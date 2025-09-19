@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tough Athletics Gym</title>
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/splashstyles.css">
+    <link rel="stylesheet" href="/css/indexstyles.css">
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+
+</head>
+
+<body>
+    <!-- this is the splash screen -->
+    <div id="splash-screen" class="d-flex flex-column justify-content-center align-items-center text-white vh-100">
+        <img src="/images/icons/startuplogo.png" alt="Startup Logo" class="mb-3" style="width: 90px; height: 160px;">
+    </div>
+
+    <!-- main content -->
+    <div class="container mt-5">
+        <!-- banner logo-->
+        <div class="bannerLogo">
+            <img src="/images/icons/bannerlogo.png" alt="Banner Logo" class="mb-3" style="width: 250px; height: 130px;">
+        </div>
+        <!-- banner logo end -->
+
+        <!-- login form -->
+        <div class="loginBox d-flex flex-column">
+            <h1 class=" text-center"><b>Welcome!</b></h1>
+            <hr class="mb-4">
+            <div class="formContainer">
+                <form action="/login" method="POST">
+                    <div class="mb-4">
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Username"
+                            required>
+                    </div>
+                    <div class="mb-2">
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Password"
+                            required>
+                    </div>
+                    <div class="forgotPass text-end mb-4">
+                        <a href="/forgot-password" class="text-decoration-none"
+                            style="font-size: 13px; color: rgb(255, 255, 255);">Forgot
+                            Password?</a>
+                    </div>
+                    <button type="submit" class="btn btn-custom w-100 mt-2">Login</button>
+                    <div class="forgotPass text-center mt-3" style="font-size: 13px; color: #fff;">
+                        Don’t have an account?
+                        <a href="/register" class="text-decoration-none" style="color: #0d6efd; font-weight: 500;">
+                            Sign Up
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</body>
+<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/js/splashscreen.js"></script>
+
+</html>

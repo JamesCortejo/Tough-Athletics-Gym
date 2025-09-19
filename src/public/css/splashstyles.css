@@ -1,0 +1,23 @@
+/* Initial splash screen state */
+#splash-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  transition: opacity 1s ease; /* fade effect */
+  z-index: 9999;
+  background-color: #393e46;
+}
+
+/* Hidden state (after fade) */
+#splash-screen.fade-out {
+  opacity: 0;
+  pointer-events: none; /* prevent clicks after hidden */
+}
+
+.formContainer {
+  display: flex;
+  justify-content: center; /* center horizontally */
+}
