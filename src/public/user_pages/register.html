@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tough Athletics Gym</title>
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/registerstyles.css">
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+</head>
+
+<body>
+    <div class="container mt-5">
+        <!-- banner logo-->
+        <div class="bannerLogo">
+            <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-5"
+                style="width: 250px; height: 120px;">
+        </div>
+        <!-- banner logo end -->
+        <div class="registerBox d-flex flex-column mb-4">
+            <h3 class="text-center mb-3"><b>Create Account</b></h3>
+            <div class="formContainer ">
+                <form action="../index.html" method="GET">
+                    <!-- First Name -->
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="firstName" name="firstName" placeholder="First Name"
+                            required>
+                    </div>
+
+                    <!-- Last Name -->
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Last Name"
+                            required>
+                    </div>
+
+                    <!-- Username -->
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Username"
+                            required>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <input type="email" class="form-control" id="email" name="email" placeholder="Email" required>
+                    </div>
+
+                    <!-- Mobile Number -->
+                    <div class="mb-3">
+                        <input type="tel" class="form-control" id="mobile" name="mobile" placeholder="Mobile Number"
+                            required>
+                    </div>
+
+                    <!-- Gender Dropdown -->
+                    <div class="mb-3">
+                        <select class="form-control" id="gender" name="gender" required>
+                            <option value="" disabled selected>Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-3">
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Password"
+                            required>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="mb-3">
+                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+                            placeholder="Confirm Password" required>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn btn-custom w-100 mt-2">Sign Up</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="forgotPass text-center mt-1 mb-5" style="font-size: 13px; color: #fff;">
+        Already have an account?
+        <a href="/" class="btn-customtext-decoration-none" style="color: #0d6efd; font-weight: 500;">
+            Login
+        </a>
+    </div>
+    <div class="footerLogo">
+        <img src="/images/icons/startuplogo.png" alt="Footer Logo" width="40" height="80">
+    </div>
+</body>
+<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+</html>

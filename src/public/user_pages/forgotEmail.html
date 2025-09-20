@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tough Athletics Gym</title>
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/forgotstyles.css">
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+</head>
+
+<body>
+    <div class="container mt-5">
+        <div class="bannerLogo">
+            <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-5"
+                style="width: 250px; height: 120px;">
+        </div>
+        <div class="forgotBox d-flex flex-column mb-4">
+            <button class="close-btn" onclick="closeForgotBox()">
+                <a href="../index.html"><img src="/images/icons/exitbtn.png" alt="Close" width="20" height="20"></a>
+            </button>
+            <h3 class="text-center mb-3"><b>Enter your Email</b></h3>
+            <div class="formContainer ">
+                <form action="/verifyEmail" method="POST">
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <input type="email" class="form-control" id="email" name="email" placeholder="Email" required>
+                    </div>
+                    <button type="submit" class="btn btn-custom w-95 mt-2">Get Code</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="footerLogo">
+        <img src="../images/icons/startuplogo.png" alt="Footer Logo" width="40" height="80">
+    </div>
+</body>
+<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+</html>

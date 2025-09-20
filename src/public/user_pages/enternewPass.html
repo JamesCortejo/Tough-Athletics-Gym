@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tough Athletics Gym</title>
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/forgotstyles.css">
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+</head>
+
+<body>
+    <div class="container mt-5">
+        <div class="bannerLogo">
+            <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-5"
+                style="width: 250px; height: 120px;">
+        </div>
+        <div class="forgotBox d-flex flex-column mb-4">
+            <div class="text-center">
+                <img src="../images/icons/verify.png" alt="Verified" class="mb-3" style="width: 35px; height: 35px;">
+            </div>
+            <h3 class="text-center mb-3"><b>Verified!</b></h3>
+            <p class="verifyDes mb-2">Please enter your new password make sure your password is strong by inculding # @
+                ! _ symbols.</p>
+            <p class="verifyDes">8-Letter Password </p>
+            <div class="formContainer ">
+                <form action="../index.html" method="POST">
+                    <!-- Password -->
+                    <div class="mb-3">
+                        <input type="password" class="form-control" id="newPassword" name="newPassword"
+                            placeholder="New Password" required>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="mb-3">
+                        <input type="password" class="form-control" id="confirmnewPassword" name="confirmnewPassword"
+                            placeholder="Confirm New Password" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-custom w-95 mt-2">Confirm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="footerLogo">
+        <img src="../images/icons/startuplogo.png" alt="Footer Logo" width="40" height="80">
+    </div>
+</body>
+<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+</html>

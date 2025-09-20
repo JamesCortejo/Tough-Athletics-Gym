@@ -5,9 +5,34 @@ body {
   font-family: "Inter", sans-serif;
   font-feature-settings: "liga" 1, "calt" 1;
   overflow-x: hidden;
-  background: url("/images/backgroundimg.png") no-repeat center center fixed;
+  background: url("../images/backgroundimg.png") no-repeat center center fixed;
   background-size: cover;
 }
+.footerLogo {
+  position: relative; /* no longer fixed */
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  margin-top: 20px; /* add space above footer if needed */
+}
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.registerBox {
+  color: rgb(0, 0, 0);
+  background-color: white;
+  border-radius: 25px;
+  display: flex;
+  width: 90%;
+  text-align: center;
+  justify-content: center; /* centers horizontally */
+  padding: 20px;
+}
+
 @supports (font-variation-settings: normal) {
   body {
     font-family: "InterVariable", sans-serif;
@@ -19,22 +44,16 @@ body {
   text-align: center;
   justify-content: center; /* centers horizontally */
 }
-.loginBox {
-  color: white;
-  display: flex;
-  width: 100%;
-  text-align: center;
-  justify-content: center; /* centers horizontally */
-  padding: 20px;
-}
 
 .form-control {
+  width: 270px; /* set a fixed width */
   border: white 1px solid;
   outline: none;
   box-shadow: none;
   height: 40px;
-  color: #7e7e7e; /* text color */
-  background-color: transparent;
+  color: #454545; /* text color */
+  background-color: rgb(223, 223, 223);
+  font-size: 13px;
 }
 
 .form-control::placeholder {
@@ -47,21 +66,11 @@ body {
   justify-content: center; /* center horizontally */
 }
 .btn-custom {
-  background-color: #000; /* black */
+  background-color: #393e46; /* black */
   color: #fff; /* white text */
   height: 50px; /* adjust height */
   border: none; /* optional: remove border */
 }
-
 .btn-custom:hover {
-  background-color: #333; /* dark gray on hover */
-}
-
-.footerLogo {
-  position: relative; /* no longer fixed */
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-  margin-top: 115px; /* add space above footer if needed */
+  background-color: #575757; /* dark gray on hover */
 }
