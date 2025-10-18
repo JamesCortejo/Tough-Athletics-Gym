@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="../css/userprofilestyles.css">
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="pfpTopbar">
+        <a class="mt-2" href="userhomepage.html"><img src="../images/icons/backBtn.png" alt="" width="30px"
+                height="30px"></a>
+        <h1 style="font-family: 'League Gothic', sans-serif; font-size: 36px;">My Profile</h1>
+        <img class="mt-3" src="../images/icons/startuplogo.png" alt="" width="30px" height="54">
+    </div>
+
+    <div class="pfpMaincontent">
+        <div class="profile-section">
+            <div class="profile-pic">
+                <img src="../images/icons/defaultPfp.png" alt="Profile Picture">
+                <div class="edit-icon" style="background-color: black;">
+                    <a href=""><img src="../images/icons/editBtn.png" alt="Edit Icon" width="20px" height="20px"
+                            style="margin-bottom: 3px;"></a>
+                </div>
+            </div>
+            <h1 class="profile-name">User U. User</h1>
+            <p class="profile-email">User23@gmail.com</p>
+        </div>
+
+        <div class="edit-info">
+            <h3>Edit Info</h3>
+
+            <label for="fname">First Name</label>
+            <input type="text" id="fname" value="User">
+
+            <label for="lname">Last Name</label>
+            <input type="text" id="lname" value="User">
+
+            <label for="email">Email</label>
+            <input type="email" id="email" value="User123@gmail.com">
+
+            <label for="age">Age</label>
+            <input type="number" id="age" value="0">
+
+            <label for="gender">Gender</label>
+            <select id="gender">
+                <option>Male</option>
+                <option>Female</option>
+            </select>
+
+            <div class="saveBtn d-flex justify-content-end">
+                <button id="saveBtn" class="save-btn ">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="popupOverlay" class="overlay">
+        <div class="popup">
+            <h2>Are you sure you want to save changes?</h2>
+            <div class="popup-buttons">
+                <button id="noBtn">No</button>
+                <button id="yesBtn">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <footer style="background-color: black; padding: 20px 30px 20px 30px;">
+        <div class="row">
+            <div class="col-6">
+                <div class="logs" style="margin-top: 20px;">
+                    <img src="../images/icons/startuplogo.png" alt="" width="40" height="80">
+                    <img src="../images/icons/words.png" alt="" width="100" height="60">
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="footer-contacts">
+                    <ul>
+                        <li>
+                            <img src="../images/icons/phone.png" alt="Phone" class="icon">
+                            0917 880 5849
+                        </li>
+                        <li>
+                            <img src="../images/icons/emailfoot.png" alt="Email" class="icon">
+                            csagpalo@gmail.com
+                        </li>
+                        <li>
+                            <img src="../images/icons/facebook.png" alt="Facebook" class="icon">
+                            TOUGH ATHLETICS GYM/YourPage
+                        </li>
+                        <li>
+                            <img src="../images/icons/location.png" alt="Location" class="icon">
+                            Magsaysay Corner Murillo St. Brgy 6, Malaybalay City, 8700 Bukidnon
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="../js/profileSave.js"></script>
+
+</html>

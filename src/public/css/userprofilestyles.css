@@ -1,0 +1,217 @@
+@font-face {
+  font-family: "League Gothic";
+  src: url("/fonts/league-gothic-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  background: url("../images/backgroundimg.png") no-repeat center center fixed;
+}
+
+.pfpTopbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+  padding: 10px 20px;
+}
+
+.pfpMaincontent {
+  background: #fff;
+  border-top-left-radius: 50px;
+  border-top-right-radius: 50px;
+  padding: 40px 30px;
+  max-width: 100%;
+  margin: 80px auto 0px auto; /* centers vertically below top bar */
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+  text-align: center;
+}
+.profile-section {
+  margin-bottom: 30px;
+}
+
+.profile-pic {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: -100px auto 0;
+}
+
+.profile-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%; /* makes it circular */
+  border: 4px solid black;
+}
+
+.edit-icon {
+  position: absolute;
+  bottom: 5px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  background-color: white;
+  border-radius: 50%;
+  border: 1px solid black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10; /* ensures it’s visible on top */
+}
+
+.edit-icon img {
+  width: 20px;
+  height: 20px;
+}
+
+/* Profile text */
+.profile-name {
+  font-family: "League Gothic", sans-serif;
+  margin-top: 10px;
+  font-size: 35px;
+}
+
+.profile-email {
+  color: #333;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.edit-info {
+  text-align: left;
+  margin: 0px 20px 0px 20px;
+}
+
+.edit-info h3 {
+  font-family: "League Gothic", sans-serif;
+  font-size: 22px;
+  margin-bottom: 15px;
+}
+
+.edit-info label {
+  display: block;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.edit-info input,
+.edit-info select {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid black;
+  border-radius: 10px;
+  margin-top: 5px;
+  font-size: 14px;
+}
+
+.save-btn {
+  display: block;
+  width: 30%;
+  margin-top: 20px;
+  background-color: black;
+  color: white;
+  padding: 10px 0;
+  border: none;
+  border-radius: 20px;
+  font-family: "League Gothic", sans-serif;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.save-btn:hover {
+  background-color: #333;
+}
+
+.footer-contacts ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.footer-contacts li {
+  color: white;
+  display: flex;
+  align-items: center;
+  margin: 6px 0;
+  font-family: "League Gothic", sans-serif;
+  font-size: 13px;
+}
+
+.footer-contacts .icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+}
+
+/*==========================================*/
+
+/* Overlay background (hidden by default) */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* dark blur overlay */
+  backdrop-filter: blur(6px); /* blurs background */
+  display: none; /* hidden initially */
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* Popup box */
+.popup {
+  background: white;
+  padding: 25px 35px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 320px;
+  width: 90%;
+}
+
+.popup h2 {
+  margin-bottom: 20px;
+  font-size: 18px;
+}
+
+/* Buttons inside popup */
+.popup-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.popup-buttons button {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#noBtn {
+  background-color: #000000;
+  color: rgb(255, 255, 255);
+}
+
+#yesBtn {
+  background-color: #000000;
+  color: white;
+}
+
+#noBtn:hover {
+  background-color: #393e46;
+}
+
+#yesBtn:hover {
+  background-color: #393e46;
+}
