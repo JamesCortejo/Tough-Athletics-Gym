@@ -1,4 +1,4 @@
-/* Initial splash screen state */
+
 #splash-screen {
   position: fixed;
   top: 0;
@@ -11,13 +11,8 @@
   background-color: #393e46;
 }
 
-/* Hidden state (after fade) */
 #splash-screen.fade-out {
   opacity: 0;
   pointer-events: none; /* prevent clicks after hidden */
 }
 
-.formContainer {
-  display: flex;
-  justify-content: center; /* center horizontally */
-}

@@ -4,6 +4,19 @@ const authRoutes = require("./src/routes/authroutes");
 
 const app = express();
 
+app.use(
+  "/fonts",
+  express.static(
+    path.join(
+      __dirname,
+      "node_modules",
+      "@fontsource",
+      "league-gothic",
+      "files"
+    )
+  )
+);
+
 // Serve static files (CSS, JS, images, HTML)
 app.use(express.static(path.join(__dirname, "src", "public")));
 

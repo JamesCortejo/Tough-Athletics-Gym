@@ -1,0 +1,50 @@
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
+  font-feature-settings: "liga" 1, "calt" 1;
+  overflow-x: hidden;
+}
+.sideBar {
+  background-color: black;
+  height: 100vh;
+  width: 360px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  position: fixed;
+}
+
+.sideBarContent {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  width: 200px;
+}
+.titleLogo {
+  color: white;
+  display: flex;
+  padding-top: 15px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn-custom {
+  background-color: #393e46; /* black */
+  color: #fff; /* white text */
+  height: 50px; /* adjust height */
+  border: none; /* optional: remove border */
+  border-radius: 14px;
+  width: 100%;
+  margin-top: 17px;
+}
+.btn-custom:hover {
+  background-color: #575757; /* dark gray on hover */
+}
+.mainContent {
+  position: relative;
+  margin-left: 400px;
+}
