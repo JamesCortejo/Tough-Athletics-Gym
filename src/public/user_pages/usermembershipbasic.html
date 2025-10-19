@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic Membership</title>
+    <link rel="stylesheet" href="../css/umembasic.css">
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+</head>
+
+<body>
+    <div class="userNavbar">
+        <div class="logo">
+            <img src="../images/icons/startuplogo.png" alt="Banner Logo" class="mb-2"
+                style="width: 27px; height: 54px; margin-top: 2px;">
+            <img src="../images/icons/words.png" alt="Words Logo" class="mb-2" style="width: 70px; height: 40px;">
+        </div>
+        <div class="pfpsett">
+            <a href="userprofile.html"><img src="../images/icons/pfplogo.png" alt="Profile Picture" class="mb-2"
+                    style="width: 30px; height: 30px; margin-right: 4px;"></a>
+            <a href="usersettings.html"><img src="../images/icons/settingslogo.png" alt="Settings Logo" class="mb-2"
+                    style="width: 30px; height: 30px;"></a>
+            <a href="#" id="notifBtn" class="notif-btn">
+                <img src="../images/icons/notificationLogo.png" alt="Notifications" width="30" height="30">
+            </a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="membershipTopbar">
+            <a class="mt-2" href="usermembership.html"><img src="../images/icons/backBtn.png" alt="" width="30px"
+                    height="30px"></a>
+            <h1 style="font-family: 'League Gothic', sans-serif; font-size: 36px;">Apply Membership</h1>
+            <img class="mt-3" src="../images/icons/startuplogo.png" alt="" width="30px" height="54">
+        </div>
+
+        <div class="d-flex justify-content-center">
+            <div class="memCard">
+                <div class="card-body">
+                    <p class="mt-0 mb-1 text-center">Basic</p>
+                    <h5 class="card-title mb-1" style="color: #ffffff; font-size: 26px;">₱500 / Month</h5>
+                    <p class="card-text mb-0" style="color: #9f9f9f;">Billed Monthly</p>
+                    <div class="membershipBen" style="display: flex; justify-content: center; margin-top: 15px;">
+                        <ul>
+                            <li>
+                                <img src="../images/icons/greencheck.png" alt="" class="icon" width="26px"
+                                    height="26px">
+                                Access to gym equipment
+                            </li>
+                            <li>
+                                <img src="../images/icons/greencheck.png" alt="" class="icon" width="26px"
+                                    height="26px">
+                                Locker Access
+                            </li>
+                            <li>
+                                <img src="../images/icons/redcheck.png" alt="" class="icon" width="26px" height="26px">
+                                24/7 Gym Access
+                            </li>
+                            <li>
+                                <img src="../images/icons/redcheck.png" alt="" class="icon" width="26px" height="26px">
+                                Personal Trainer
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="formContainer">
+            <form action="">
+                <div class="row">
+                    <div class="col">
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Username"
+                            required>
+                    </div>
+                    <div class="col">
+                        <input type="text" class="form-control" id="lastname" name="lastname" placeholder="Last Name"
+                            required>
+                    </div>
+                </div>
+                <input type="email" class="form-control" id="email" name="email" placeholder="Email" required>
+                <input type="number" class="form-control" id="Phone" name="Phone" placeholder="Phone" required>
+                <h3>Payment Method</h3>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
+                    <label class="form-check-label" for="flexRadioDefault1">
+                        Cash at Gym
+                    </label>
+                </div>
+                <button type="submit">Apply Membership</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Dropdown -->
+    <div id="notifDropdown" class="notif-overlay">
+        <div class="notif-box">
+            <h3>Notifications</h3>
+            <div class="notif-list">
+                <div class="notif-item">New message from John</div>
+                <div class="notif-item">Your subscription is expiring soon</div>
+                <div class="notif-item">Profile updated successfully</div>
+                <div class="notif-item">System maintenance scheduled</div>
+            </div>
+            <div class="notif-actions">
+                <a href="#" class="notif-btn clear">Clear</a>
+                <a href="#" class="notif-btn read">Mark all as read</a>
+            </div>
+        </div>
+    </div>
+
+    <footer style=" background-color: black; padding: 20px 30px 20px 30px;">
+        <div class="row">
+            <div class="col-6">
+                <div class="logs" style="margin-top: 20px;">
+                    <img src="../images/icons/startuplogo.png" alt="" width="40" height="80">
+                    <img src="../images/icons/words.png" alt="" width="100" height="60">
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="footer-contacts">
+                    <ul>
+                        <li>
+                            <img src="../images/icons/phone.png" alt="Phone" class="icon">
+                            0917 880 5849
+                        </li>
+                        <li>
+                            <img src="../images/icons/emailfoot.png" alt="Email" class="icon">
+                            csagpalo@gmail.com
+                        </li>
+                        <li>
+                            <img src="../images/icons/facebook.png" alt="Facebook" class="icon">
+                            TOUGH ATHLETICS GYM/YourPage
+                        </li>
+                        <li>
+                            <img src="../images/icons/location.png" alt="Location" class="icon">
+                            Magsaysay Corner Murillo St. Brgy 6, Malaybalay City, 8700 Bukidnon
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="../js/notifications.js"></script>
+
+</html>
