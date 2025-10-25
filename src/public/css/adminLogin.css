@@ -1,0 +1,52 @@
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  background: url("../images/adminLogin.png") repeat center center fixed;
+}
+
+.login-card {
+  background-color: #1e1e1e !important;
+  border-radius: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  color: white; /* changed text color to white */
+}
+
+.login-logo img {
+  width: 300px;
+  height: auto;
+  margin-bottom: 20px;
+}
+
+.btn-custom {
+  background-color: #121212;
+  color: #fff;
+  border-radius: 8px;
+  border: none;
+  width: 100%;
+  padding: 10px;
+  font-weight: bold;
+}
+
+.btn-custom:hover {
+  background-color: #979797;
+  color: white;
+}
+
+h2 {
+  font-weight: 600;
+  margin-bottom: 10px;
+  font-family: "League Gothic", sans-serif;
+  color: white; /* ensure heading is white */
+}
+
+p {
+  color: white; /* changed paragraph text to white */
+  margin-bottom: 30px;
+}

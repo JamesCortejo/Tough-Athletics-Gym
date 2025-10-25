@@ -9,45 +9,162 @@
     <link rel="stylesheet" href="../css/forgotstyles.css">
     <link rel="preconnect" href="https://rsms.me/">
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        .alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            width: calc(100% - 40px);
+            max-width: 350px;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 0;
+            border: none;
+            font-size: 14px;
+            line-height: 1.4;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-left: 4px solid transparent;
+            text-align: center;
+            word-wrap: break-word;
+        }
+
+        .alert-danger {
+            background: #fff5f5;
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            color: #0c5460;
+            border-left-color: #28a745;
+        }
+    </style>
 </head>
 
 <body>
     <div class="container mt-5">
         <div class="bannerLogo">
-            <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-5"
-                style="width: 250px; height: 120px;">
+            <img src="/images/icons/bannerlogo.png" alt="Banner Logo" class="mb-5" style="width: 250px; height: 120px;">
         </div>
         <div class="forgotBox d-flex flex-column mb-4">
-            <button class="close-btn" onclick="closeForgotBox()">
-                <a href="../index.html"><img src="/images/icons/exitbtn.png" alt="Close" width="20" height="20"></a>
+            <button class="close-btn">
+                <a href="/"><img src="/images/icons/exitbtn.png" alt="Close" width="20" height="20"></a>
             </button>
             <h3 class="text-center mb-3"><b>Verify its you</b></h3>
-            <p class="verifyDes mb-2">We sent verification code to you@gmail.com. Please check your inbox and enter the
-                code
-                below.</p>
+            <p class="verifyDes mb-2" id="emailDescription">We sent verification code to your email. Please check your
+                inbox and enter the code below.</p>
             <p class="verifyDes">6-digits code*</p>
-            <div class="formContainer ">
-                <form action="/enternewPass" method="GET">
-                    <!-- Email -->
+            <div class="formContainer">
+                <form id="verifyCodeForm">
+                    <!-- Hidden email field -->
+                    <input type="hidden" id="userEmail" name="email">
+                    <!-- Code input -->
                     <div class="mb-3">
-                        <input type="number" class="form-control" id="number" name="number"
-                            placeholder="Enter 6-digits code" required>
+                        <input type="text" class="form-control" id="code" name="code" placeholder="Enter 6-digits code"
+                            required maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                     </div>
                     <button type="submit" class="btn btn-custom w-95 mt-2">Verify Code</button>
                 </form>
             </div>
             <div class="verifyDes text-center mt-4">
-                Didn’t receive an email?
-                <a href="/" class="btn-customtext-decoration-none" style="color: #0d6efd; font-weight: 500;">
+                Didn't receive an email?
+                <a href="/forgotEmail" class="btn-customtext-decoration-none" style="color: #0d6efd; font-weight: 500;">
                     Try Again
                 </a>
             </div>
         </div>
     </div>
     <div class="footerLogo">
-        <img src="../images/icons/startuplogo.png" alt="Footer Logo" width="40" height="80">
+        <img src="/images/icons/startuplogo.png" alt="Footer Logo" width="40" height="80">
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Get email from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const email = urlParams.get('email');
+
+            if (email) {
+                document.getElementById('userEmail').value = email;
+                document.getElementById('emailDescription').textContent =
+                    `We sent verification code to ${email}. Please check your inbox and enter the code below.`;
+            }
+
+            const form = document.getElementById('verifyCodeForm');
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const email = document.getElementById('userEmail').value;
+                const code = document.getElementById('code').value.trim();
+                const submitBtn = form.querySelector('button[type="submit"]');
+
+                // Remove existing alerts
+                removeExistingAlerts();
+
+                if (!code || code.length !== 6) {
+                    showError('Please enter a valid 6-digit code');
+                    return;
+                }
+
+                try {
+                    // Show loading state
+                    submitBtn.textContent = 'Verifying...';
+                    submitBtn.disabled = true;
+
+                    const response = await fetch('/verify-reset-code', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ email: email, code: code })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showSuccess(result.message);
+                        // Redirect to enter new password page
+                        setTimeout(() => {
+                            window.location.href = result.redirect;
+                        }, 2000);
+                    } else {
+                        showError(result.message);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showError('An error occurred. Please try again.');
+                } finally {
+                    // Reset button state
+                    submitBtn.textContent = 'Verify Code';
+                    submitBtn.disabled = false;
+                }
+            });
+
+            function showError(message) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger';
+                alertDiv.textContent = message;
+                form.parentNode.insertBefore(alertDiv, form);
+            }
+
+            function showSuccess(message) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success';
+                alertDiv.textContent = message;
+                form.parentNode.insertBefore(alertDiv, form);
+            }
+
+            function removeExistingAlerts() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => alert.remove());
+            }
+        });
+    </script>
 </body>
-<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 </html>

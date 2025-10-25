@@ -8,8 +8,6 @@
     <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/splashstyles.css">
     <link rel="stylesheet" href="/css/indexstyles.css">
-    <link rel="preconnect" href="https://rsms.me/">
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 
 </head>
 
@@ -58,11 +56,41 @@
             </div>
         </div>
     </div>
+
+    <!-- Add this at the top of your index.html body content -->
+    <div id="registrationSuccessAlert" class="alert alert-success alert-dismissible fade show"
+        style="display: none; margin: 15px; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; width: calc(100% - 30px); max-width: 400px;">
+        <div style="padding-right: 30px;">
+            <strong>Success!</strong> Your registration was completed successfully.
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
     <div class="footerLogo">
         <img src="/images/icons/startuplogo.png" alt="Footer Logo" width="40" height="80">
     </div>
 </body>
+<script>
+    // Check for successful registration on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('registration') === 'success') {
+            const successAlert = document.getElementById('registrationSuccessAlert');
+            if (successAlert) {
+                successAlert.style.display = 'block';
+
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    successAlert.style.display = 'none';
+                    // Remove the query parameter from URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }, 5000);
+            }
+        }
+    });
+</script>
 <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="/js/splashscreen.js"></script>
+<script src="/js/userJS/login.js"></script>
 
 </html>

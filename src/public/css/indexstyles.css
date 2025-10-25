@@ -65,3 +65,91 @@ body {
   text-align: center;
   margin-top: 115px; /* add space above footer if needed */
 }
+
+/* Mobile-Optimized Alert Styles */
+.alert {
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 10px 0 20px 0;
+  border: none;
+  font-size: 14px;
+  line-height: 1.4;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  word-wrap: break-word;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-left: 4px solid transparent;
+}
+
+.alert-danger {
+  background: #fff5f5;
+  color: #721c24;
+  border-left-color: #dc3545;
+}
+
+.alert-success {
+  background: #f0fff4;
+  color: #0c5460;
+  border-left-color: #28a745;
+}
+
+.alert .btn-close {
+  padding: 12px;
+  font-size: 10px;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  opacity: 0.7;
+}
+
+.alert .btn-close:hover {
+  opacity: 1;
+}
+
+/* Ensure alerts are visible and properly spaced in the form */
+.formContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.formContainer .alert {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 480px) {
+  .alert {
+    padding: 14px 16px;
+    font-size: 13px;
+    margin: 8px 0 15px 0;
+  }
+
+  .alert .btn-close {
+    top: 10px;
+    right: 10px;
+    padding: 10px;
+  }
+
+  .registerBox {
+    padding: 20px 15px;
+  }
+}
+
+/* Prevent horizontal scrolling */
+.container {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.registerBox {
+  max-width: 100%;
+  overflow-x: hidden;
+}

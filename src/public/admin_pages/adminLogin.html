@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/adminLogin.css">
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        .alert {
+            margin: 10px 0;
+            width: 100%;
+            max-width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="text-center">
+        <div class="login-card mx-auto">
+            <div class="login-logo">
+                <img src="../images/icons/bannerlogo.png" alt="Logo">
+            </div>
+            <h2>Admin Login</h2>
+            <p>Sign in to access the admin dashboard</p>
+
+            <!-- Alert Container -->
+            <div id="alertContainer"></div>
+
+            <form id="adminLoginForm">
+                <div class="mb-3 text-start">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" placeholder="Enter your username" required>
+                </div>
+                <div class="mb-3 text-start">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" placeholder="Enter your password"
+                        required>
+                </div>
+                <button type="submit" class="btn btn-custom">Login</button>
+            </form>
+        </div>
+    </div>
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/adminJS/adminLogin.js"></script>
+</body>
+
+</html>

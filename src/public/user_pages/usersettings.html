@@ -13,10 +13,12 @@
             color: #fff;
             height: 50px;
             border: none;
+            width: 170px;
         }
 
         .btn-custom:hover {
             background-color: #333;
+            color: #fff;
         }
 
         .btn-customLog {
@@ -31,28 +33,50 @@
             background-color: #540000;
             color: #fff;
         }
+
+        .settButtons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            width: calc(100% - 30px);
+            max-width: 400px;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Logout Success Alert -->
+    <div id="logoutSuccessAlert" class="alert alert-success alert-dismissible fade show" style="display: none;">
+        <strong>Success!</strong> You have been logged out successfully.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
     <div class="settTopbar">
-        <a class="mt-2" href="userhomepage.html"><img src="../images/icons/backBtn.png" alt="" width="30px"
-                height="30px"></a>
+        <a class="mt-2" href="/userhomepage"><img src="/images/icons/backBtn.png" alt="" width="30px" height="30px"></a>
         <h1 style="font-family: 'League Gothic', sans-serif; font-size: 36px;">Settings</h1>
-        <img class="mt-3" src="../images/icons/startuplogo.png" alt="" width="30px" height="54">
+        <img class="mt-3" src="/images/icons/startuplogo.png" alt="" width="30px" height="54">
     </div>
 
     <div class="settMaincontent">
         <div class="settBanner">
-            <img src="../images/icons/bannerlogo.png" alt="" width="350px" height="160px">
+            <img src="/images/icons/bannerlogo.png" alt="" width="350px" height="160px">
         </div>
         <div class="settButtons">
             <div class="changePass">
                 <div class="btnChangepass mt-3">
-                    <a href=""><button class="btn btn-custom">Change Password</button></a>
+                    <a href="/changepassword"><button class="btn btn-custom">Change Password</button></a>
                 </div>
                 <div class="btnLogout mt-3">
-                    <a href=""><button class="btn btn-customLog">Logout</button></a>
+                    <button id="logoutBtn" class="btn btn-customLog">Logout</button>
                 </div>
             </div>
         </div>
@@ -61,27 +85,27 @@
         <div class="row">
             <div class="col-6">
                 <div class="logs" style="margin-top: 20px;">
-                    <img src="../images/icons/startuplogo.png" alt="" width="40" height="80">
-                    <img src="../images/icons/words.png" alt="" width="100" height="60">
+                    <img src="/images/icons/startuplogo.png" alt="" width="40" height="80">
+                    <img src="/images/icons/words.png" alt="" width="100" height="60">
                 </div>
             </div>
             <div class="col-6">
                 <div class="footer-contacts">
                     <ul>
                         <li>
-                            <img src="../images/icons/phone.png" alt="Phone" class="icon">
+                            <img src="/images/icons/phone.png" alt="Phone" class="icon">
                             0917 880 5849
                         </li>
                         <li>
-                            <img src="../images/icons/emailfoot.png" alt="Email" class="icon">
+                            <img src="/images/icons/emailfoot.png" alt="Email" class="icon">
                             csagpalo@gmail.com
                         </li>
                         <li>
-                            <img src="../images/icons/facebook.png" alt="Facebook" class="icon">
+                            <img src="/images/icons/facebook.png" alt="Facebook" class="icon">
                             TOUGH ATHLETICS GYM/YourPage
                         </li>
                         <li>
-                            <img src="../images/icons/location.png" alt="Location" class="icon">
+                            <img src="/images/icons/location.png" alt="Location" class="icon">
                             Magsaysay Corner Murillo St. Brgy 6, Malaybalay City, 8700 Bukidnon
                         </li>
                     </ul>
@@ -90,7 +114,63 @@
         </div>
     </footer>
 
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const logoutBtn = document.getElementById('logoutBtn');
+            const logoutSuccessAlert = document.getElementById('logoutSuccessAlert');
+
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function () {
+                    // Show confirmation dialog
+                    const confirmLogout = confirm('Are you sure you want to logout?');
+
+                    if (confirmLogout) {
+                        // Clear all user data from localStorage
+                        localStorage.removeItem('currentUser');
+                        localStorage.removeItem('token');
+
+                        // Show success message
+                        logoutSuccessAlert.style.display = 'block';
+
+                        // Optional: Add fade-in animation
+                        logoutSuccessAlert.classList.add('show');
+
+                        console.log('User logged out. LocalStorage cleared.');
+
+                        // Redirect to login page after a short delay
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 1500);
+                    }
+                });
+            }
+
+            // Check if user is logged in
+            const currentUser = localStorage.getItem('currentUser');
+            if (!currentUser) {
+                // If no user is logged in, redirect to login page
+                window.location.href = '/';
+            }
+        });
+
+        // Function to show alert (for future use)
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; width: calc(100% - 30px); max-width: 400px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+    </script>
 </body>
-<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 </html>

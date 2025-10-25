@@ -11,52 +11,106 @@
         body {
             background-color: #393E46;
         }
+
+        .user-info {
+            color: white;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .userQR img {
+            border: 4px solid white;
+            border-radius: 15px;
+            background: white;
+            padding: 10px;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .debug-info {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px;
+            font-size: 12px;
+        }
     </style>
 </head>
 
 <body>
+    <!-- Debug Info Panel -->
+    <div id="debugInfo" class="debug-info" style="display: none;">
+        <strong>Debug Information:</strong>
+        <div id="debugContent"></div>
+    </div>
+
     <div class="userNavbar">
         <div class="logo">
-            <img src="../images/icons/startuplogo.png" alt="Banner Logo" class="mb-2"
+            <img src="/images/icons/startuplogo.png" alt="Banner Logo" class="mb-2"
                 style="width: 27px; height: 54px; margin-top: 2px;">
-            <img src="../images/icons/words.png" alt="Words Logo" class="mb-2" style="width: 70px; height: 40px;">
+            <img src="/images/icons/words.png" alt="Words Logo" class="mb-2" style="width: 70px; height: 40px;">
         </div>
         <div class="pfpsett">
-            <a href="userprofile.html"><img src="../images/icons/pfplogo.png" alt="Profile Picture" class="mb-2"
-                    style="width: 30px; height: 30px; margin-right: 4px;"></a>
-            <a href="usersettings.html"><img src="../images/icons/settingslogo.png" alt="Settings Logo" class="mb-2"
-                    style="width: 30px; height: 30px;"></a>
-            <a href="#" id="notifBtn" class="notif-btn">
-                <img src="../images/icons/notificationLogo.png" alt="Notifications" width="30" height="30">
+            <a href="/userprofile" style="text-decoration: none;">
+                <img src="/images/icons/pfplogo.png" alt="Profile Picture" class="mb-2"
+                    style="width: 30px; height: 30px; margin-right: 4px;">
+            </a>
+            <a href="/usersettings" style="text-decoration: none;">
+                <img src="/images/icons/settingslogo.png" alt="Settings Logo" class="mb-2"
+                    style="width: 30px; height: 30px;">
+            </a>
+            <a href="#" id="notifBtn" class="notif-btn" style="text-decoration: none;">
+                <img src="/images/icons/notificationLogo.png" alt="Notifications" width="30" height="30">
             </a>
         </div>
     </div>
 
     <div class="maincontent">
         <div class="homepage_banner">
-            <img src="../images/icons/bannerlogo.png" alt="" width="350px" height="160px">
+            <img src="/images/icons/bannerlogo.png" alt="" width="350px" height="160px">
         </div>
         <div class="firsttext">
             <h1>Fitness gym next to none.</h1>
         </div>
-        <div class="userQR">
-            <img src="../images/icons/sampleQR.png" alt="" width="380px" height="380px">
+
+        <!-- User Welcome Section -->
+        <div class="user-info">
+            <h3 id="welcomeMessage">Welcome to Tough Athletics!</h3>
+            <p id="userName" style="margin-bottom: 5px;">Scan your QR code below</p>
+            <small id="qrCodeId" style="color: #ccc; font-size: 12px;"></small>
         </div>
-        <div class="row" style="margin-left: 25px; margin-right: 25px; height: 46px;">
+
+        <!-- QR Code Section -->
+        <div class="userQR" style="text-align: center;">
+            <img id="userQRCode" src="/images/icons/sampleQR.png" alt="User QR Code" width="350" height="350">
+            <div id="qrStatus" style="color: #fff; margin-top: 10px; font-size: 14px;"></div>
+        </div>
+
+        <div class="row" style="margin-left: 25px; margin-right: 25px; height: 46px; margin-top: 20px;">
             <div class="col-6">
-                <a href="usermembership.html"><button class="btn btn-dark fancy-btn"
-                        style="font-family: 'League Gothic', sans-serif; padding: 10px 40px 10px 40px; background-color: black; font-size: 16px;">Membership</button></a>
+                <a href="/usermembership">
+                    <button class="btn btn-dark fancy-btn"
+                        style="font-family: 'League Gothic', sans-serif; padding: 10px 40px 10px 40px; background-color: black; font-size: 16px;">
+                        Membership
+                    </button>
+                </a>
             </div>
             <div class="col-6">
-                <a href=""><button class="btn btn-dark fancy-btn"
-                        style="font-family: 'League Gothic', sans-serif; padding: 10px 40px 10px 40px; background-color: black; font-size: 16px;">Gym
-                        History</button></a>
+                <a href="/gymhistory">
+                    <button class="btn btn-dark fancy-btn"
+                        style="font-family: 'League Gothic', sans-serif; padding: 10px 40px 10px 40px; background-color: black; font-size: 16px;">
+                        Gym History
+                    </button>
+                </a>
             </div>
         </div>
+
+        <!-- Rest of your content -->
         <div class="homepageImages">
             <div class="first">
                 <div class="fImage">
-                    <img src="../images/homeimg1.png" alt="" width="300px" height="300px"
+                    <img src="/images/homeimg1.png" alt="" width="300px" height="300px"
                         style="border: 4px solid white; border-radius: 15px;">
                 </div>
                 <div class="destext mt-3">
@@ -65,41 +119,39 @@
             </div>
             <div class="second mt-3">
                 <div class="fImage">
-                    <img src="../images/homeimg2.png" alt="" width="300px" height="300px"
+                    <img src="/images/homeimg2.png" alt="" width="300px" height="300px"
                         style="border: 4px solid white; border-radius: 15px;">
                 </div>
                 <div class="destext mt-3 w-75">
-                    <h5>Train and do not stop!Deadlifts: the secret fuel behind powerful strides.
-                    </h5>
+                    <h5>Deadlifts: the secret fuel behind powerful strides.</h5>
                 </div>
             </div>
             <div class="third mt-3">
                 <div class="fImage">
-                    <img src="../images/homeimg3.png" alt="" width="300px" height="300px"
+                    <img src="/images/homeimg3.png" alt="" width="300px" height="300px"
                         style="border: 4px solid white; border-radius: 15px;">
                 </div>
                 <div class="destext mt-3 w-75">
-                    <p style="font-size: 16px;">Fresh space. Familiar faces. Let’s go!Here’s to another year around the
-                        gym
-                        Share your experience and workout together.</p>
+                    <p style="font-size: 16px;">Fresh space. Familiar faces. Let's go! Here's to another year around the
+                        gym. Share your experience and workout together.</p>
                 </div>
             </div>
             <div class="forth mt-3">
                 <div class="fImage">
-                    <img src="../images/homeimg4.png" alt="" width="300px" height="300px"
+                    <img src="/images/homeimg4.png" alt="" width="300px" height="300px"
                         style="border: 4px solid white; border-radius: 15px;">
                 </div>
                 <div class="destext mt-3">
-                    <h3>Fresh space. Familiar faces. Let’s go!</h3>
+                    <h3>Fresh space. Familiar faces. Let's go!</h3>
                 </div>
             </div>
             <div class="map mt-3">
                 <div class="fImage">
-                    <img src="../images/gymloc.png" alt="" width="300px" height="370px"
+                    <img src="/images/gymloc.png" alt="" width="300px" height="370px"
                         style="border: 4px solid white; border-radius: 15px;">
                 </div>
                 <div class="destext mt-3 mb-3 w-75">
-                    <h5>New location, same grind. The vibe doesn’t change — just the address. Let’s keep pushing!</h5>
+                    <h5>New location, same grind. The vibe doesn't change — just the address. Let's keep pushing!</h5>
                 </div>
             </div>
         </div>
@@ -154,8 +206,85 @@
             </div>
         </div>
     </footer>
+
+    <script>
+        // Load user data and display QR code
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('=== HOMEPAGE LOADED ===');
+
+            // For debugging, you can enable this:
+            // document.getElementById('debugInfo').style.display = 'block';
+
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const debugContent = document.getElementById('debugContent');
+
+            console.log('Current user from localStorage:', currentUser);
+
+            const qrCodeImg = document.getElementById('userQRCode');
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            const userName = document.getElementById('userName');
+            const qrCodeIdElement = document.getElementById('qrCodeId');
+            const qrStatus = document.getElementById('qrStatus');
+
+            if (currentUser) {
+                console.log('✅ User data found in localStorage');
+
+                // Display user information
+                if (currentUser.firstName) {
+                    welcomeMessage.textContent = `Welcome, ${currentUser.firstName}!`;
+                    userName.textContent = `${currentUser.firstName}'s QR Code`;
+                    console.log('✅ Welcome message set for:', currentUser.firstName);
+                } else {
+                    console.log('❌ No firstName in user data');
+                }
+
+                // Display QR code
+                if (currentUser.qrCode) {
+                    console.log('🔄 Setting QR code source to:', currentUser.qrCode);
+                    qrCodeImg.src = currentUser.qrCode;
+
+                    // Test if QR code loads
+                    qrCodeImg.onload = function () {
+                        console.log('✅ QR code image loaded successfully');
+                        qrStatus.textContent = 'QR Code loaded successfully';
+                        qrStatus.style.color = '#90EE90';
+                    };
+
+                    qrCodeImg.onerror = function () {
+                        console.log('❌ QR code image failed to load');
+                        qrStatus.textContent = 'QR Code not found';
+                        qrStatus.style.color = '#FF6B6B';
+                    };
+
+                } else {
+                    console.log('❌ No qrCode in user data');
+                    qrStatus.textContent = 'No QR code available';
+                    qrStatus.style.color = '#FF6B6B';
+                }
+
+                // Display QR code ID
+                if (currentUser.qrCodeId) {
+                    qrCodeIdElement.textContent = `ID: ${currentUser.qrCodeId}`;
+                    console.log('✅ QR Code ID set:', currentUser.qrCodeId);
+                } else {
+                    console.log('❌ No qrCodeId in user data');
+                }
+
+            } else {
+                console.log('❌ No user data found in localStorage');
+                welcomeMessage.textContent = 'Welcome! Please log in.';
+                qrStatus.textContent = 'Please log in to see your QR code';
+                qrStatus.style.color = '#FF6B6B';
+
+                // Show debug info if no user data
+                document.getElementById('debugInfo').style.display = 'block';
+                debugContent.innerHTML = 'No user data in localStorage. Available keys: ' + Object.keys(localStorage).join(', ');
+            }
+        });
+    </script>
+
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/notifications.js"></script>
 </body>
-<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="../js/notifications.js"></script>
 
 </html>

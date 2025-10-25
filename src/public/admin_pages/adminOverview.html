@@ -4,14 +4,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tough Athletics Gym</title>
+    <title>Tough Athletics Gym - Admin Dashboard</title>
     <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../css/adminDashboard.css">
+    <link rel="stylesheet" href="../css/adminOverview.css">
     <link rel="preconnect" href="https://rsms.me/">
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 </head>
 
 <body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="text-center">
+            <div class="spinner-border mb-3" role="status"></div>
+            <p>Checking authentication...</p>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="logout-modal">
+        <div class="logout-modal-content">
+            <h4>Confirm Logout</h4>
+            <p>Are you sure you want to log out?</p>
+            <div class="logout-modal-buttons">
+                <button id="logoutCancelBtn" class="logout-cancel-btn">Cancel</button>
+                <button id="logoutConfirmBtn" class="logout-confirm-btn">Yes, Logout</button>
+            </div>
+        </div>
+    </div>
+
     <div class="sideBar d-flex flex-column">
         <div class="titleLogo">
             <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-5"
@@ -19,16 +39,62 @@
             <h3 class="">Admin Dashboard</h3>
         </div>
         <div class="sideBarContent ">
-            <button type="submit" class="btn btn-custom">Overview</button>
-            <button type="submit" class="btn btn-custom">Membership Manager</button>
-            <button type="submit" class="btn btn-custom">Accounts Manager</button>
-            <button type="submit" class="btn btn-custom">Reports Manager</button>
+            <button type="button" class="btn btn-custom overview-btn">Overview</button>
+            <button type="button" class="btn btn-custom membership-btn">Membership Manager</button>
+            <button type="button" class="btn btn-custom accounts-btn">Accounts Manager</button>
+            <button type="button" class="btn btn-custom reports-btn">Reports Manager</button>
+            <button type="button" class="btn btn-custom logout-btn mt-4">Logout</button>
         </div>
     </div>
     <div class="container mainContent">
-        <h1 style="margin: 0; padding-top: 15px;">This is the main Content</h1>
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
+
+        <!-- Admin Info -->
+        <div class="admin-info">
+            <h4>Welcome, <span id="adminName">Admin</span>!</h4>
+            <p>Email: <span id="adminEmail">admin@example.com</span></p>
+            <p>Role: <span id="adminRole">Administrator</span></p>
+        </div>
+
+        <h1 style="margin: 0; padding-top: 15px;">Admin Overview</h1>
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Members</h5>
+                        <h2 class="card-text" id="totalMembers">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Active Members</h5>
+                        <h2 class="card-text" id="activeMembers">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Pending</h5>
+                        <h2 class="card-text" id="pendingMembers">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-danger mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Expired</h5>
+                        <h2 class="card-text" id="expiredMembers">0</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/adminJS/adminOverview.js"></script>
 </body>
-<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 </html>

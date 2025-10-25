@@ -9,21 +9,54 @@
     <link rel="stylesheet" href="../css/forgotstyles.css">
     <link rel="preconnect" href="https://rsms.me/">
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        .alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            width: calc(100% - 40px);
+            max-width: 350px;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 0;
+            border: none;
+            font-size: 14px;
+            line-height: 1.4;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-left: 4px solid transparent;
+            text-align: center;
+            word-wrap: break-word;
+        }
+
+        .alert-danger {
+            background: #fff5f5;
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            color: #0c5460;
+            border-left-color: #28a745;
+        }
+    </style>
 </head>
 
 <body>
     <div class="container mt-5">
         <div class="bannerLogo">
-            <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-5"
-                style="width: 250px; height: 120px;">
+            <img src="/images/icons/bannerlogo.png" alt="Banner Logo" class="mb-5" style="width: 250px; height: 120px;">
         </div>
         <div class="forgotBox d-flex flex-column mb-4">
-            <button class="close-btn" onclick="closeForgotBox()">
-                <a href="../index.html"><img src="/images/icons/exitbtn.png" alt="Close" width="20" height="20"></a>
+            <button class="close-btn">
+                <a href="/"><img src="/images/icons/exitbtn.png" alt="Close" width="20" height="20"></a>
             </button>
             <h3 class="text-center mb-3"><b>Enter your Email</b></h3>
-            <div class="formContainer ">
-                <form action="/verifyEmail" method="GET">
+            <div class="formContainer">
+                <form id="forgotPasswordForm">
                     <!-- Email -->
                     <div class="mb-3">
                         <input type="email" class="form-control" id="email" name="email" placeholder="Email" required>
@@ -34,9 +67,81 @@
         </div>
     </div>
     <div class="footerLogo">
-        <img src="../images/icons/startuplogo.png" alt="Footer Logo" width="40" height="80">
+        <img src="/images/icons/startuplogo.png" alt="Footer Logo" width="40" height="80">
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('forgotPasswordForm');
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const email = document.getElementById('email').value.trim();
+                const submitBtn = form.querySelector('button[type="submit"]');
+
+                // Remove existing alerts
+                removeExistingAlerts();
+
+                if (!email) {
+                    showError('Please enter your email address');
+                    return;
+                }
+
+                try {
+                    // Show loading state
+                    submitBtn.textContent = 'Sending...';
+                    submitBtn.disabled = true;
+
+                    const response = await fetch('/forgot-password', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ email: email })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showSuccess(result.message);
+                        // Redirect to verify email page
+                        setTimeout(() => {
+                            window.location.href = result.redirect;
+                        }, 2000);
+                    } else {
+                        showError(result.message);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showError('An error occurred. Please try again.');
+                } finally {
+                    // Reset button state
+                    submitBtn.textContent = 'Get Code';
+                    submitBtn.disabled = false;
+                }
+            });
+
+            function showError(message) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger';
+                alertDiv.textContent = message;
+                form.parentNode.insertBefore(alertDiv, form);
+            }
+
+            function showSuccess(message) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success';
+                alertDiv.textContent = message;
+                form.parentNode.insertBefore(alertDiv, form);
+            }
+
+            function removeExistingAlerts() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => alert.remove());
+            }
+        });
+    </script>
 </body>
-<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 </html>

@@ -7,52 +7,125 @@
     <title>User Profile</title>
     <link rel="stylesheet" href="../css/userprofilestyles.css">
     <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .alert {
+            margin: 10px 0;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .profile-pic {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+        }
+
+        .profile-pic img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 4px solid white;
+        }
+
+        .edit-icon {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: black;
+            border-radius: 50%;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        #profileImageInput {
+            display: none;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            color: black;
+        }
+
+        .popup-buttons {
+            margin-top: 20px;
+        }
+
+        .popup-buttons button {
+            margin: 0 10px;
+            padding: 5px 20px;
+        }
+    </style>
 </head>
 
 <body>
     <div class="pfpTopbar">
-        <a class="mt-2" href="userhomepage.html"><img src="../images/icons/backBtn.png" alt="" width="30px"
-                height="30px"></a>
+        <a class="mt-2" href="/userhomepage"><img src="/images/icons/backBtn.png" alt="" width="30px" height="30px"></a>
         <h1 style="font-family: 'League Gothic', sans-serif; font-size: 36px;">My Profile</h1>
-        <img class="mt-3" src="../images/icons/startuplogo.png" alt="" width="30px" height="54">
+        <img class="mt-3" src="/images/icons/startuplogo.png" alt="" width="30px" height="54">
     </div>
 
     <div class="pfpMaincontent">
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
+
         <div class="profile-section">
             <div class="profile-pic">
-                <img src="../images/icons/defaultPfp.png" alt="Profile Picture">
-                <div class="edit-icon" style="background-color: black;">
-                    <a href=""><img src="../images/icons/editBtn.png" alt="Edit Icon" width="20px" height="20px"
-                            style="margin-bottom: 3px;"></a>
+                <img id="profileImage" src="/images/icons/default-pfp.png" alt="Profile Picture">
+                <div class="edit-icon">
+                    <input type="file" id="profileImageInput" accept="image/*">
+                    <label for="profileImageInput" style="cursor: pointer; margin: 0;">
+                        <img src="/images/icons/editBtn.png" alt="Edit Icon" width="20px" height="20px"
+                            style="margin-bottom: 3px;">
+                    </label>
                 </div>
             </div>
-            <h1 class="profile-name">User U. User</h1>
-            <p class="profile-email">User23@gmail.com</p>
+            <h1 class="profile-name" id="profileName">Firstname Lastname</h1>
+            <p class="profile-email" id="profileEmail">User23@gmail.com</p>
         </div>
 
         <div class="edit-info">
             <h3>Edit Info</h3>
 
             <label for="fname">First Name</label>
-            <input type="text" id="fname" value="User">
+            <input type="text" id="fname" value="User" placeholder="Firstname" required>
 
             <label for="lname">Last Name</label>
-            <input type="text" id="lname" value="User">
+            <input type="text" id="lname" value="User" placeholder="Lastname" required>
 
             <label for="email">Email</label>
-            <input type="email" id="email" value="User123@gmail.com">
+            <input type="email" id="email" value="User123@gmail.com" required>
 
             <label for="age">Age</label>
-            <input type="number" id="age" value="0">
+            <input type="number" id="age" value="0" min="1" max="120">
 
             <label for="gender">Gender</label>
             <select id="gender">
-                <option>Male</option>
-                <option>Female</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+                <option value="prefer-not-to-say">Prefer not to say</option>
             </select>
 
             <div class="saveBtn d-flex justify-content-end">
-                <button id="saveBtn" class="save-btn ">Save</button>
+                <button id="saveBtn" class="save-btn">Save</button>
             </div>
         </div>
     </div>
@@ -71,27 +144,27 @@
         <div class="row">
             <div class="col-6">
                 <div class="logs" style="margin-top: 20px;">
-                    <img src="../images/icons/startuplogo.png" alt="" width="40" height="80">
-                    <img src="../images/icons/words.png" alt="" width="100" height="60">
+                    <img src="/images/icons/startuplogo.png" alt="" width="40" height="80">
+                    <img src="/images/icons/words.png" alt="" width="100" height="60">
                 </div>
             </div>
             <div class="col-6">
                 <div class="footer-contacts">
                     <ul>
                         <li>
-                            <img src="../images/icons/phone.png" alt="Phone" class="icon">
+                            <img src="/images/icons/phone.png" alt="Phone" class="icon">
                             0917 880 5849
                         </li>
                         <li>
-                            <img src="../images/icons/emailfoot.png" alt="Email" class="icon">
+                            <img src="/images/icons/emailfoot.png" alt="Email" class="icon">
                             csagpalo@gmail.com
                         </li>
                         <li>
-                            <img src="../images/icons/facebook.png" alt="Facebook" class="icon">
+                            <img src="/images/icons/facebook.png" alt="Facebook" class="icon">
                             TOUGH ATHLETICS GYM/YourPage
                         </li>
                         <li>
-                            <img src="../images/icons/location.png" alt="Location" class="icon">
+                            <img src="/images/icons/location.png" alt="Location" class="icon">
                             Magsaysay Corner Murillo St. Brgy 6, Malaybalay City, 8700 Bukidnon
                         </li>
                     </ul>
@@ -99,8 +172,188 @@
             </div>
         </div>
     </footer>
+
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load user data when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            loadUserProfile();
+            setupEventListeners();
+        });
+
+        function loadUserProfile() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const token = localStorage.getItem('token');
+
+            if (currentUser && token) {
+                console.log('Loading user profile:', currentUser);
+
+                // Populate form with current user data
+                document.getElementById('fname').value = currentUser.firstName || '';
+                document.getElementById('lname').value = currentUser.lastName || '';
+                document.getElementById('email').value = currentUser.email || '';
+                document.getElementById('age').value = currentUser.age || '';
+                document.getElementById('gender').value = currentUser.gender || 'prefer-not-to-say';
+
+                // Update profile display
+                document.getElementById('profileName').textContent =
+                    `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Firstname Lastname';
+                document.getElementById('profileEmail').textContent = currentUser.email || 'User23@gmail.com';
+
+                // Set profile picture
+                if (currentUser.profilePicture) {
+                    document.getElementById('profileImage').src = currentUser.profilePicture;
+                } else {
+                    // Set default profile picture
+                    document.getElementById('profileImage').src = '/images/icons/default-pfp.png';
+                }
+            } else {
+                console.log('No user data found in localStorage');
+                showAlert('Please log in to view your profile', 'warning');
+            }
+        }
+
+        function setupEventListeners() {
+            // Profile picture upload
+            document.getElementById('profileImageInput').addEventListener('change', function (e) {
+                if (e.target.files.length > 0) {
+                    uploadProfilePicture(e.target.files[0]);
+                }
+            });
+
+            // Save button click
+            document.getElementById('saveBtn').addEventListener('click', function () {
+                document.getElementById('popupOverlay').style.display = 'flex';
+            });
+
+            // Popup buttons
+            document.getElementById('noBtn').addEventListener('click', function () {
+                document.getElementById('popupOverlay').style.display = 'none';
+            });
+
+            document.getElementById('yesBtn').addEventListener('click', function () {
+                document.getElementById('popupOverlay').style.display = 'none';
+                updateProfile();
+            });
+        }
+
+        function uploadProfilePicture(file) {
+            const formData = new FormData();
+            const token = localStorage.getItem('token');
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+            if (!currentUser || !currentUser._id) {
+                showAlert('Please log in to update profile picture', 'danger');
+                return;
+            }
+
+            formData.append('profilePicture', file);
+            formData.append('userId', currentUser._id);
+
+            showAlert('Uploading profile picture...', 'info');
+
+            fetch('/profile/picture', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        // Update profile image
+                        document.getElementById('profileImage').src = result.profilePicture;
+
+                        // Update localStorage
+                        const updatedUser = { ...currentUser, ...result.user };
+                        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+                        showAlert('Profile picture updated successfully!', 'success');
+                    } else {
+                        showAlert('Error: ' + result.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error uploading profile picture:', error);
+                    showAlert('Error uploading profile picture', 'danger');
+                });
+        }
+
+        function updateProfile() {
+            const token = localStorage.getItem('token');
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+            if (!currentUser) {
+                showAlert('Please log in to update profile', 'danger');
+                return;
+            }
+
+            const profileData = {
+                firstName: document.getElementById('fname').value.trim(),
+                lastName: document.getElementById('lname').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                age: document.getElementById('age').value,
+                gender: document.getElementById('gender').value
+            };
+
+            // Validation
+            if (!profileData.firstName || !profileData.lastName || !profileData.email) {
+                showAlert('Please fill in all required fields', 'danger');
+                return;
+            }
+
+            showAlert('Updating profile...', 'info');
+
+            fetch('/profile/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(profileData)
+            })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        // Update localStorage
+                        const updatedUser = { ...currentUser, ...result.user };
+                        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+                        // Update display
+                        document.getElementById('profileName').textContent =
+                            `${result.user.firstName} ${result.user.lastName}`;
+                        document.getElementById('profileEmail').textContent = result.user.email;
+
+                        showAlert('Profile updated successfully!', 'success');
+                    } else {
+                        showAlert('Error: ' + result.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating profile:', error);
+                    showAlert('Error updating profile', 'danger');
+                });
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.appendChild(alertDiv);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    </script>
 </body>
-<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="../js/profileSave.js"></script>
 
 </html>

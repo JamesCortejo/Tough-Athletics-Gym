@@ -20,10 +20,16 @@
   "homepage": "https://github.com/JamesCortejo/Tough-Athletics-Gym#readme",
   "dependencies": {
     "@fontsource/league-gothic": "^5.2.8",
+    "bcryptjs": "^3.0.2",
     "bootstrap": "^5.3.8",
     "dotenv": "^17.2.2",
     "ejs": "^3.1.10",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.20.0",
+    "multer": "^2.0.2",
+    "nodemailer": "^7.0.10",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

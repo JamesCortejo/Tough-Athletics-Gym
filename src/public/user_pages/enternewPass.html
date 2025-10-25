@@ -9,45 +9,209 @@
     <link rel="stylesheet" href="../css/forgotstyles.css">
     <link rel="preconnect" href="https://rsms.me/">
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        .alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            width: calc(100% - 40px);
+            max-width: 350px;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 0;
+            border: none;
+            font-size: 14px;
+            line-height: 1.4;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-left: 4px solid transparent;
+            text-align: center;
+            word-wrap: break-word;
+        }
+
+        .alert-danger {
+            background: #fff5f5;
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            color: #0c5460;
+            border-left-color: #28a745;
+        }
+
+        .password-requirements {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #0d6efd;
+        }
+
+        .password-requirements ul {
+            margin: 8px 0 0 0;
+            padding-left: 20px;
+        }
+
+        .password-requirements li {
+            font-size: 12px;
+            line-height: 1.4;
+            margin-bottom: 4px;
+            color: #555;
+        }
+    </style>
 </head>
 
 <body>
     <div class="container mt-5">
         <div class="bannerLogo">
-            <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-5"
-                style="width: 250px; height: 120px;">
+            <img src="/images/icons/bannerlogo.png" alt="Banner Logo" class="mb-5" style="width: 250px; height: 120px;">
         </div>
         <div class="forgotBox d-flex flex-column mb-4">
             <div class="text-center">
-                <img src="../images/icons/verify.png" alt="Verified" class="mb-3" style="width: 35px; height: 35px;">
+                <img src="/images/icons/verify.png" alt="Verified" class="mb-3" style="width: 35px; height: 35px;">
             </div>
             <h3 class="text-center mb-3"><b>Verified!</b></h3>
-            <p class="verifyDes mb-2">Please enter your new password make sure your password is strong by inculding # @
-                ! _ symbols.</p>
-            <p class="verifyDes">8-Letter Password </p>
-            <div class="formContainer ">
-                <form action="../index.html" method="GET">
+            <p class="verifyDes mb-2">Please enter your new password. Make sure your password is strong by including
+                uppercase, lowercase, numbers, and special characters.</p>
+            <p class="verifyDes">8+ Character Password</p>
+
+            <!-- Password Requirements -->
+            <div class="password-requirements">
+                <small class="text-muted">
+                    Password must contain:
+                    <ul>
+                        <li>At least 8 characters</li>
+                        <li>One uppercase letter</li>
+                        <li>One lowercase letter</li>
+                        <li>One number</li>
+                        <li>One special character (!@#$%^&* etc.)</li>
+                    </ul>
+                </small>
+            </div>
+
+            <div class="formContainer">
+                <form id="resetPasswordForm">
+                    <!-- Hidden email field -->
+                    <input type="hidden" id="userEmail" name="email">
                     <!-- Password -->
                     <div class="mb-3">
                         <input type="password" class="form-control" id="newPassword" name="newPassword"
                             placeholder="New Password" required>
                     </div>
-
                     <!-- Confirm Password -->
                     <div class="mb-3">
                         <input type="password" class="form-control" id="confirmnewPassword" name="confirmnewPassword"
                             placeholder="Confirm New Password" required>
                     </div>
-
-                    <button type="submit" class="btn btn-custom w-95 mt-2">Confirm</button>
+                    <button type="submit" class="btn btn-custom w-100 mt-2">Reset Password</button>
                 </form>
             </div>
         </div>
     </div>
     <div class="footerLogo">
-        <img src="../images/icons/startuplogo.png" alt="Footer Logo" width="40" height="80">
+        <img src="/images/icons/startuplogo.png" alt="Footer Logo" width="40" height="80">
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Get email from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const email = urlParams.get('email');
+
+            if (email) {
+                document.getElementById('userEmail').value = email;
+            }
+
+            const form = document.getElementById('resetPasswordForm');
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const email = document.getElementById('userEmail').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmnewPassword').value;
+                const submitBtn = form.querySelector('button[type="submit"]');
+
+                // Remove existing alerts
+                removeExistingAlerts();
+
+                // Basic validation
+                if (newPassword !== confirmPassword) {
+                    showError('Passwords do not match');
+                    return;
+                }
+
+                if (newPassword.length < 8) {
+                    showError('Password must be at least 8 characters long');
+                    return;
+                }
+
+                try {
+                    // Show loading state
+                    submitBtn.textContent = 'Resetting...';
+                    submitBtn.disabled = true;
+
+                    const response = await fetch('/reset-password', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            email: email,
+                            newPassword: newPassword,
+                            confirmPassword: confirmPassword
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showSuccess(result.message);
+                        // Redirect to login page
+                        setTimeout(() => {
+                            window.location.href = result.redirect;
+                        }, 2000);
+                    } else {
+                        if (result.errors) {
+                            showError('Password requirements: ' + result.errors.join(', '));
+                        } else {
+                            showError(result.message);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showError('An error occurred. Please try again.');
+                } finally {
+                    // Reset button state
+                    submitBtn.textContent = 'Reset Password';
+                    submitBtn.disabled = false;
+                }
+            });
+
+            function showError(message) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger';
+                alertDiv.textContent = message;
+                form.parentNode.insertBefore(alertDiv, form);
+            }
+
+            function showSuccess(message) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success';
+                alertDiv.textContent = message;
+                form.parentNode.insertBefore(alertDiv, form);
+            }
+
+            function removeExistingAlerts() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => alert.remove());
+            }
+        });
+    </script>
 </body>
-<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 </html>
