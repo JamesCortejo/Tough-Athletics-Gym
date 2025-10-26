@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/memstat.css">
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <title>Membership Status</title>
+</head>
+
+<body>
+    <div class="settTopbar">
+        <a class="mt-2" href="/userhomepage"><img src="/images/icons/backBtn.png" alt="" width="30px" height="30px"></a>
+        <h1 style="font-family: 'League Gothic', sans-serif; font-size: 36px;">Membership Status</h1>
+        <img class="mt-3" src="/images/icons/startuplogo.png" alt="" width="30px" height="54">
+    </div>
+
+    <div class="settMaincontent">
+        <!-- Membership Status Card -->
+        <div class="status-card">
+            <!-- Header with Status and Plan Type -->
+            <div class="status-header">
+                <div class="status-pill" id="statusPill">
+                    <span id="statusText">Loading...</span>
+                </div>
+                <div class="plan-type-badge" id="planTypeBadge">
+                    <span id="planTypeText">-</span>
+                </div>
+            </div>
+
+            <!-- Status Details -->
+            <div class="status-details">
+                <div class="detail-row">
+                    <span class="detail-label">Start Date:</span>
+                    <span class="detail-value" id="startDate">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Expiry Date:</span>
+                    <span class="detail-value" id="expiryDate">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Remaining Days:</span>
+                    <span class="detail-value" id="remainingDays">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Next Payment Due:</span>
+                    <span class="detail-value" id="nextPaymentDue">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Last Visit:</span>
+                    <span class="detail-value" id="lastVisit">-</span>
+                </div>
+            </div>
+
+            <!-- No Membership Message -->
+            <div class="no-membership" id="noMembership" style="display: none;">
+                <div class="no-membership-icon">🏋️</div>
+                <h3>No Active Membership</h3>
+                <p>You don't have an active membership yet.</p>
+                <a href="/usermembership" class="btn btn-primary">Get Membership</a>
+            </div>
+
+            <!-- Pending Membership Message -->
+            <div class="pending-membership" id="pendingMembership" style="display: none;">
+                <div class="pending-icon">⏳</div>
+                <h3>Membership Pending Approval</h3>
+                <p>Your membership application is waiting for admin approval.</p>
+                <div class="pending-details">
+                    <p><strong>Applied Plan:</strong> <span id="pendingPlan">-</span></p>
+                    <p><strong>Applied Date:</strong> <span id="pendingDate">-</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer style="background-color: black; padding: 20px 30px 20px 30px;">
+        <div class="row">
+            <div class="col-6">
+                <div class="logs" style="margin-top: 20px;">
+                    <img src="/images/icons/startuplogo.png" alt="" width="40" height="80">
+                    <img src="/images/icons/words.png" alt="" width="100" height="60">
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="footer-contacts">
+                    <ul>
+                        <li>
+                            <img src="/images/icons/phone.png" alt="Phone" class="icon">
+                            0917 880 5849
+                        </li>
+                        <li>
+                            <img src="/images/icons/emailfoot.png" alt="Email" class="icon">
+                            csagpalo@gmail.com
+                        </li>
+                        <li>
+                            <img src="/images/icons/facebook.png" alt="Facebook" class="icon">
+                            TOUGH ATHLETICS GYM/YourPage
+                        </li>
+                        <li>
+                            <img src="/images/icons/location.png" alt="Location" class="icon">
+                            Magsaysay Corner Murillo St. Brgy 6, Malaybalay City, 8700 Bukidnon
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const token = localStorage.getItem('token');
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+            if (!token || !currentUser) {
+                window.location.href = '/login';
+                return;
+            }
+
+            // Fetch membership status
+            fetchMembershipStatus();
+
+            async function fetchMembershipStatus() {
+                try {
+                    // First check for active membership
+                    const activeResponse = await fetch('/api/membership/current', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    const activeResult = await activeResponse.json();
+
+                    if (activeResult.success && activeResult.membership) {
+                        displayActiveMembership(activeResult.membership);
+                    } else {
+                        // Check for pending membership
+                        const pendingResponse = await fetch('/api/membership/pending', {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        const pendingResult = await pendingResponse.json();
+
+                        if (pendingResult.success && pendingResult.membership) {
+                            displayPendingMembership(pendingResult.membership);
+                        } else {
+                            displayNoMembership();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching membership status:', error);
+                    displayNoMembership();
+                }
+            }
+
+            function displayActiveMembership(membership) {
+                console.log('Displaying active membership:', membership);
+
+                // Hide other sections
+                document.getElementById('noMembership').style.display = 'none';
+                document.getElementById('pendingMembership').style.display = 'none';
+
+                // Show active membership sections
+                document.querySelector('.status-details').style.display = 'block';
+
+                // Update status pill and plan type badge
+                updateStatusHeader('Active', membership.planType);
+
+                // Format dates
+                const startDate = new Date(membership.startDate);
+                const expiryDate = new Date(membership.endDate);
+                const today = new Date();
+
+                // Calculate remaining days
+                const timeDiff = expiryDate.getTime() - today.getTime();
+                const remainingDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                // Update details
+                document.getElementById('startDate').textContent = formatDate(startDate);
+                document.getElementById('expiryDate').textContent = formatDate(expiryDate);
+                document.getElementById('remainingDays').textContent = `${remainingDays} days`;
+                document.getElementById('nextPaymentDue').textContent = formatDate(expiryDate);
+
+                // For demo purposes, set last visit to a recent date
+                const lastVisit = new Date(today);
+                lastVisit.setDate(today.getDate() - 2); // 2 days ago
+                document.getElementById('lastVisit').textContent = formatDate(lastVisit);
+            }
+
+            function displayPendingMembership(membership) {
+                console.log('Displaying pending membership:', membership);
+
+                // Hide other sections
+                document.querySelector('.status-details').style.display = 'none';
+                document.getElementById('noMembership').style.display = 'none';
+
+                // Show pending section
+                document.getElementById('pendingMembership').style.display = 'block';
+
+                // Update status pill and plan type badge for pending
+                updateStatusHeader('Pending', membership.planType);
+
+                // Update pending details
+                document.getElementById('pendingPlan').textContent = membership.planType;
+                document.getElementById('pendingDate').textContent = formatDate(new Date(membership.appliedAt));
+
+                // Show projected dates if available
+                if (membership.startDate && membership.endDate) {
+                    const startDate = new Date(membership.startDate);
+                    const endDate = new Date(membership.endDate);
+
+                    const projectedDetails = document.createElement('div');
+                    projectedDetails.className = 'pending-details mt-3';
+                    projectedDetails.innerHTML = `
+                        <p><strong>Projected Start:</strong> ${formatDate(startDate)}</p>
+                        <p><strong>Projected End:</strong> ${formatDate(endDate)}</p>
+                        <p><em>Dates will be confirmed upon approval</em></p>
+                    `;
+                    document.getElementById('pendingMembership').appendChild(projectedDetails);
+                }
+            }
+
+            function displayNoMembership() {
+                // Hide other sections
+                document.querySelector('.status-details').style.display = 'none';
+                document.getElementById('pendingMembership').style.display = 'none';
+
+                // Show no membership section
+                document.getElementById('noMembership').style.display = 'block';
+
+                // Update header for no membership
+                updateStatusHeader('No Membership', 'None');
+            }
+
+            function updateStatusHeader(status, planType) {
+                // Update status pill
+                const statusPill = document.getElementById('statusPill');
+                const statusText = document.getElementById('statusText');
+
+                statusText.textContent = status;
+
+                // Set status pill color
+                statusPill.className = 'status-pill';
+                if (status === 'Active') {
+                    statusPill.classList.add('status-active');
+                } else if (status === 'Pending') {
+                    statusPill.classList.add('status-pending');
+                } else {
+                    statusPill.classList.add('status-none');
+                }
+
+                // Update plan type badge
+                const planTypeBadge = document.getElementById('planTypeBadge');
+                const planTypeText = document.getElementById('planTypeText');
+
+                planTypeText.textContent = planType;
+
+                // Set plan type badge color
+                planTypeBadge.className = 'plan-type-badge';
+                if (planType === 'Basic') {
+                    planTypeBadge.classList.add('plan-basic');
+                } else if (planType === 'Premium') {
+                    planTypeBadge.classList.add('plan-premium');
+                } else if (planType === 'VIP') {
+                    planTypeBadge.classList.add('plan-vip');
+                } else {
+                    planTypeBadge.classList.add('plan-none');
+                }
+            }
+
+            function formatDate(date) {
+                if (!date || isNaN(date.getTime())) {
+                    return 'Not set';
+                }
+                return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -17,9 +17,9 @@
             <img src="../images/icons/words.png" alt="Words Logo" class="mb-2" style="width: 70px; height: 40px;">
         </div>
         <div class="pfpsett">
-            <a href="userprofile.html"><img src="../images/icons/pfplogo.png" alt="Profile Picture" class="mb-2"
+            <a href="/userprofile"><img src="../images/icons/pfplogo.png" alt="Profile Picture" class="mb-2"
                     style="width: 30px; height: 30px; margin-right: 4px;"></a>
-            <a href="usersettings.html"><img src="../images/icons/settingslogo.png" alt="Settings Logo" class="mb-2"
+            <a href="/usersettings"><img src="../images/icons/settingslogo.png" alt="Settings Logo" class="mb-2"
                     style="width: 30px; height: 30px;"></a>
             <a href="#" id="notifBtn" class="notif-btn">
                 <img src="../images/icons/notificationLogo.png" alt="Notifications" width="30" height="30">
@@ -29,7 +29,7 @@
 
     <div class="container">
         <div class="membershipTopbar">
-            <a class="mt-2" href="usermembership.html"><img src="../images/icons/backBtn.png" alt="" width="30px"
+            <a class="mt-2" href="/usermembership"><img src="../images/icons/backBtn.png" alt="" width="30px"
                     height="30px"></a>
             <h1 style="font-family: 'League Gothic', sans-serif; font-size: 36px;">Apply Membership</h1>
             <img class="mt-3" src="../images/icons/startuplogo.png" alt="" width="30px" height="54">
@@ -72,24 +72,30 @@
             <form action="">
                 <div class="row">
                     <div class="col">
-                        <input type="text" class="form-control" id="username" name="username" placeholder="Username"
-                            required>
+                        <input type="text" class="form-control" id="firstname" name="firstname" placeholder="First Name"
+                            required readonly>
                     </div>
                     <div class="col">
                         <input type="text" class="form-control" id="lastname" name="lastname" placeholder="Last Name"
-                            required>
+                            required readonly>
                     </div>
                 </div>
-                <input type="email" class="form-control" id="email" name="email" placeholder="Email" required>
-                <input type="number" class="form-control" id="Phone" name="Phone" placeholder="Phone" required>
-                <h3>Payment Method</h3>
+                <input type="email" class="form-control" id="email" name="email" placeholder="Email" required readonly>
+                <input type="text" class="form-control" id="phone" name="phone" placeholder="Phone Number" required
+                    readonly>
+
+                <h3 class="mt-4">Payment Method</h3>
                 <div class="form-check">
-                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault1">
-                    <label class="form-check-label" for="flexRadioDefault1">
+                    <input class="form-check-input" type="radio" name="paymentMethod" id="cashPayment"
+                        value="Cash at Gym" checked>
+                    <label class="form-check-label" for="cashPayment">
                         Cash at Gym
                     </label>
                 </div>
-                <button type="submit">Apply Membership</button>
+
+                <button type="submit" class="btn btn-success mt-4" style="width: 100%; padding: 12px; font-size: 18px;">
+                    Submit Membership Application
+                </button>
             </form>
         </div>
     </div>
@@ -146,5 +152,6 @@
 </body>
 <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="../js/notifications.js"></script>
+<script src="../js/userJS/memvip.js"></script>
 
 </html>

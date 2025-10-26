@@ -250,3 +250,17 @@ body {
   height: 20px;
   margin-right: 10px;
 }
+.alert-warning {
+  background-color: #fff3cd;
+  border-color: #ffeaa7;
+  color: #856404;
+  padding: 12px;
+  border-radius: 5px;
+  margin-top: 15px;
+}
+
+.btn-secondary:disabled {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  cursor: not-allowed;
+}

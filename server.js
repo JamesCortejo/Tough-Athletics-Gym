@@ -1,6 +1,6 @@
-// server.js (at project root)
 const express = require("express");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 
@@ -94,10 +94,86 @@ app.post(
   }
 );
 
+const membershipRoutes = require("./src/routes/membershipRoutes");
+app.use("/api/membership", membershipRoutes);
+
 // Homepage route
 app.get("/", (req, res) => {
   res.sendFile(
     path.join(__dirname, "src", "public", "user_pages", "index.html")
+  );
+});
+
+// Route for user pages - ADD THESE ROUTES
+app.get("/userhomepage", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "src", "public", "user_pages", "userhomepage.html")
+  );
+});
+
+app.get("/usermembership", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "src", "public", "user_pages", "usermembership.html")
+  );
+});
+
+app.get("/usermembershipbasic", (req, res) => {
+  res.sendFile(
+    path.join(
+      __dirname,
+      "src",
+      "public",
+      "user_pages",
+      "usermembershipbasic.html"
+    )
+  );
+});
+
+app.get("/usermembershippremium", (req, res) => {
+  res.sendFile(
+    path.join(
+      __dirname,
+      "src",
+      "public",
+      "user_pages",
+      "usermembershippremium.html"
+    )
+  );
+});
+
+app.get("/usermembershipvip", (req, res) => {
+  res.sendFile(
+    path.join(
+      __dirname,
+      "src",
+      "public",
+      "user_pages",
+      "usermembershipvip.html"
+    )
+  );
+});
+
+app.get("/userprofile", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "src", "public", "user_pages", "userprofile.html")
+  );
+});
+
+app.get("/usersettings", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "src", "public", "user_pages", "usersettings.html")
+  );
+});
+
+app.get("/usermembershipstatus", (req, res) => {
+  res.sendFile(
+    path.join(
+      __dirname,
+      "src",
+      "public",
+      "user_pages",
+      "usermembershipstatus.html"
+    )
   );
 });
 

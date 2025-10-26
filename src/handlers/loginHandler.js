@@ -52,6 +52,7 @@ async function loginUser(loginData) {
         userId: user._id.toString(),
         username: user.username,
         email: user.email,
+        qrCodeId: user.qrCodeId,
       },
       JWT_SECRET,
       { expiresIn: "24h" } // Token expires in 24 hours
