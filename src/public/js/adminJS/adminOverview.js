@@ -156,10 +156,11 @@ function setupEventListeners() {
       // Already on overview
     });
 
+  // FIXED: Redirect to membership manager instead of showing alert
   document
     .querySelector(".membership-btn")
     .addEventListener("click", function () {
-      showAlert("Membership Manager - Coming Soon", "info");
+      window.location.href = "/admin/membership-manager";
     });
 
   document

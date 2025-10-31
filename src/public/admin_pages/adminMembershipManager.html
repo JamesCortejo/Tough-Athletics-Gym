@@ -4,14 +4,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tough Athletics Gym</title>
+    <title>Tough Athletics Gym - Admin Membership Manager</title>
     <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../css/adminMemmanager.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="preconnect" href="https://rsms.me/">
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 </head>
 
 <body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p class="mt-2 text-white">Loading...</p>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="alert-container"></div>
+
     <!-- Logout Confirmation Modal -->
     <div id="logoutModal" class="logout-modal">
         <div class="logout-modal-content">
@@ -24,13 +34,101 @@
         </div>
     </div>
 
+    <!-- Application Details Modal -->
+    <div class="modal fade" id="applicationModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Membership Application Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="application-details">
+                        <div class="profile-section">
+                            <img id="detailProfilePicture" src="" alt="Profile" class="profile-image">
+                            <div class="mt-3">
+                                <span id="detailPlanBadge" class="plan-badge"></span>
+                            </div>
+                        </div>
+                        <div class="details-section">
+                            <div class="detail-item">
+                                <div class="detail-label">First Name</div>
+                                <div id="detailFirstName" class="detail-value">-</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Last Name</div>
+                                <div id="detailLastName" class="detail-value">-</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Email</div>
+                                <div id="detailEmail" class="detail-value">-</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Phone</div>
+                                <div id="detailPhone" class="detail-value">-</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Plan Type</div>
+                                <div id="detailPlanType" class="detail-value">-</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Amount</div>
+                                <div id="detailAmount" class="detail-value">-</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Applied At</div>
+                                <div id="detailAppliedAt" class="detail-value">-</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Payment Method</div>
+                                <div id="detailPaymentMethod" class="detail-value">-</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">QR Code ID</div>
+                                <div id="detailQrCodeId" class="detail-value">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="declineBtn">Decline</button>
+                    <button type="button" class="btn btn-success" id="approveBtn">Approve</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Decline Reason Modal -->
+    <div class="modal fade" id="declineReasonModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Decline Application</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="declineReason" class="form-label">Reason for Decline</label>
+                        <textarea class="form-control" id="declineReason"
+                            placeholder="Please provide a reason for declining this application..." rows="4"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeclineBtn">Confirm Decline</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="sideBar d-flex flex-column">
         <div class="titleLogo">
             <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-5"
                 style="width: 250px; height: 120px;">
             <h3 class="" style="font-family: 'League Gothic' sans-serif;">Admin Dashboard</h3>
         </div>
-        <div class="sideBarContent ">
+        <div class="sideBarContent">
             <button type="button" class="btn btn-custom overview-btn">Overview</button>
             <button type="button" class="btn btn-custom membership-btn">Membership Manager</button>
             <button type="button" class="btn btn-custom accounts-btn">Accounts Manager</button>
@@ -38,7 +136,93 @@
             <button type="button" class="btn btn-custom logout-btn mt-4">Logout</button>
         </div>
     </div>
+
+    <div class="main-content">
+        <div class="dashboard-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1>Membership Applications</h1>
+                    <p class="text-muted mb-0">Manage pending membership applications</p>
+                </div>
+                <button type="button" class="btn btn-primary" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" id="totalPending">-</div>
+                    <div class="stat-label">Total Pending</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-week"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" id="applicationsThisWeek">-</div>
+                    <div class="stat-label">This Week</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" id="applicationsThisMonth">-</div>
+                    <div class="stat-label">This Month</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Applications Table -->
+        <div class="applications-section">
+            <div class="section-header">
+                <h3 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    Pending Applications
+                </h3>
+                <div class="section-actions">
+                    <span class="badge bg-primary" id="applicationsCount">0 applications</span>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Member</th>
+                                <th>Plan Type</th>
+                                <th>Amount</th>
+                                <th>Applied At</th>
+                                <th>Payment Method</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="applicationsTableBody">
+                            <!-- Applications will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="noApplicationsMessage" class="no-applications">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <h4>No Pending Applications</h4>
+                    <p class="text-muted">There are no pending membership applications at the moment.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/adminJS/adminMembershipManager.js"></script>
 </body>
-<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 </html>

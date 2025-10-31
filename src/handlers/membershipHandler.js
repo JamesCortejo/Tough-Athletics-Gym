@@ -1,5 +1,7 @@
 const { connectToDatabase } = require("../config/db");
 const { ObjectId } = require("mongodb");
+const { calculateEndDate } = require("../utils/membershipDateUtils");
+const { createNotification } = require("./notificationHandler");
 
 async function registerMembership(membershipData) {
   console.log("Received membership data:", membershipData);
@@ -87,28 +89,11 @@ async function registerMembership(membershipData) {
       }
     }
 
-    // Calculate membership dates (will be set to active dates when approved)
+    // Calculate membership dates using utility function
     const startDate = new Date();
     startDate.setHours(0, 0, 0, 0);
 
-    const endDate = new Date(startDate);
-
-    // Calculate end date based on plan type
-    switch (planType) {
-      case "Basic":
-        endDate.setMonth(endDate.getMonth() + 1);
-        break;
-      case "Premium":
-        endDate.setMonth(endDate.getMonth() + 3);
-        break;
-      case "VIP":
-        endDate.setMonth(endDate.getMonth() + 6);
-        break;
-      default:
-        throw new Error("Invalid plan type");
-    }
-
-    endDate.setHours(23, 59, 59, 999);
+    const endDate = calculateEndDate(startDate, planType);
 
     // Prepare enhanced membership document with user information
     const membershipDocument = {
@@ -123,19 +108,19 @@ async function registerMembership(membershipData) {
       phone: phone,
       profilePicture: profilePicture,
 
-      // Membership details - dates will be set when approved
-      startDate: null, // Will be set when admin approves
-      endDate: null, // Will be set when admin approves
+      // Membership details
+      startDate: startDate,
+      endDate: endDate,
       paymentMethod: paymentMethod || "Cash at Gym",
       status: "Pending",
       amount: getMembershipAmount(planType),
-      appliedAt: new Date(), // Track when application was submitted
+      appliedAt: new Date(),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     console.log(
-      "Attempting to insert pending membership document:",
+      "Attempting to insert membership document with dates:",
       membershipDocument
     );
 
@@ -149,6 +134,24 @@ async function registerMembership(membershipData) {
     });
     console.log("Verified inserted membership:", insertedMembership);
 
+    // Send notification to user about application submission
+    try {
+      const notificationResult = await createNotification({
+        userId: userId,
+        title: "📋 Membership Application Submitted",
+        message: `Your ${planType} membership application has been received and is pending admin approval.`,
+        type: "info",
+        relatedId: result.insertedId.toString(),
+      });
+      console.log("Application submission notification:", notificationResult);
+    } catch (notificationError) {
+      console.error(
+        "Failed to send application notification:",
+        notificationError
+      );
+      // Don't throw error, just log it
+    }
+
     return {
       success: true,
       message:
@@ -156,6 +159,8 @@ async function registerMembership(membershipData) {
       membershipId: result.insertedId,
       status: "Pending",
       planType: planType,
+      startDate: startDate,
+      endDate: endDate,
     };
   } catch (error) {
     console.error("Membership registration error:", error);
@@ -309,6 +314,162 @@ async function getAllActiveMemberships() {
   }
 }
 
+// Get specific membership application details
+async function getMembershipApplication(membershipId) {
+  try {
+    const db = await connectToDatabase();
+    const membershipsCollection = db.collection("memberships");
+
+    const membership = await membershipsCollection.findOne({
+      _id: new ObjectId(membershipId),
+    });
+
+    return membership;
+  } catch (error) {
+    console.error("Error getting membership application:", error);
+    return null;
+  }
+}
+
+// Admin function to approve a pending membership
+async function approveMembership(membershipId) {
+  try {
+    const db = await connectToDatabase();
+    const membershipsCollection = db.collection("memberships");
+
+    // First get the membership to get the plan type and user ID
+    const membership = await membershipsCollection.findOne({
+      _id: new ObjectId(membershipId),
+    });
+
+    if (!membership) {
+      throw new Error("Membership not found");
+    }
+
+    // Calculate new start and end dates based on current date
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0); // Set to start of day
+
+    const endDate = calculateEndDate(startDate, membership.planType);
+
+    const result = await membershipsCollection.updateOne(
+      {
+        _id: new ObjectId(membershipId),
+        status: "Pending",
+      },
+      {
+        $set: {
+          status: "Active",
+          startDate: startDate,
+          endDate: endDate,
+          updatedAt: new Date(),
+          approvedAt: new Date(),
+        },
+      }
+    );
+
+    if (result.modifiedCount === 0) {
+      throw new Error("Membership not found or already approved");
+    }
+
+    // Send notification to user about approval
+    try {
+      const notificationResult = await createNotification({
+        userId: membership.userId,
+        title: "🎉 Membership Approved!",
+        message: `Your ${
+          membership.planType
+        } membership application has been approved and is now active. Welcome to Tough Athletics Gym! Your membership is valid until ${endDate.toLocaleDateString()}.`,
+        type: "success",
+        relatedId: membershipId,
+      });
+      console.log("Membership approval notification:", notificationResult);
+    } catch (notificationError) {
+      console.error("Failed to send approval notification:", notificationError);
+      // Don't throw error, just log it
+    }
+
+    return {
+      success: true,
+      message: "Membership approved successfully",
+      startDate: startDate,
+      endDate: endDate,
+    };
+  } catch (error) {
+    console.error("Error approving membership:", error);
+    return {
+      success: false,
+      message: error.message,
+    };
+  }
+}
+
+// Decline pending membership (admin only)
+async function declineMembership(membershipId, reason) {
+  try {
+    const db = await connectToDatabase();
+    const membershipsCollection = db.collection("memberships");
+
+    // First get the membership to get user ID
+    const membership = await membershipsCollection.findOne({
+      _id: new ObjectId(membershipId),
+    });
+
+    if (!membership) {
+      throw new Error("Membership not found");
+    }
+
+    const result = await membershipsCollection.updateOne(
+      {
+        _id: new ObjectId(membershipId),
+        status: "Pending",
+      },
+      {
+        $set: {
+          status: "Declined",
+          declineReason: reason,
+          updatedAt: new Date(),
+          declinedAt: new Date(),
+        },
+      }
+    );
+
+    if (result.modifiedCount === 0) {
+      throw new Error("Membership not found or already processed");
+    }
+
+    // Send notification to user about decline with the reason
+    try {
+      const notificationMessage = reason
+        ? `Your ${membership.planType} membership application has been declined.\n\nReason: ${reason}\n\nYou can apply again with corrected information.`
+        : `Your ${membership.planType} membership application has been declined.\n\nYou can apply again with corrected information.`;
+
+      const notificationResult = await createNotification({
+        userId: membership.userId,
+        title: "❌ Membership Declined",
+        message: notificationMessage,
+        type: "error",
+        relatedId: membershipId,
+      });
+      console.log("Membership decline notification:", notificationResult);
+    } catch (notificationError) {
+      console.error("Failed to send decline notification:", notificationError);
+      // Don't throw error, just log it
+    }
+
+    return {
+      success: true,
+      message: "Membership declined successfully",
+    };
+  } catch (error) {
+    console.error("Error declining membership:", error);
+    return {
+      success: false,
+      message: error.message,
+    };
+  }
+}
+
 module.exports = {
   registerMembership,
   getUserMembership,
@@ -317,4 +478,7 @@ module.exports = {
   getUserMembershipStatus,
   getAllPendingMemberships,
   getAllActiveMemberships,
+  approveMembership,
+  declineMembership,
+  getMembershipApplication,
 };

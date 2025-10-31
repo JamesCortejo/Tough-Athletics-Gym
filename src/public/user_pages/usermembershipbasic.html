@@ -21,8 +21,9 @@
                     style="width: 30px; height: 30px; margin-right: 4px;"></a>
             <a href="/usersettings"><img src="../images/icons/settingslogo.png" alt="Settings Logo" class="mb-2"
                     style="width: 30px; height: 30px;"></a>
-            <a href="#" id="notifBtn" class="notif-btn">
-                <img src="../images/icons/notificationLogo.png" alt="Notifications" width="30" height="30">
+            <a href="#" id="notifBtn" class="notif-btn" style="text-decoration: none;">
+                <img class="mb-1" src="/images/icons/notificationLogo.png" alt="Notifications" width="41" height="41">
+                <span id="notifBadge" class="notif-badge" style="display: none;">0</span>
             </a>
         </div>
     </div>
@@ -101,16 +102,20 @@
     <!-- Notification Dropdown -->
     <div id="notifDropdown" class="notif-overlay">
         <div class="notif-box">
-            <h3>Notifications</h3>
-            <div class="notif-list">
-                <div class="notif-item">New message from John</div>
-                <div class="notif-item">Your subscription is expiring soon</div>
-                <div class="notif-item">Profile updated successfully</div>
-                <div class="notif-item">System maintenance scheduled</div>
+            <div class="notif-header">
+                <h3>Notifications</h3>
+                <button class="notif-close" id="notifCloseBtn">&times;</button>
+            </div>
+            <div class="notif-list" id="notifList">
+                <!-- Notifications will be loaded here -->
+                <div class="notif-loading">
+                    <div class="spinner"></div>
+                    <p>Loading notifications...</p>
+                </div>
             </div>
             <div class="notif-actions">
-                <a href="#" class="notif-btn clear">Clear</a>
-                <a href="#" class="notif-btn read">Mark all as read</a>
+                <a href="#" class="notif-btn" id="clearAllBtn">Clear All</a>
+                <a href="#" class="notif-btn" id="markAllReadBtn">Mark All Read</a>
             </div>
         </div>
     </div>

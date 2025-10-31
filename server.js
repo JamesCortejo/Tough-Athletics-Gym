@@ -177,6 +177,31 @@ app.get("/usermembershipstatus", (req, res) => {
   );
 });
 
+// Add with your other route imports
+const membershipUtilsRoutes = require("./src/routes/membershipUtilsRoutes");
+
+// Add with your other route uses
+app.use("/api/membership-utils", membershipUtilsRoutes);
+
+// Serve admin membership manager page
+app.get("/admin/membership-manager", (req, res) => {
+  res.sendFile(
+    path.join(
+      __dirname,
+      "src",
+      "public",
+      "admin_pages",
+      "adminMembershipManager.html"
+    )
+  );
+});
+
+// Add with your other route imports
+const notificationRoutes = require("./src/routes/notificationRoutes");
+
+// Add with your other route uses
+app.use("/api/notifications", notificationRoutes);
+
 const adminRoutes = require("./src/routes/adminroutes");
 app.use("/", adminRoutes);
 
