@@ -17,7 +17,6 @@ router.get("/admin/login", (req, res) => {
 
 // Serve admin overview page - Check token via query parameter or session
 router.get("/admin/overview", (req, res) => {
-  // For HTML page requests, we'll rely on client-side token checking
   res.sendFile(
     path.join(__dirname, "..", "public", "admin_pages", "adminOverview.html")
   );

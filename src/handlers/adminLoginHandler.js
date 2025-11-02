@@ -3,7 +3,7 @@ const { connectToDatabase } = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const JWT_SECRET = "your_jwt_secret_key_here"; // Use the same secret as user login
+const JWT_SECRET = "your_jwt_secret_key_here";
 
 async function adminLogin(loginData) {
   console.log("Received admin login data:", loginData);

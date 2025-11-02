@@ -36,7 +36,6 @@ body {
   justify-content: center;
   align-items: center;
   text-align: center;
-  margin-bottom: 2rem;
 }
 
 .titleLogo h3 {
@@ -44,6 +43,29 @@ body {
   font-weight: 700;
   font-size: 1.5rem;
   margin: 1rem 0 0 0;
+}
+
+/* Admin Info Styles */
+.admin-info {
+  padding: 15px;
+  border-radius: 10px;
+  color: white;
+  text-align: center;
+  width: 100%;
+  margin: 1rem 0;
+  box-sizing: border-box;
+}
+
+.admin-welcome {
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+  opacity: 0.8;
+}
+
+.admin-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
 }
 
 .btn-custom {
@@ -72,19 +94,6 @@ body {
 
 .alert {
   margin: 10px;
-}
-
-.admin-info {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 15px;
-  border-radius: 5px;
-  color: white;
-  max-width: calc(100% - 30px);
-  /* prevents overflow */
-  box-sizing: border-box;
-  margin-right: 15px;
-  margin-left: 0;
-  overflow-wrap: break-word;
 }
 
 .loading-overlay {

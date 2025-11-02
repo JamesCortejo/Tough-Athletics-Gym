@@ -1,4 +1,4 @@
-// userstat.js - Updated to use reusable calendar component
+// userstat.js - Updated with Check-in Data and Calendar
 document.addEventListener("DOMContentLoaded", function () {
   const token = localStorage.getItem("token");
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const activeResult = await activeResponse.json();
 
       if (activeResult.success && activeResult.membership) {
-        displayActiveMembership(activeResult.membership);
+        await displayActiveMembership(activeResult.membership);
       } else {
         // Check for pending membership
         const pendingResponse = await fetch("/api/membership/pending", {
@@ -49,7 +49,38 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  function displayActiveMembership(membership) {
+  // Add this function to userstat.js to ensure proper calendar display
+  function initializeCalendar(startDate, endDate, checkinDates = []) {
+    // Show calendar section
+    const calendarSection = document.getElementById("calendarSection");
+    if (calendarSection) {
+      calendarSection.style.display = "block";
+    }
+
+    console.log("📅 Initializing calendar with:", {
+      startDate: startDate,
+      endDate: endDate,
+      checkinDates: checkinDates,
+    });
+
+    // Initialize or update calendar component
+    if (window.membershipCalendar) {
+      window.membershipCalendar.updateDates(startDate, endDate);
+      window.membershipCalendar.updateCheckins(checkinDates);
+    } else {
+      window.membershipCalendar = new MembershipCalendar("calendarSection", {
+        startDate: startDate,
+        endDate: endDate,
+        checkinDates: checkinDates,
+        onDateClick: function (date) {
+          console.log("Date clicked:", date);
+          // You can add click functionality here if needed
+        },
+      });
+    }
+  }
+
+  async function displayActiveMembership(membership) {
     console.log("Displaying active membership:", membership);
 
     // Hide other sections
@@ -82,13 +113,83 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("nextPaymentDue").textContent =
       formatDate(membershipEndDate);
 
-    // For demo purposes, set last visit to a recent date
-    const lastVisit = new Date(today);
-    lastVisit.setDate(today.getDate() - 2); // 2 days ago
-    document.getElementById("lastVisit").textContent = formatDate(lastVisit);
+    // Initialize calendar first (with empty check-ins)
+    initializeCalendar(membershipStartDate, membershipEndDate, []);
 
-    // Initialize calendar
-    initializeCalendar(membershipStartDate, membershipEndDate);
+    // Then fetch check-in data and update calendar
+    await loadCheckinData(membership);
+  }
+
+  async function loadCheckinData(membership) {
+    try {
+      const membershipId = membership._id;
+      console.log("🔍 Fetching check-ins for membership:", membershipId);
+
+      // Fetch check-in data for this membership
+      const checkinResponse = await fetch(
+        `/api/membership/checkins/${membershipId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("📡 Check-in API response status:", checkinResponse.status);
+
+      if (checkinResponse.ok) {
+        const checkinResult = await checkinResponse.json();
+        console.log("📊 Check-in API result:", checkinResult);
+
+        if (checkinResult.success && checkinResult.checkins) {
+          const checkinDates = checkinResult.checkins.map(
+            (checkin) => checkin.checkinTime
+          );
+          console.log("📅 Check-in dates found:", checkinDates);
+
+          // Update calendar with check-in data if calendar exists
+          if (membershipCalendar) {
+            console.log("🔄 Updating calendar with check-in data");
+            membershipCalendar.updateCheckins(checkinDates);
+          }
+
+          // Update last visit with most recent check-in
+          updateLastVisit(checkinResult.checkins);
+        } else {
+          // No check-ins found
+          console.log("❌ No check-ins found for this membership");
+          document.getElementById("lastVisit").textContent = "No visits yet";
+
+          // Initialize calendar without check-in data
+          if (membershipCalendar) {
+            membershipCalendar.updateCheckins([]);
+          }
+        }
+      } else {
+        console.log("❌ Check-in API request failed");
+        document.getElementById("lastVisit").textContent = "No visits yet";
+      }
+    } catch (error) {
+      console.error("❌ Error loading check-in data:", error);
+      document.getElementById("lastVisit").textContent = "Error loading data";
+    }
+  }
+
+  function updateLastVisit(checkins) {
+    if (!checkins || checkins.length === 0) {
+      document.getElementById("lastVisit").textContent = "No visits yet";
+      return;
+    }
+
+    // Sort check-ins by date (newest first) and get the most recent
+    const sortedCheckins = checkins.sort(
+      (a, b) => new Date(b.checkinTime) - new Date(a.checkinTime)
+    );
+    const lastCheckin = sortedCheckins[0];
+
+    const lastVisitDate = new Date(lastCheckin.checkinTime);
+    document.getElementById("lastVisit").textContent =
+      formatDate(lastVisitDate);
   }
 
   function displayPendingMembership(membership) {
@@ -191,20 +292,27 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  function initializeCalendar(startDate, endDate) {
+  function initializeCalendar(startDate, endDate, checkinDates = []) {
     // Show calendar section
     document.getElementById("calendarSection").style.display = "block";
+
+    console.log("📅 Initializing calendar with:", {
+      startDate: startDate,
+      endDate: endDate,
+      checkinDates: checkinDates,
+    });
 
     // Initialize calendar component
     if (membershipCalendar) {
       membershipCalendar.updateDates(startDate, endDate);
+      membershipCalendar.updateCheckins(checkinDates);
     } else {
       membershipCalendar = new MembershipCalendar("calendarSection", {
         startDate: startDate,
         endDate: endDate,
+        checkinDates: checkinDates, // Pass check-in dates initially
         onDateClick: function (date) {
           console.log("Date clicked:", date);
-          // You can add custom click behavior here
         },
       });
     }

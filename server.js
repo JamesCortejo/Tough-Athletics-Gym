@@ -24,6 +24,12 @@ app.use(
   )
 );
 
+// Serve html5-qrcode from node_modules
+app.use(
+  "/lib/html5-qrcode",
+  express.static(path.join(__dirname, "node_modules/html5-qrcode"))
+);
+
 // Serve Bootstrap
 app.use(
   "/bootstrap",
@@ -96,6 +102,10 @@ app.post(
 
 const membershipRoutes = require("./src/routes/membershipRoutes");
 app.use("/api/membership", membershipRoutes);
+
+// FIX: Add this line to mount checkin routes
+const checkinRoutes = require("./src/routes/checkinRoutes");
+app.use("/api/membership", checkinRoutes); // Add this line
 
 // Homepage route
 app.get("/", (req, res) => {

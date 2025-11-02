@@ -30,6 +30,12 @@ document.addEventListener("DOMContentLoaded", function () {
     window.location.href = "/admin/overview";
   });
 
+  document
+    .querySelector(".membership-btn")
+    .addEventListener("click", function () {
+      window.location.href = "/admin/membership-manager";
+    });
+
   document.querySelector(".accounts-btn").addEventListener("click", () => {
     showAlert("Accounts Manager coming soon!", "info");
   });

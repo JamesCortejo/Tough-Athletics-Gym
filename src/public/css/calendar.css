@@ -1,8 +1,10 @@
-/* calendar.css - Reusable Calendar Styles */
+/* calendar.css - Updated Calendar Styles with Proper Color Hierarchy */
 .calendar-section {
   margin-top: 20px;
   padding: 15px;
   background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .calendar-title {
@@ -86,6 +88,10 @@
   cursor: default;
   transition: all 0.3s ease;
   border: 2px solid transparent;
+  background: white;
+  color: #333;
+  position: relative;
+  box-sizing: border-box;
 }
 
 .calendar-day.empty {
@@ -93,34 +99,62 @@
   cursor: default;
 }
 
-.calendar-day.normal {
-  background: white;
-  color: #333;
-  border-color: #f0f0f0;
-}
-
-.calendar-day.active {
-  background: #ff9800;
+/* Base membership period color (BLUE) */
+.calendar-day.active-day {
+  background: #2196f3; /* Blue */
   color: white;
-  border-color: #f57c00;
-  font-weight: 600;
+  border-color: #1976d2;
 }
 
+/* Checked-in days (GREEN) - overrides blue */
+.calendar-day.active-day.checked-in {
+  background: #4caf50 !important; /* Green */
+  border-color: #388e3c !important;
+  color: white;
+}
+
+/* Not-checked days (RED) - overrides blue */
+.calendar-day.active-day.not-checked {
+  background: #f44336 !important; /* Red */
+  border-color: #d32f2f !important;
+  color: white;
+}
+
+/* TODAY - This must be the strongest selector */
 .calendar-day.today {
-  background: #000;
-  color: white;
-  border-color: #333;
-  font-weight: 600;
+  border: 3px solid #000000 !important;
+  box-shadow: 0 0 0 1px #ffffff inset;
+  font-weight: bold;
+  transform: scale(1.05);
+  z-index: 10;
 }
 
-.calendar-day.past {
-  background: #e0e0e0;
-  color: #999;
+/* Make sure today style works with other statuses */
+.calendar-day.today.active-day {
+  border: 3px solid #000000 !important;
+  box-shadow: 0 0 0 1px #ffffff inset;
 }
 
-.calendar-day.future {
-  background: white;
+.calendar-day.today.active-day.checked-in {
+  border: 3px solid #000000 !important;
+  box-shadow: 0 0 0 1px #ffffff inset;
+}
+
+.calendar-day.today.active-day.not-checked {
+  border: 3px solid #000000 !important;
+  box-shadow: 0 0 0 1px #ffffff inset;
+}
+
+/* Regular days outside membership period */
+.calendar-day:not(.active-day) {
+  background: #f8f9fa;
   color: #666;
+}
+
+/* Past days outside membership period */
+.calendar-day:not(.active-day).past {
+  background: #e9ecef;
+  color: #999;
 }
 
 .calendar-day.clickable {
@@ -129,8 +163,7 @@
 
 .calendar-day.clickable:hover {
   transform: scale(1.1);
-  z-index: 1;
-  position: relative;
+  z-index: 4;
 }
 
 .calendar-legend {
@@ -156,14 +189,25 @@
   border: 2px solid transparent;
 }
 
+.legend-color.checked-in {
+  background: #4caf50; /* Green for checked-in */
+  border-color: #388e3c;
+}
+
+.legend-color.not-checked {
+  background: #f44336; /* Red for not checked-in */
+  border-color: #d32f2f;
+}
+
 .legend-color.active-day {
-  background: #ff9800;
-  border-color: #f57c00;
+  background: #2196f3; /* Blue for membership period */
+  border-color: #1976d2;
 }
 
 .legend-color.today {
-  background: #000;
-  border-color: #333;
+  background: white;
+  border: 3px solid #000000;
+  box-shadow: 0 0 0 1px #ffffff;
 }
 
 /* Responsive Calendar */

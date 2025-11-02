@@ -16,6 +16,38 @@ const {
 } = require("../handlers/membershipHandler");
 const { verifyToken } = require("../handlers/loginHandler");
 
+// Get check-ins for a specific membership
+router.get("/checkins/:membershipId", verifyToken, async (req, res) => {
+  try {
+    const { membershipId } = req.params;
+    const db = await connectToDatabase();
+    const usercheckinCollection = db.collection("usercheckin");
+
+    console.log("🔍 Looking for check-ins for membership:", membershipId);
+
+    // Get all check-ins for this membership, sorted by date (newest first)
+    const checkins = await usercheckinCollection
+      .find({
+        membershipId: new ObjectId(membershipId),
+      })
+      .sort({ checkinTime: -1 })
+      .toArray();
+
+    console.log("📋 Found check-ins:", checkins.length);
+
+    res.json({
+      success: true,
+      checkins: checkins,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching check-ins:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
 // Decline pending membership (admin only)
 router.post("/admin/decline/:membershipId", verifyToken, async (req, res) => {
   try {

@@ -4,9 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tough Athletics Gym - Admin Dashboard</title>
+    <title>Tough Athletics Gym - Admin Overview</title>
     <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../css/adminOverview.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+</head>
 </head>
 
 <body>
@@ -32,9 +36,14 @@
 
     <div class="sideBar d-flex flex-column">
         <div class="titleLogo">
-            <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-5"
+            <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-2"
                 style="width: 250px; height: 120px;">
             <h3 class="" style="font-family: 'League Gothic' sans-serif;">Admin Dashboard</h3>
+            <!-- Admin Info Section -->
+            <div class="admin-info">
+                <div class="admin-welcome">Welcome back,</div>
+                <div class="admin-name" id="adminNameDisplay">Loading...</div>
+            </div>
         </div>
         <div class="sideBarContent">
             <button type="button" class="btn btn-custom overview-btn">Overview</button>
@@ -94,6 +103,7 @@
     </div>
     <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="../js/adminJS/adminOverview.js"></script>
+    <script src="../js/adminJS/adminCommon.js"></script>
 </body>
 
 </html>
