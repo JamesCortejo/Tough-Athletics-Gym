@@ -1,6 +1,7 @@
 const { connectToDatabase } = require("../config/db");
 const bcrypt = require("bcryptjs");
-const { generateQRCode, generateQRCodeId } = require("../utils/qrGenerator"); // Updated path
+const { generateQRCode, generateQRCodeId } = require("../utils/qrGenerator");
+const { verifyRecaptcha } = require("../utils/recaptcha");
 
 function validatePassword(password) {
   // Check minimum length
@@ -31,10 +32,52 @@ function validatePassword(password) {
   return null; // No errors
 }
 
+function validateAge(age) {
+  // Check if age is a number
+  if (isNaN(age) || !Number.isInteger(age)) {
+    return "Age must be a valid number";
+  }
+
+  // Check if age is within reasonable range (16-100)
+  if (age < 16) {
+    return "You must be at least 16 years old to register";
+  }
+
+  if (age > 100) {
+    return "Please enter a valid age";
+  }
+
+  return null; // No errors
+}
+
 async function registerUser(userData) {
   console.log("Received user data:", userData);
 
   try {
+    // Verify reCAPTCHA first
+    if (!userData.recaptchaToken) {
+      throw new Error("reCAPTCHA verification required");
+    }
+
+    const recaptchaResult = await verifyRecaptcha(userData.recaptchaToken);
+    if (!recaptchaResult.success) {
+      console.error("reCAPTCHA verification failed:", recaptchaResult.message);
+      throw new Error(
+        `Security verification failed: ${recaptchaResult.message}`
+      );
+    }
+
+    console.log(
+      "reCAPTCHA verified successfully, score:",
+      recaptchaResult.score
+    );
+
+    // Validate age
+    const ageValidationError = validateAge(userData.age);
+    if (ageValidationError) {
+      throw new Error(ageValidationError);
+    }
+
     // Validate password match
     if (userData.password !== userData.confirmPassword) {
       throw new Error("Passwords do not match");
@@ -78,7 +121,7 @@ async function registerUser(userData) {
     const qrCodeId = generateQRCodeId();
     console.log("Generated QR Code ID:", qrCodeId);
 
-    // Prepare user document with new schema
+    // Prepare user document with new schema including age
     const userDocument = {
       firstName: userData.firstName,
       lastName: userData.lastName,
@@ -86,6 +129,7 @@ async function registerUser(userData) {
       email: userData.email,
       mobile: userData.mobile,
       gender: userData.gender,
+      age: userData.age, // Add age field
       password: hashedPassword,
       qrCodeId: qrCodeId,
       profilePicture: "/images/default-profile.png", // Default profile picture

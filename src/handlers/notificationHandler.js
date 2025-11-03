@@ -13,6 +13,7 @@ async function createNotification(notificationData) {
       message: notificationData.message,
       type: notificationData.type || "info", // info, success, warning, error
       isRead: false,
+      isCleared: false, // New field for soft delete
       relatedId: notificationData.relatedId, // Optional: membership ID, etc.
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -34,22 +35,26 @@ async function createNotification(notificationData) {
   }
 }
 
-// Get notifications for a user
+// Get notifications for a user (only non-cleared notifications)
 async function getUserNotifications(userId, limit = 20) {
   try {
     const db = await connectToDatabase();
     const notificationsCollection = db.collection("notifications");
 
     const notifications = await notificationsCollection
-      .find({ userId: new ObjectId(userId) })
+      .find({
+        userId: new ObjectId(userId),
+        isCleared: { $ne: true }, // Only get notifications that are not cleared
+      })
       .sort({ createdAt: -1 })
       .limit(limit)
       .toArray();
 
-    // Count unread notifications
+    // Count unread notifications (only non-cleared)
     const unreadCount = await notificationsCollection.countDocuments({
       userId: new ObjectId(userId),
       isRead: false,
+      isCleared: { $ne: true },
     });
 
     return {
@@ -100,7 +105,11 @@ async function markAllAsRead(userId) {
     const notificationsCollection = db.collection("notifications");
 
     const result = await notificationsCollection.updateMany(
-      { userId: new ObjectId(userId), isRead: false },
+      {
+        userId: new ObjectId(userId),
+        isRead: false,
+        isCleared: { $ne: true }, // Only update non-cleared notifications
+      },
       { $set: { isRead: true, updatedAt: new Date() } }
     );
 
@@ -117,19 +126,20 @@ async function markAllAsRead(userId) {
   }
 }
 
-// Delete a notification
+// Delete a notification (soft delete - mark as cleared)
 async function deleteNotification(notificationId) {
   try {
     const db = await connectToDatabase();
     const notificationsCollection = db.collection("notifications");
 
-    const result = await notificationsCollection.deleteOne({
-      _id: new ObjectId(notificationId),
-    });
+    const result = await notificationsCollection.updateOne(
+      { _id: new ObjectId(notificationId) },
+      { $set: { isCleared: true, updatedAt: new Date() } }
+    );
 
     return {
       success: true,
-      deletedCount: result.deletedCount,
+      modifiedCount: result.modifiedCount,
     };
   } catch (error) {
     console.error("Error deleting notification:", error);
@@ -140,14 +150,75 @@ async function deleteNotification(notificationId) {
   }
 }
 
-// Clear all notifications for a user
+// Clear all notifications for a user (soft delete - mark all as cleared)
 async function clearAllNotifications(userId) {
   try {
     const db = await connectToDatabase();
     const notificationsCollection = db.collection("notifications");
 
+    const result = await notificationsCollection.updateMany(
+      {
+        userId: new ObjectId(userId),
+        isCleared: { $ne: true }, // Only update notifications that aren't already cleared
+      },
+      { $set: { isCleared: true, updatedAt: new Date() } }
+    );
+
+    return {
+      success: true,
+      modifiedCount: result.modifiedCount,
+    };
+  } catch (error) {
+    console.error("Error clearing all notifications:", error);
+    return {
+      success: false,
+      message: error.message,
+    };
+  }
+}
+
+// Get cleared notifications for a user (for admin purposes)
+async function getClearedNotifications(userId, limit = 50) {
+  try {
+    const db = await connectToDatabase();
+    const notificationsCollection = db.collection("notifications");
+
+    const notifications = await notificationsCollection
+      .find({
+        userId: new ObjectId(userId),
+        isCleared: true,
+      })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .toArray();
+
+    return {
+      success: true,
+      notifications: notifications,
+      total: notifications.length,
+    };
+  } catch (error) {
+    console.error("Error getting cleared notifications:", error);
+    return {
+      success: false,
+      notifications: [],
+      total: 0,
+    };
+  }
+}
+
+// Permanently delete cleared notifications older than specified days
+async function permanentlyDeleteOldNotifications(daysOld = 30) {
+  try {
+    const db = await connectToDatabase();
+    const notificationsCollection = db.collection("notifications");
+
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+
     const result = await notificationsCollection.deleteMany({
-      userId: new ObjectId(userId),
+      isCleared: true,
+      updatedAt: { $lt: cutoffDate },
     });
 
     return {
@@ -155,7 +226,7 @@ async function clearAllNotifications(userId) {
       deletedCount: result.deletedCount,
     };
   } catch (error) {
-    console.error("Error clearing all notifications:", error);
+    console.error("Error permanently deleting old notifications:", error);
     return {
       success: false,
       message: error.message,
@@ -170,4 +241,6 @@ module.exports = {
   markAllAsRead,
   deleteNotification,
   clearAllNotifications,
+  getClearedNotifications,
+  permanentlyDeleteOldNotifications,
 };

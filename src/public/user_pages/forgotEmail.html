@@ -57,6 +57,9 @@
             <h3 class="text-center mb-3"><b>Enter your Email</b></h3>
             <div class="formContainer">
                 <form id="forgotPasswordForm">
+                    <!-- Hidden reCAPTCHA token field -->
+                    <input type="hidden" id="recaptchaToken" name="recaptchaToken">
+
                     <!-- Email -->
                     <div class="mb-3">
                         <input type="email" class="form-control" id="email" name="email" placeholder="Email" required>
@@ -70,78 +73,8 @@
         <img src="/images/icons/startuplogo.png" alt="Footer Logo" width="40" height="80">
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.getElementById('forgotPasswordForm');
-
-            form.addEventListener('submit', async function (e) {
-                e.preventDefault();
-
-                const email = document.getElementById('email').value.trim();
-                const submitBtn = form.querySelector('button[type="submit"]');
-
-                // Remove existing alerts
-                removeExistingAlerts();
-
-                if (!email) {
-                    showError('Please enter your email address');
-                    return;
-                }
-
-                try {
-                    // Show loading state
-                    submitBtn.textContent = 'Sending...';
-                    submitBtn.disabled = true;
-
-                    const response = await fetch('/forgot-password', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ email: email })
-                    });
-
-                    const result = await response.json();
-
-                    if (result.success) {
-                        showSuccess(result.message);
-                        // Redirect to verify email page
-                        setTimeout(() => {
-                            window.location.href = result.redirect;
-                        }, 2000);
-                    } else {
-                        showError(result.message);
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    showError('An error occurred. Please try again.');
-                } finally {
-                    // Reset button state
-                    submitBtn.textContent = 'Get Code';
-                    submitBtn.disabled = false;
-                }
-            });
-
-            function showError(message) {
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-danger';
-                alertDiv.textContent = message;
-                form.parentNode.insertBefore(alertDiv, form);
-            }
-
-            function showSuccess(message) {
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-success';
-                alertDiv.textContent = message;
-                form.parentNode.insertBefore(alertDiv, form);
-            }
-
-            function removeExistingAlerts() {
-                const alerts = document.querySelectorAll('.alert');
-                alerts.forEach(alert => alert.remove());
-            }
-        });
-    </script>
+    <!-- Include the external JavaScript file -->
+    <script src="../js/userJS/forgotpass.js"></script>
 </body>
 
 </html>

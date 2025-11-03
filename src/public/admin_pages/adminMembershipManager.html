@@ -8,6 +8,7 @@
     <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../css/adminMemmanager.css">
     <link rel="stylesheet" href="../css/adminCheckin.css">
+    <link rel="stylesheet" href="../css/calendar.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="preconnect" href="https://rsms.me/">
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
@@ -40,7 +41,10 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Membership Application Details</h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-id-card me-2"></i>
+                        Membership Application Details
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -53,48 +57,318 @@
                         </div>
                         <div class="details-section">
                             <div class="detail-item">
-                                <div class="detail-label">First Name</div>
+                                <div class="detail-label">
+                                    <i class="fas fa-user me-1"></i>First Name
+                                </div>
                                 <div id="detailFirstName" class="detail-value">-</div>
                             </div>
                             <div class="detail-item">
-                                <div class="detail-label">Last Name</div>
+                                <div class="detail-label">
+                                    <i class="fas fa-user me-1"></i>Last Name
+                                </div>
                                 <div id="detailLastName" class="detail-value">-</div>
                             </div>
                             <div class="detail-item">
-                                <div class="detail-label">Email</div>
+                                <div class="detail-label">
+                                    <i class="fas fa-envelope me-1"></i>Email
+                                </div>
                                 <div id="detailEmail" class="detail-value">-</div>
                             </div>
                             <div class="detail-item">
-                                <div class="detail-label">Phone</div>
+                                <div class="detail-label">
+                                    <i class="fas fa-phone me-1"></i>Phone
+                                </div>
                                 <div id="detailPhone" class="detail-value">-</div>
                             </div>
                             <div class="detail-item">
-                                <div class="detail-label">Plan Type</div>
+                                <div class="detail-label">
+                                    <i class="fas fa-tag me-1"></i>Plan Type
+                                </div>
                                 <div id="detailPlanType" class="detail-value">-</div>
                             </div>
                             <div class="detail-item">
-                                <div class="detail-label">Amount</div>
+                                <div class="detail-label">
+                                    <i class="fas fa-money-bill-wave me-1"></i>Amount
+                                </div>
                                 <div id="detailAmount" class="detail-value">-</div>
                             </div>
                             <div class="detail-item">
-                                <div class="detail-label">Applied At</div>
+                                <div class="detail-label">
+                                    <i class="fas fa-calendar-plus me-1"></i>Applied At
+                                </div>
                                 <div id="detailAppliedAt" class="detail-value">-</div>
                             </div>
                             <div class="detail-item">
-                                <div class="detail-label">Payment Method</div>
+                                <div class="detail-label">
+                                    <i class="fas fa-credit-card me-1"></i>Payment Method
+                                </div>
                                 <div id="detailPaymentMethod" class="detail-value">-</div>
                             </div>
                             <div class="detail-item">
-                                <div class="detail-label">QR Code ID</div>
+                                <div class="detail-label">
+                                    <i class="fas fa-qrcode me-1"></i>QR Code ID
+                                </div>
                                 <div id="detailQrCodeId" class="detail-value">-</div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="declineBtn">
+                        <i class="fas fa-times-circle me-1"></i>Decline
+                    </button>
+                    <button type="button" class="btn btn-success" id="approveBtn">
+                        <i class="fas fa-check-circle me-1"></i>Approve
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Member Details Modal -->
+    <div class="modal fade" id="memberDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Member Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="member-profile-section text-center">
+                                <img id="memberDetailProfilePicture" src="" alt="Profile" class="member-profile-image">
+                                <h4 id="memberDetailName" class="mt-3">-</h4>
+                                <div id="memberDetailPlanBadge" class="plan-badge mt-2"></div>
+
+                                <!-- QR Code Display -->
+                                <div class="qr-code-section mt-4">
+                                    <h6>QR Code</h6>
+                                    <div class="qr-code-container">
+                                        <img id="memberQrCodeImage" src="" alt="QR Code" class="qr-code-image">
+                                        <small class="text-muted d-block mt-2" id="memberQrCodeId">QR Code ID: -</small>
+                                    </div>
+                                </div>
+
+                                <!-- Membership Information -->
+                                <div class="membership-info-section mt-4">
+                                    <div class="section-header">
+                                        <i class="fas fa-id-card"></i>
+                                        <h6>Membership Information</h6>
+                                    </div>
+                                    <div class="membership-details">
+                                        <div class="info-card">
+                                            <div class="info-icon">
+                                                <i class="fas fa-envelope"></i>
+                                            </div>
+                                            <div class="info-content">
+                                                <div class="info-label">Email</div>
+                                                <div id="memberDetailEmail" class="info-value">-</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="info-card">
+                                            <div class="info-icon">
+                                                <i class="fas fa-phone"></i>
+                                            </div>
+                                            <div class="info-content">
+                                                <div class="info-label">Phone</div>
+                                                <div id="memberDetailPhone" class="info-value">-</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="info-card">
+                                            <div class="info-icon">
+                                                <i class="fas fa-tag"></i>
+                                            </div>
+                                            <div class="info-content">
+                                                <div class="info-label">Plan Type</div>
+                                                <div id="memberDetailPlanType" class="info-value">-</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="info-card">
+                                            <div class="info-icon">
+                                                <i class="fas fa-play-circle"></i>
+                                            </div>
+                                            <div class="info-content">
+                                                <div class="info-label">Start Date</div>
+                                                <div id="memberDetailStartDate" class="info-value">-</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="info-card">
+                                            <div class="info-icon">
+                                                <i class="fas fa-flag-checkered"></i>
+                                            </div>
+                                            <div class="info-content">
+                                                <div class="info-label">End Date</div>
+                                                <div id="memberDetailEndDate" class="info-value">-</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="member-details-section">
+                                <!-- Calendar Section -->
+                                <div class="calendar-section mt-0">
+                                    <h5 class="calendar-title">Check-in Calendar</h5>
+                                    <div id="calendarSection" class="calendar-container"></div>
+
+                                    <!-- Statistics -->
+                                    <div class="calendar-statistics mt-4">
+                                        <div class="row text-center">
+                                            <div class="col-6 col-md-3">
+                                                <div class="stat-card-mini">
+                                                    <div class="stat-icon-mini">
+                                                        <i class="fas fa-check-circle"></i>
+                                                    </div>
+                                                    <div class="stat-number" id="statTotalCheckins">0</div>
+                                                    <div class="stat-label">Total Check-ins</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 col-md-3">
+                                                <div class="stat-card-mini">
+                                                    <div class="stat-icon-mini">
+                                                        <i class="fas fa-times-circle"></i>
+                                                    </div>
+                                                    <div class="stat-number" id="statMissedCheckins">0</div>
+                                                    <div class="stat-label">Missed Check-ins</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 col-md-3">
+                                                <div class="stat-card-mini">
+                                                    <div class="stat-icon-mini">
+                                                        <i class="fas fa-chart-line"></i>
+                                                    </div>
+                                                    <div class="stat-number" id="statCheckinRate">0%</div>
+                                                    <div class="stat-label">Check-in Rate</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 col-md-3">
+                                                <div class="stat-card-mini">
+                                                    <div class="stat-icon-mini">
+                                                        <i class="fas fa-calendar-day"></i>
+                                                    </div>
+                                                    <div class="stat-number" id="statRemainingDays">0</div>
+                                                    <div class="stat-label">Remaining Days</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Membership Management Actions -->
+                                <div class="membership-actions-section mt-4">
+                                    <h5 class="section-title">Membership Management</h5>
+                                    <div class="actions-grid">
+                                        <!-- Extend Membership -->
+                                        <div class="action-card">
+                                            <div class="action-icon extend">
+                                                <i class="fas fa-calendar-plus"></i>
+                                            </div>
+                                            <div class="action-content">
+                                                <h6>Extend Membership</h6>
+                                                <p class="action-description">Add more time to the current membership
+                                                    plan
+                                                </p>
+                                                <div class="extend-options mt-2">
+                                                    <button class="btn btn-outline-primary btn-sm extend-option"
+                                                        data-months="1">
+                                                        1 Month
+                                                    </button>
+                                                    <button class="btn btn-outline-primary btn-sm extend-option"
+                                                        data-months="3">
+                                                        3 Months
+                                                    </button>
+                                                    <button class="btn btn-outline-primary btn-sm extend-option"
+                                                        data-months="6">
+                                                        6 Months
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Change Plan -->
+                                        <div class="action-card">
+                                            <div class="action-icon change">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </div>
+                                            <div class="action-content">
+                                                <h6>Change Plan</h6>
+                                                <p class="action-description">Switch to a different membership plan</p>
+                                                <div class="change-options mt-2">
+                                                    <button class="btn btn-outline-warning btn-sm change-option"
+                                                        data-plan="Basic" data-months="1">
+                                                        Basic (1 Month)
+                                                    </button>
+                                                    <button class="btn btn-outline-warning btn-sm change-option"
+                                                        data-plan="Premium" data-months="3">
+                                                        Premium (3 Months)
+                                                    </button>
+                                                    <button class="btn btn-outline-warning btn-sm change-option"
+                                                        data-plan="VIP" data-months="6">
+                                                        VIP (6 Months)
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Withdraw Membership -->
+                                        <div class="action-card">
+                                            <div class="action-icon withdraw">
+                                                <i class="fas fa-user-times"></i>
+                                            </div>
+                                            <div class="action-content">
+                                                <h6>Withdraw Membership</h6>
+                                                <p class="action-description">Immediately expire this membership</p>
+                                                <button class="btn btn-outline-danger btn-sm mt-2"
+                                                    id="withdrawMembershipBtn">
+                                                    Withdraw Membership
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Confirmation Modal -->
+    <div class="modal fade" id="passwordConfirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="passwordModalTitle">Confirm Action</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="actionDescription" class="mb-3">
+                        <!-- Action description will be inserted here -->
+                    </div>
+                    <div class="mb-3">
+                        <label for="adminPassword" class="form-label">Admin Password</label>
+                        <input type="password" class="form-control" id="adminPassword"
+                            placeholder="Enter your admin password to confirm">
+                        <div class="form-text">This action requires admin authentication.</div>
+                    </div>
+                    <div id="passwordError" class="alert alert-danger mt-2" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="declineBtn">Decline</button>
-                    <button type="button" class="btn btn-success" id="approveBtn">Approve</button>
+                    <button type="button" class="btn btn-primary" id="confirmActionBtn">Confirm Action</button>
                 </div>
             </div>
         </div>
@@ -211,7 +485,6 @@
                                         <button class="btn btn-outline-dark" type="button" id="manualSearchBtn">
                                             <i class="fas fa-search"></i> Search
                                         </button>
-
                                     </div>
                                 </div>
                             </div>
@@ -221,88 +494,213 @@
             </div>
         </div>
 
-        <div class="dashboard-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-id-card me-2 mb-4" style="font-size: 1.8rem;"></i>
-                    <div>
-                        <h3 style="font-weight: bold; margin: 0;">Membership Applications</h3>
-                        <p class="text-muted mb-0">Manage pending membership applications</p>
+        <!-- Active Members Section -->
+        <div class="active-members-section mt-5">
+            <div class="dashboard-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-users me-2 mb-4" style="font-size: 1.8rem;"></i>
+                        <div>
+                            <h3 style="font-weight: bold; margin: 0;">Active Members</h3>
+                            <p class="text-muted mb-0">Manage current gym members</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="refreshActiveMembersBtn">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Active Members Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalActiveMembers">-</div>
+                        <div class="stat-label">Active Members</div>
                     </div>
                 </div>
-                <button type="button" class="btn btn-primary" id="refreshBtn">
-                    <i class="fas fa-sync-alt"></i> Refresh
-                </button>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-week"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="expiringThisWeek">-</div>
+                        <div class="stat-label">Expiring This Week</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalCheckinsToday">-</div>
+                        <div class="stat-label">Checked In Today</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Members Table -->
+            <div class="applications-section">
+                <div class="section-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Active Members List
+                    </h3>
+                    <div class="section-actions">
+                        <span class="badge bg-success" id="activeMembersCount">0 members</span>
+                        <!-- Search Bar for Active Members -->
+                        <div class="search-container">
+                            <div class="search-box">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" class="search-input" id="activeMembersSearch"
+                                    placeholder="Search active members...">
+                                <button class="search-clear" id="clearActiveMembersSearch" style="display: none;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container table-container-md">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Member</th>
+                                    <th>QR Code ID</th>
+                                    <th>Plan Type</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Remaining Days</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activeMembersTableBody">
+                                <!-- Active members will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="noActiveMembersMessage" class="no-applications">
+                        <i class="fas fa-users fa-3x mb-3"></i>
+                        <h4>No Active Members</h4>
+                        <p class="text-muted">There are no active members at the moment.</p>
+                    </div>
+
+                    <div id="noActiveMembersSearchResults" class="no-applications" style="display: none;">
+                        <i class="fas fa-search fa-3x mb-3"></i>
+                        <h4>No Members Found</h4>
+                        <p class="text-muted">No active members match your search criteria.</p>
+                    </div>
+                </div>
             </div>
         </div>
 
-
-        <!-- Statistics Cards -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-number" id="totalPending">-</div>
-                    <div class="stat-label">Total Pending</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-calendar-week"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-number" id="applicationsThisWeek">-</div>
-                    <div class="stat-label">This Week</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">
-                    <i class="fas fa-calendar-alt"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-number" id="applicationsThisMonth">-</div>
-                    <div class="stat-label">This Month</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Applications Table -->
-        <div class="applications-section">
-            <div class="section-header">
-                <h3 class="mb-0">
-                    <i class="fas fa-list me-2"></i>
-                    Pending Applications
-                </h3>
-                <div class="section-actions">
-                    <span class="badge bg-primary" id="applicationsCount">0 applications</span>
+        <!-- Membership Applications Section -->
+        <div class="applications-manager-section mt-5">
+            <div class="dashboard-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-id-card me-2 mb-4" style="font-size: 1.8rem;"></i>
+                        <div>
+                            <h3 style="font-weight: bold; margin: 0;">Membership Applications</h3>
+                            <p class="text-muted mb-0">Manage pending membership applications</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="refreshBtn">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
                 </div>
             </div>
 
-            <div class="table-container">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Member</th>
-                                <th>Plan Type</th>
-                                <th>Amount</th>
-                                <th>Applied At</th>
-                                <th>Payment Method</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="applicationsTableBody">
-                            <!-- Applications will be populated here -->
-                        </tbody>
-                    </table>
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalPending">-</div>
+                        <div class="stat-label">Total Pending</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-week"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="applicationsThisWeek">-</div>
+                        <div class="stat-label">This Week</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="applicationsThisMonth">-</div>
+                        <div class="stat-label">This Month</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Applications Table -->
+            <div class="applications-section">
+                <div class="section-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Pending Applications
+                    </h3>
+                    <div class="section-actions">
+                        <span class="badge bg-primary" id="applicationsCount">0 applications</span>
+                        <!-- Search Bar for Pending Applications -->
+                        <div class="search-container">
+                            <div class="search-box">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" class="search-input" id="pendingApplicationsSearch"
+                                    placeholder="Search applications...">
+                                <button class="search-clear" id="clearPendingApplicationsSearch" style="display: none;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div id="noApplicationsMessage" class="no-applications">
-                    <i class="fas fa-inbox fa-3x mb-3"></i>
-                    <h4>No Pending Applications</h4>
-                    <p class="text-muted">There are no pending membership applications at the moment.</p>
+                <div class="table-container table-container-md">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Member</th>
+                                    <th>Plan Type</th>
+                                    <th>Amount</th>
+                                    <th>Applied At</th>
+                                    <th>Payment Method</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="applicationsTableBody">
+                                <!-- Applications will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="noApplicationsMessage" class="no-applications">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <h4>No Pending Applications</h4>
+                        <p class="text-muted">There are no pending membership applications at the moment.</p>
+                    </div>
+
+                    <div id="noApplicationsSearchResults" class="no-applications" style="display: none;">
+                        <i class="fas fa-search fa-3x mb-3"></i>
+                        <h4>No Applications Found</h4>
+                        <p class="text-muted">No pending applications match your search criteria.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -310,10 +708,11 @@
 
     <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="/lib/html5-qrcode/html5-qrcode.min.js"></script>
-    <script src="/js/adminCheckin.js"></script>
+    <script src="../js/calendar.js"></script>
     <script src="../js/adminJS/adminCommon.js"></script>
     <script src="../js/adminJS/adminCheckin.js"></script>
     <script src="../js/adminJS/adminMembershipManager.js"></script>
+    <script src="../js/adminJS/adminActiveMembers.js"></script>
 </body>
 
 </html>

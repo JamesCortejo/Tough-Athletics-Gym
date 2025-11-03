@@ -1,31 +1,103 @@
 // public/js/login.js
 document.addEventListener("DOMContentLoaded", function () {
+  let recaptchaSiteKey = "";
   const loginForm = document.querySelector("form");
+
+  // Load reCAPTCHA configuration
+  async function loadRecaptchaConfig() {
+    try {
+      const response = await fetch("/api/config");
+      const config = await response.json();
+      recaptchaSiteKey = config.recaptchaSiteKey;
+
+      // Load reCAPTCHA script
+      const script = document.createElement("script");
+      script.src = `https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`;
+      document.head.appendChild(script);
+
+      console.log("reCAPTCHA script loaded with key:", recaptchaSiteKey);
+    } catch (error) {
+      console.error("Failed to load reCAPTCHA config:", error);
+      showError(
+        "Security verification failed to load. Please refresh the page."
+      );
+    }
+  }
+
+  // Function to get reCAPTCHA token
+  async function getRecaptchaToken() {
+    return new Promise((resolve) => {
+      if (typeof grecaptcha === "undefined") {
+        console.error("reCAPTCHA not loaded");
+        resolve(null);
+        return;
+      }
+
+      if (!recaptchaSiteKey) {
+        console.error("reCAPTCHA site key not available");
+        resolve(null);
+        return;
+      }
+
+      grecaptcha.ready(function () {
+        grecaptcha
+          .execute(recaptchaSiteKey, { action: "login" })
+          .then(function (token) {
+            console.log("reCAPTCHA token obtained:", token);
+            resolve(token);
+          })
+          .catch(function (error) {
+            console.error("reCAPTCHA error:", error);
+            resolve(null);
+          });
+      });
+    });
+  }
 
   if (loginForm) {
     loginForm.addEventListener("submit", async function (e) {
       e.preventDefault();
 
-      // Get form data
-      const formData = {
-        username: document.getElementById("username").value.trim(),
-        password: document.getElementById("password").value,
-      };
-
-      // Client-side validation
-      if (!formData.username || !formData.password) {
-        showError("Username and password are required!");
-        return;
-      }
+      // Show loading state
+      const submitBtn = loginForm.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = "Verifying...";
+      submitBtn.disabled = true;
 
       try {
-        // Show loading state
-        const submitBtn = loginForm.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
-        submitBtn.textContent = "Logging in...";
-        submitBtn.disabled = true;
+        // Wait a moment for reCAPTCHA to be ready if needed
+        if (typeof grecaptcha === "undefined") {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
 
-        console.log("Sending login request:", formData);
+        // Get reCAPTCHA token
+        const recaptchaToken = await getRecaptchaToken();
+
+        if (!recaptchaToken) {
+          showError(
+            "Security verification failed. Please refresh the page and try again."
+          );
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
+          return;
+        }
+
+        // Get form data
+        const formData = {
+          username: document.getElementById("username").value.trim(),
+          password: document.getElementById("password").value,
+          recaptchaToken: recaptchaToken,
+        };
+
+        // Client-side validation
+        if (!formData.username || !formData.password) {
+          showError("Username and password are required!");
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
+          return;
+        }
+
+        console.log("Sending login request with reCAPTCHA");
 
         const response = await fetch("/login", {
           method: "POST",
@@ -38,19 +110,12 @@ document.addEventListener("DOMContentLoaded", function () {
         const result = await response.json();
         console.log("Login response:", result);
 
-        // Reset button state
-        submitBtn.textContent = originalText;
-        submitBtn.disabled = false;
-
         if (result.success) {
           // Store JWT token and user data in localStorage
           localStorage.setItem("token", result.token);
           localStorage.setItem("currentUser", JSON.stringify(result.user));
 
           console.log("Stored user data:", result.user);
-          console.log("QR Code path:", result.user.qrCode);
-          console.log("First Name:", result.user.firstName);
-
           showSuccess(result.message);
           console.log("Redirecting to:", result.redirect);
 
@@ -58,20 +123,19 @@ document.addEventListener("DOMContentLoaded", function () {
           window.location.href = result.redirect;
         } else {
           showError("Login failed: " + result.message);
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
         }
       } catch (error) {
         console.error("Error:", error);
         showError("An error occurred during login. Please try again.");
-
-        // Reset button state on error too
-        const submitBtn = loginForm.querySelector('button[type="submit"]');
-        submitBtn.textContent = "Login";
+        submitBtn.textContent = originalText;
         submitBtn.disabled = false;
       }
     });
   }
 
-  // Show error message
+  // Rest of your existing functions (showError, showSuccess, removeExistingAlerts)
   function showError(message) {
     removeExistingAlerts();
 
@@ -94,7 +158,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Show success message
   function showSuccess(message) {
     removeExistingAlerts();
 
@@ -117,7 +180,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Remove existing alerts
   function removeExistingAlerts() {
     const existingAlerts = document.querySelectorAll(".alert");
     existingAlerts.forEach((alert) => {
@@ -126,4 +188,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
+
+  // Initialize reCAPTCHA
+  loadRecaptchaConfig();
 });

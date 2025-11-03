@@ -45,7 +45,7 @@ class NotificationManager {
       this.markAllAsRead();
     });
 
-    // Clear all notifications
+    // Clear all notifications (now soft delete)
     document.getElementById("clearAllBtn").addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -203,17 +203,25 @@ class NotificationManager {
 
       if (result.success) {
         this.loadNotifications();
+        this.showAlert("All notifications marked as read", "success");
       } else {
-        alert("Failed to mark all as read: " + result.message);
+        this.showAlert(
+          "Failed to mark all as read: " + result.message,
+          "error"
+        );
       }
     } catch (error) {
       console.error("Error marking all as read:", error);
-      alert("Error marking all as read");
+      this.showAlert("Error marking all as read", "error");
     }
   }
 
   async clearAllNotifications() {
-    if (!confirm("Are you sure you want to clear all notifications?")) {
+    if (
+      !confirm(
+        "Are you sure you want to clear all notifications? This will remove them from your view but keep them in the system."
+      )
+    ) {
       return;
     }
 
@@ -231,12 +239,16 @@ class NotificationManager {
 
       if (result.success) {
         this.loadNotifications();
+        this.showAlert("All notifications cleared", "success");
       } else {
-        alert("Failed to clear notifications: " + result.message);
+        this.showAlert(
+          "Failed to clear notifications: " + result.message,
+          "error"
+        );
       }
     } catch (error) {
       console.error("Error clearing notifications:", error);
-      alert("Error clearing notifications");
+      this.showAlert("Error clearing notifications", "error");
     }
   }
 
@@ -273,6 +285,27 @@ class NotificationManager {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  showAlert(message, type) {
+    // Create a simple alert system - you can integrate with your existing alert system
+    const alertDiv = document.createElement("div");
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText =
+      "top: 20px; right: 20px; z-index: 10000; min-width: 300px;";
+    alertDiv.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(alertDiv);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      if (alertDiv.parentNode) {
+        alertDiv.remove();
+      }
+    }, 5000);
   }
 }
 

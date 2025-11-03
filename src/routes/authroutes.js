@@ -2,6 +2,7 @@ const express = require("express");
 const path = require("path");
 const { registerUser } = require("../handlers/registerHandler");
 const { loginUser, verifyToken } = require("../handlers/loginHandler");
+const { verifyRecaptcha } = require("../utils/recaptcha");
 const {
   generateResetCode,
   checkEmailExists,
@@ -112,8 +113,10 @@ router.post("/register", async (req, res) => {
       email,
       mobile,
       gender,
+      age,
       password,
       confirmPassword,
+      recaptchaToken,
     } = req.body;
 
     // Basic validation
@@ -124,6 +127,7 @@ router.post("/register", async (req, res) => {
       !email ||
       !mobile ||
       !gender ||
+      !age ||
       !password ||
       !confirmPassword
     ) {
@@ -142,8 +146,10 @@ router.post("/register", async (req, res) => {
       email,
       mobile,
       gender,
+      age,
       password,
       confirmPassword,
+      recaptchaToken,
     });
 
     console.log("Registration result:", result);
@@ -169,12 +175,11 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// Handle login form submission
 router.post("/login", async (req, res) => {
   console.log("Received login request:", req.body);
 
   try {
-    const { username, password } = req.body;
+    const { username, password, recaptchaToken } = req.body; // Add recaptchaToken
 
     // Basic validation
     if (!username || !password) {
@@ -185,10 +190,20 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    // reCAPTCHA validation
+    if (!recaptchaToken) {
+      console.log("Missing reCAPTCHA token");
+      return res.status(400).json({
+        success: false,
+        message: "reCAPTCHA verification required",
+      });
+    }
+
     console.log("Calling loginUser function");
     const result = await loginUser({
       username,
       password,
+      recaptchaToken, // Pass the token to login handler
     });
 
     console.log("Login result:", result);
@@ -197,7 +212,7 @@ router.post("/login", async (req, res) => {
       res.json({
         success: true,
         message: "Login successful!",
-        token: result.token, // Send JWT token to client
+        token: result.token,
         user: result.user,
         redirect: "/userhomepage",
       });
@@ -221,7 +236,7 @@ router.post("/login", async (req, res) => {
 // Handle forgot password request
 router.post("/forgot-password", async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, recaptchaToken } = req.body; // Add recaptchaToken
 
     if (!email) {
       return res.status(400).json({
@@ -230,6 +245,28 @@ router.post("/forgot-password", async (req, res) => {
       });
     }
 
+    // Add reCAPTCHA validation
+    if (!recaptchaToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Security verification required",
+      });
+    }
+
+    // Verify reCAPTCHA
+    const recaptchaResult = await verifyRecaptcha(recaptchaToken);
+    if (!recaptchaResult.success) {
+      console.error("reCAPTCHA verification failed:", recaptchaResult.message);
+      return res.status(400).json({
+        success: false,
+        message: `Security verification failed: ${recaptchaResult.message}`,
+      });
+    }
+
+    console.log(
+      "reCAPTCHA verified successfully, score:",
+      recaptchaResult.score
+    );
     console.log("Password reset requested for:", email);
 
     // Check if email exists

@@ -1,7 +1,7 @@
+require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
-
 const app = express();
 
 // Body parsing middleware
@@ -10,6 +10,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from src/public
 app.use(express.static(path.join(__dirname, "src", "public")));
+
+app.get("/api/config", (req, res) => {
+  res.json({
+    recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY,
+  });
+});
 
 app.use(
   "/fonts",
@@ -35,6 +41,9 @@ app.use(
   "/bootstrap",
   express.static(path.join(__dirname, "node_modules", "bootstrap", "dist"))
 );
+
+const activeMembersRoutes = require("./src/routes/activeMembersRoutes");
+app.use("/api/admin", activeMembersRoutes);
 
 // Import handlers
 const { loginUser, verifyToken } = require("./src/handlers/loginHandler");

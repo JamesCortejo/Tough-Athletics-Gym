@@ -8,6 +8,11 @@ document.addEventListener("DOMContentLoaded", function () {
     return;
   }
 
+  let pendingApplications = [];
+  let filteredApplications = [];
+  let currentApplicationId = null;
+  let searchTimeout = null;
+
   // Initialize the page
   initializePage();
 
@@ -24,6 +29,28 @@ document.addEventListener("DOMContentLoaded", function () {
   document
     .getElementById("confirmDeclineBtn")
     .addEventListener("click", handleDecline);
+
+  // Search functionality for pending applications
+  const searchInput = document.getElementById("pendingApplicationsSearch");
+  const clearSearchBtn = document.getElementById(
+    "clearPendingApplicationsSearch"
+  );
+
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      handlePendingApplicationsSearch(e.target.value);
+    });
+
+    searchInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        handlePendingApplicationsSearch(e.target.value);
+      }
+    });
+  }
+
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener("click", clearPendingApplicationsSearch);
+  }
 
   // Navigation
   document.querySelector(".overview-btn").addEventListener("click", () => {
@@ -56,10 +83,99 @@ document.addEventListener("DOMContentLoaded", function () {
     .getElementById("logoutCancelBtn")
     .addEventListener("click", hideLogoutModal);
 
-  let currentApplicationId = null;
-
   async function initializePage() {
     await loadPendingApplications();
+  }
+
+  function handlePendingApplicationsSearch(searchTerm) {
+    const clearSearchBtn = document.getElementById(
+      "clearPendingApplicationsSearch"
+    );
+
+    // Show/hide clear button
+    if (searchTerm.trim() && clearSearchBtn) {
+      clearSearchBtn.style.display = "flex";
+    } else if (clearSearchBtn) {
+      clearSearchBtn.style.display = "none";
+    }
+
+    // Debounce search
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      filterPendingApplications(searchTerm);
+    }, 300);
+  }
+
+  function filterPendingApplications(searchTerm) {
+    if (!searchTerm.trim()) {
+      filteredApplications = [...pendingApplications];
+      displayApplications(filteredApplications);
+      updateSearchUI(false);
+      return;
+    }
+
+    const term = searchTerm.toLowerCase().trim();
+
+    filteredApplications = pendingApplications.filter((application) => {
+      const searchableFields = [
+        application.firstName,
+        application.lastName,
+        application.email,
+        application.phone,
+        application.planType,
+        application.paymentMethod,
+      ]
+        .filter((field) => field)
+        .map((field) => field.toLowerCase());
+
+      return searchableFields.some((field) => field.includes(term));
+    });
+
+    displayApplications(filteredApplications);
+    updateSearchUI(true);
+  }
+
+  function clearPendingApplicationsSearch() {
+    const searchInput = document.getElementById("pendingApplicationsSearch");
+    const clearSearchBtn = document.getElementById(
+      "clearPendingApplicationsSearch"
+    );
+
+    if (searchInput) {
+      searchInput.value = "";
+      searchInput.focus();
+    }
+
+    if (clearSearchBtn) {
+      clearSearchBtn.style.display = "none";
+    }
+
+    filteredApplications = [...pendingApplications];
+    displayApplications(filteredApplications);
+    updateSearchUI(false);
+  }
+
+  function updateSearchUI(isSearching) {
+    const noResultsElement = document.getElementById(
+      "noApplicationsSearchResults"
+    );
+    const noApplicationsElement = document.getElementById(
+      "noApplicationsMessage"
+    );
+
+    if (noResultsElement && noApplicationsElement) {
+      if (isSearching && filteredApplications.length === 0) {
+        noResultsElement.style.display = "block";
+        noApplicationsElement.style.display = "none";
+      } else {
+        noResultsElement.style.display = "none";
+        if (pendingApplications.length === 0) {
+          noApplicationsElement.style.display = "block";
+        } else {
+          noApplicationsElement.style.display = "none";
+        }
+      }
+    }
   }
 
   async function loadPendingApplications() {
@@ -82,8 +198,11 @@ document.addEventListener("DOMContentLoaded", function () {
       const result = await response.json();
 
       if (result.success) {
-        displayApplications(result.applications);
-        updateStatistics(result.applications);
+        pendingApplications = result.applications;
+        filteredApplications = [...pendingApplications];
+        displayApplications(filteredApplications);
+        updateStatistics(pendingApplications);
+        clearPendingApplicationsSearch(); // Reset search when reloading
       } else {
         showAlert("Failed to load applications: " + result.message, "danger");
       }
@@ -91,6 +210,8 @@ document.addEventListener("DOMContentLoaded", function () {
       console.error("Error loading applications:", error);
       showAlert("Error loading applications. Please try again.", "danger");
       // Display empty state
+      pendingApplications = [];
+      filteredApplications = [];
       displayApplications([]);
       updateStatistics([]);
     } finally {
@@ -106,13 +227,21 @@ document.addEventListener("DOMContentLoaded", function () {
     const applicationsCount = document.getElementById("applicationsCount");
 
     // Update applications count
-    applicationsCount.textContent = `${applications.length} application${
-      applications.length !== 1 ? "s" : ""
+    applicationsCount.textContent = `${pendingApplications.length} application${
+      pendingApplications.length !== 1 ? "s" : ""
     }`;
 
     if (applications.length === 0) {
       tableBody.innerHTML = "";
-      noApplicationsMessage.style.display = "block";
+      if (
+        applications === filteredApplications &&
+        pendingApplications.length > 0
+      ) {
+        // This means we have applications but search returned no results
+        noApplicationsMessage.style.display = "none";
+      } else {
+        noApplicationsMessage.style.display = "block";
+      }
       return;
     }
 

@@ -7,9 +7,11 @@ const {
   markAllAsRead,
   deleteNotification,
   clearAllNotifications,
+  getClearedNotifications,
+  permanentlyDeleteOldNotifications,
 } = require("../handlers/notificationHandler");
 
-// Get user notifications
+// Get user notifications (only non-cleared)
 router.get("/", verifyToken, async (req, res) => {
   try {
     const { limit } = req.query;
@@ -21,6 +23,25 @@ router.get("/", verifyToken, async (req, res) => {
     res.status(200).json(result);
   } catch (error) {
     console.error("Get notifications error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
+
+// Get cleared notifications (for admin/user review)
+router.get("/cleared", verifyToken, async (req, res) => {
+  try {
+    const { limit } = req.query;
+    const result = await getClearedNotifications(
+      req.user.userId,
+      parseInt(limit) || 50
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Get cleared notifications error:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -63,7 +84,7 @@ router.put("/read-all", verifyToken, async (req, res) => {
   }
 });
 
-// Delete a notification
+// Delete a notification (soft delete - mark as cleared)
 router.delete("/:notificationId", verifyToken, async (req, res) => {
   try {
     const { notificationId } = req.params;
@@ -83,7 +104,7 @@ router.delete("/:notificationId", verifyToken, async (req, res) => {
   }
 });
 
-// Clear all notifications
+// Clear all notifications (soft delete - mark all as cleared)
 router.delete("/", verifyToken, async (req, res) => {
   try {
     const result = await clearAllNotifications(req.user.userId);
@@ -91,6 +112,24 @@ router.delete("/", verifyToken, async (req, res) => {
     res.status(200).json(result);
   } catch (error) {
     console.error("Clear all notifications error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
+
+// Permanently delete old cleared notifications (admin only - optional)
+router.delete("/cleanup/old", verifyToken, async (req, res) => {
+  try {
+    const { days } = req.query;
+    const result = await permanentlyDeleteOldNotifications(
+      parseInt(days) || 30
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Cleanup old notifications error:", error);
     res.status(500).json({
       success: false,
       message: "Internal server error",

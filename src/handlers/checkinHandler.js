@@ -1,5 +1,6 @@
 const { connectToDatabase } = require("../config/db");
 const { ObjectId } = require("mongodb");
+const { createNotification } = require("./notificationHandler");
 
 async function checkinMember(qrCodeInput) {
   try {
@@ -149,6 +150,9 @@ async function recordCheckin(checkinData) {
 
     const result = await usercheckinCollection.insertOne(checkinDocument);
 
+    // Send notification to the user about the check-in
+    await sendCheckinNotification(checkinData);
+
     return {
       success: true,
       message: "Check-in recorded successfully in usercheckin collection",
@@ -162,6 +166,33 @@ async function recordCheckin(checkinData) {
     };
   }
 }
+
+async function sendCheckinNotification(checkinData) {
+  try {
+    const notificationResult = await createNotification({
+      userId: checkinData.userId,
+      title: "Check-in Successful",
+      message: `Hello ${
+        checkinData.firstName
+      }! You have been successfully checked in at ${new Date().toLocaleTimeString()}.`,
+      type: "success",
+      relatedId: checkinData.membershipId,
+    });
+
+    if (notificationResult.success) {
+      console.log("✅ Check-in notification sent to user:", checkinData.userId);
+    } else {
+      console.error(
+        "❌ Failed to send check-in notification:",
+        notificationResult.message
+      );
+    }
+  } catch (error) {
+    console.error("❌ Error sending check-in notification:", error);
+    // Don't throw error here as we don't want to fail the check-in if notification fails
+  }
+}
+
 module.exports = {
   checkinMember,
   recordCheckin,

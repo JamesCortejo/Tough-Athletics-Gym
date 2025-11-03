@@ -8,7 +8,13 @@
     <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/splashstyles.css">
     <link rel="stylesheet" href="/css/indexstyles.css">
-
+    <!-- Add reCAPTCHA script -->
+    <script src="https://www.google.com/recaptcha/api.js?render=YOUR_SITE_KEY"></script>
+    <script>
+        // Set reCAPTCHA site key from environment (you'll need to pass this from server)
+        const RECAPTCHA_SITE_KEY = '<?= process.env.RECAPTCHA_SITE_KEY ?>';
+        // For static HTML, you'll need to set this manually or create a dynamic route
+    </script>
 </head>
 
 <body>
@@ -30,7 +36,7 @@
             <h1 class=" text-center"><b>Welcome!</b></h1>
             <hr class="mb-4">
             <div class="formContainer">
-                <form action="/login" method="POST">
+                <form action="/login" method="POST" id="loginForm">
                     <div class="mb-4">
                         <input type="text" class="form-control" id="username" name="username" placeholder="Username"
                             required>
@@ -39,14 +45,17 @@
                         <input type="password" class="form-control" id="password" name="password" placeholder="Password"
                             required>
                     </div>
+                    <!-- Hidden input for reCAPTCHA token -->
+                    <input type="hidden" id="recaptchaToken" name="recaptchaToken">
+
                     <div class="forgotPass text-end mb-4">
                         <a href="/user_pages/forgotEmail.html" class="text-decoration-none"
                             style="font-size: 13px; color: rgb(255, 255, 255);">Forgot
                             Password?</a>
                     </div>
-                    <button type="submit" class="btn btn-custom w-100 mt-2">Login</button>
+                    <button type="submit" class="btn btn-custom w-100 mt-2" id="loginButton">Login</button>
                     <div class="forgotPass text-center mt-3" style="font-size: 13px; color: #fff;">
-                        Don’t have an account?
+                        Don't have an account?
                         <a href="/user_pages/register.html" class="text-decoration-none"
                             style="color: #0d6efd; font-weight: 500;">
                             Sign Up

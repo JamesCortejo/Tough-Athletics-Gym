@@ -1,4 +1,6 @@
-/* Admin Membership Manager Styles */
+/* ===== ADMIN MEMBERSHIP MANAGER STYLES ===== */
+
+/* ===== BASE STYLES ===== */
 body {
   font-family: "Inter", sans-serif;
   background-color: #f8f9fa;
@@ -7,6 +9,7 @@ body {
   color: #333;
 }
 
+/* ===== LAYOUT STYLES ===== */
 .sideBar {
   background: url("../images/backgroundimg.png") repeat center center fixed !important;
   height: 100vh;
@@ -28,7 +31,13 @@ body {
   width: 200px;
 }
 
-/* Admin Info Styles */
+.main-content {
+  margin-left: 360px;
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+/* ===== ADMIN INFO STYLES ===== */
 .admin-info {
   padding: 15px;
   border-radius: 10px;
@@ -68,6 +77,7 @@ body {
   margin: 1rem 0 0 0;
 }
 
+/* ===== BUTTON STYLES ===== */
 .btn-primary {
   background-color: #000000 !important;
   border: none;
@@ -97,12 +107,7 @@ body {
   font-weight: 600;
 }
 
-.main-content {
-  margin-left: 360px;
-  padding: 2rem;
-  min-height: 100vh;
-}
-
+/* ===== DASHBOARD COMPONENTS ===== */
 .dashboard-header {
   background: white;
   padding: 2rem;
@@ -117,7 +122,7 @@ body {
   font-weight: 700;
 }
 
-/* Statistics Grid */
+/* ===== STATISTICS GRID ===== */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -169,7 +174,7 @@ body {
   font-size: 0.9rem;
 }
 
-/* Applications Section */
+/* ===== TABLE SECTIONS ===== */
 .applications-section {
   background: white;
   border-radius: 12px;
@@ -179,17 +184,27 @@ body {
 
 .section-header {
   padding: 1.5rem 2rem;
+  margin-bottom: 0;
   background: #f8f9fa;
   border-bottom: 1px solid #dee2e6;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .section-header h3 {
   margin: 0;
   color: #333;
   font-weight: 600;
+}
+
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .section-actions .badge {
@@ -211,7 +226,7 @@ body {
   color: #333;
   border-bottom: 2px solid #dee2e6;
   padding: 1rem;
-  font-size: 0.875rem;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -222,8 +237,15 @@ body {
   border-color: #f1f3f4;
 }
 
-/* Plan Badges */
+.table code {
+  background: #f8f9fa;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-size: 0.875rem;
+}
 
+/* ===== PLAN BADGES ===== */
 .badge {
   background-color: #000000 !important;
   color: white !important;
@@ -253,7 +275,7 @@ body {
   color: #f57c00;
 }
 
-/* Action Buttons */
+/* ===== ACTION BUTTONS ===== */
 .btn-action {
   padding: 6px 12px;
   font-size: 0.875rem;
@@ -265,7 +287,84 @@ body {
   transform: translateY(-1px);
 }
 
-/* Modal Styles */
+/* ===== SEARCH COMPONENTS ===== */
+.search-container {
+  position: relative;
+  width: 290px;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 25px;
+  padding: 0.5rem 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.search-box:focus-within {
+  border-color: #667eea;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+  transform: translateY(-1px);
+}
+
+.search-icon {
+  color: #666;
+  margin-right: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.search-input {
+  width: 350px;
+  border: none;
+  outline: none;
+  flex: 1;
+  padding: 0.25rem 0;
+  font-size: 0.9rem;
+  background: transparent;
+}
+
+.search-input::placeholder {
+  color: #999;
+}
+
+.search-clear {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.search-clear:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+/* Search Results Badge */
+.badge.bg-info {
+  background: linear-gradient(135deg, #4facfe, #00f2fe) !important;
+}
+
+/* Filter Highlight */
+.highlight {
+  background-color: #fff3cd;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+/* ===== MODAL STYLES ===== */
 .modal-content {
   border-radius: 12px;
   border: none;
@@ -283,6 +382,26 @@ body {
   padding: 2rem;
 }
 
+.modal-footer {
+  border-top: 1px solid #dee2e6;
+  padding: 1.5rem;
+}
+
+.modal-backdrop {
+  z-index: 1040;
+}
+
+.modal {
+  z-index: 1050;
+}
+
+/* Force remove any lingering backdrops */
+body.modal-open {
+  overflow: auto;
+  padding-right: 0 !important;
+}
+
+/* Application Details Modal */
 .application-details {
   display: grid;
   grid-template-columns: 1fr 2fr;
@@ -328,11 +447,138 @@ body {
   font-size: 1rem;
 }
 
-.modal-footer {
-  border-top: 1px solid #dee2e6;
-  padding: 1.5rem;
+/* Member Details Modal */
+.member-profile-section {
+  padding: 0;
 }
 
+.member-profile-image {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 6px solid white;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  margin-bottom: 1.5rem;
+}
+
+.member-profile-section h4 {
+  color: #333;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.qr-code-section {
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.qr-code-section h6 {
+  color: #333;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.qr-code-image {
+  width: 200px;
+  height: 200px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto;
+  background: #f8f9fa;
+  object-fit: cover;
+}
+
+.membership-info-section {
+  margin-top: 1.5rem;
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.membership-info-section .section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 8px;
+  margin-bottom: 15px;
+  background: none;
+  border-bottom: 1px solid #ddd;
+  padding: 0 0 8px 0;
+}
+
+.membership-info-section .section-header i {
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.membership-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: space-between;
+}
+
+.info-card {
+  flex: 1 1 calc(20% - 20px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 10px 15px;
+  min-width: 180px;
+}
+
+.info-icon i {
+  font-size: 1.3rem;
+  color: #007bff;
+}
+
+.info-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-label {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.info-value {
+  font-weight: 600;
+  color: #333;
+}
+
+.calendar-statistics {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+}
+
+.calendar-statistics .stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.calendar-statistics .stat-label {
+  color: #666;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* ===== UTILITY STYLES ===== */
 /* Loading Overlay */
 .loading-overlay {
   position: fixed;
@@ -453,7 +699,16 @@ body {
   margin-bottom: 0.5rem;
 }
 
-/* Responsive Design */
+/* ===== SECTION SPECIFIC STYLES ===== */
+.active-members-section {
+  margin-top: 2rem;
+}
+
+.applications-manager-section {
+  margin-top: 3rem;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 768px) {
   .sideBar {
     width: 100%;
@@ -477,4 +732,284 @@ body {
   .stats-grid {
     grid-template-columns: 1fr;
   }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .section-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .search-container {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .member-profile-image {
+    width: 150px;
+    height: 150px;
+  }
+
+  .qr-code-image {
+    width: 160px;
+    height: 160px;
+  }
+
+  .info-card {
+    flex: 1 1 calc(50% - 10px);
+  }
+
+  .calendar-statistics .row {
+    gap: 1rem;
+  }
+
+  .calendar-statistics .col-6 {
+    flex: 0 0 calc(50% - 0.5rem);
+  }
+}
+
+@media (max-width: 576px) {
+  .search-container {
+    width: 100%;
+  }
+
+  .section-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .info-card {
+    flex: 1 1 100%;
+  }
+}
+
+/* Membership Management Actions */
+.membership-actions-section {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e9ecef;
+}
+
+.membership-actions-section .section-title {
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+  font-size: 1.25rem;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.action-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.action-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.action-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.action-icon.extend {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.action-icon.change {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.action-icon.withdraw {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.action-content {
+  flex: 1;
+}
+
+.action-content h6 {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #2c3e50;
+}
+
+.action-description {
+  color: #6c757d;
+  font-size: 0.875rem;
+  margin-bottom: 0;
+}
+
+.extend-options,
+.change-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.extend-option,
+.change-option {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.extend-option:hover,
+.change-option:hover {
+  transform: translateY(-1px);
+}
+
+/* Password Modal Styles */
+#passwordConfirmModal .modal-content {
+  border-radius: 12px;
+}
+
+#passwordConfirmModal .modal-header {
+  border-bottom: 1px solid #e9ecef;
+  padding: 1.25rem;
+}
+
+#passwordConfirmModal .modal-body {
+  padding: 1.5rem;
+}
+
+#passwordConfirmModal .modal-footer {
+  border-top: 1px solid #e9ecef;
+  padding: 1.25rem;
+}
+
+#actionDescription {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+}
+
+#actionDescription h6 {
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
+}
+
+#actionDescription p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+/* Fixed Height Scrollable Tables */
+.applications-section .table-container,
+.active-members-section .table-container {
+  max-height: 500px;
+  overflow-y: auto;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: white;
+}
+
+/* Table header styling for scrollable tables */
+.applications-section .table-container .table,
+.active-members-section .table-container .table {
+  margin-bottom: 0;
+}
+
+.applications-section .table-container .table thead th,
+.active-members-section .table-container .table thead th {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  z-index: 10;
+  border-bottom: 2px solid #dee2e6;
+  padding: 12px 8px;
+  font-weight: 600;
+  color: #495057;
+}
+
+/* Table body styling */
+.applications-section .table-container .table tbody td,
+.active-members-section .table-container .table tbody td {
+  padding: 12px 8px;
+  vertical-align: middle;
+}
+
+/* Ensure the table takes full width */
+.applications-section .table-container .table,
+.active-members-section .table-container .table {
+  width: 100%;
+}
+
+/* Style the scrollbar */
+.applications-section .table-container::-webkit-scrollbar,
+.active-members-section .table-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.applications-section .table-container::-webkit-scrollbar-track,
+.active-members-section .table-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.applications-section .table-container::-webkit-scrollbar-thumb,
+.active-members-section .table-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.applications-section .table-container::-webkit-scrollbar-thumb:hover,
+.active-members-section .table-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Firefox scrollbar */
+.applications-section .table-container,
+.active-members-section .table-container {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+/* No applications/members message styling */
+.no-applications {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #6c757d;
+}
+
+/* Ensure the table-responsive div doesn't add extra spacing */
+.table-responsive {
+  margin-bottom: 0;
+}
+
+/* Header section spacing */
+.applications-section .section-header,
+.active-members-section .section-header {
+  margin-bottom: 0;
+}
+
+/* Search container adjustments */
+.section-actions .search-container {
+  margin-left: auto;
 }

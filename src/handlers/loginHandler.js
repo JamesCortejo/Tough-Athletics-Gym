@@ -1,6 +1,7 @@
 const { connectToDatabase } = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { verifyRecaptcha } = require("../utils/recaptcha");
 
 const JWT_SECRET = "your_jwt_secret_key_here"; // Change this to a strong secret in production
 
@@ -8,13 +9,31 @@ async function loginUser(loginData) {
   console.log("Received login data:", loginData);
 
   try {
-    const { username, password } = loginData;
+    const { username, password, recaptchaToken } = loginData; // Add recaptchaToken
 
     // Basic validation
     if (!username || !password) {
       throw new Error("Username and password are required");
     }
 
+    // Verify reCAPTCHA
+    if (!recaptchaToken) {
+      throw new Error("reCAPTCHA verification required");
+    }
+
+    const recaptchaResult = await verifyRecaptcha(recaptchaToken);
+    if (!recaptchaResult.success) {
+      throw new Error(
+        `reCAPTCHA verification failed: ${recaptchaResult.message}`
+      );
+    }
+
+    console.log(
+      "reCAPTCHA verified successfully, score:",
+      recaptchaResult.score
+    );
+
+    // Continue with existing login logic...
     const db = await connectToDatabase();
     console.log("Database connected successfully for login");
 
@@ -55,7 +74,7 @@ async function loginUser(loginData) {
         qrCodeId: user.qrCodeId,
       },
       JWT_SECRET,
-      { expiresIn: "24h" } // Token expires in 24 hours
+      { expiresIn: "24h" }
     );
 
     // Return user data (excluding password) including QR code
