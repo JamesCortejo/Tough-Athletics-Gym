@@ -52,37 +52,6 @@ document.addEventListener("DOMContentLoaded", function () {
     clearSearchBtn.addEventListener("click", clearPendingApplicationsSearch);
   }
 
-  // Navigation
-  document.querySelector(".overview-btn").addEventListener("click", () => {
-    window.location.href = "/admin/overview";
-  });
-
-  document
-    .querySelector(".membership-btn")
-    .addEventListener("click", function () {
-      window.location.href = "/admin/membership-manager";
-    });
-
-  document.querySelector(".accounts-btn").addEventListener("click", () => {
-    showAlert("Accounts Manager coming soon!", "info");
-  });
-
-  document.querySelector(".reports-btn").addEventListener("click", () => {
-    showAlert("Reports Manager coming soon!", "info");
-  });
-
-  document
-    .querySelector(".logout-btn")
-    .addEventListener("click", showLogoutModal);
-
-  // Logout modal handlers
-  document
-    .getElementById("logoutConfirmBtn")
-    .addEventListener("click", handleLogout);
-  document
-    .getElementById("logoutCancelBtn")
-    .addEventListener("click", hideLogoutModal);
-
   async function initializePage() {
     await loadPendingApplications();
   }
@@ -533,40 +502,37 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function showLoading(show) {
-    document.getElementById("loadingOverlay").style.display = show
-      ? "flex"
-      : "none";
+    // Use the common loading function if available, otherwise create one
+    if (window.adminCommon && window.adminCommon.showLoading) {
+      window.adminCommon.showLoading(show);
+    } else {
+      const loadingOverlay = document.getElementById("loadingOverlay");
+      if (loadingOverlay) {
+        loadingOverlay.style.display = show ? "flex" : "none";
+      }
+    }
   }
 
   function showAlert(message, type) {
-    const alertContainer = document.getElementById("alertContainer");
-    const alertDiv = document.createElement("div");
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.innerHTML = `
+    // Use the common alert function if available, otherwise create one
+    if (window.adminCommon && window.adminCommon.showAlert) {
+      window.adminCommon.showAlert(message, type);
+    } else {
+      const alertContainer = document.getElementById("alertContainer");
+      const alertDiv = document.createElement("div");
+      alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+      alertDiv.innerHTML = `
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
-    alertContainer.appendChild(alertDiv);
+      alertContainer.appendChild(alertDiv);
 
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-      if (alertDiv.parentNode) {
-        alertDiv.remove();
-      }
-    }, 5000);
-  }
-
-  function showLogoutModal() {
-    document.getElementById("logoutModal").style.display = "flex";
-  }
-
-  function hideLogoutModal() {
-    document.getElementById("logoutModal").style.display = "none";
-  }
-
-  function handleLogout() {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("currentAdmin");
-    window.location.href = "/admin/login";
+      // Auto remove after 5 seconds
+      setTimeout(() => {
+        if (alertDiv.parentNode) {
+          alertDiv.remove();
+        }
+      }, 5000);
+    }
   }
 });

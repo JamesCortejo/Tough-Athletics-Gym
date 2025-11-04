@@ -10,6 +10,7 @@ class AdminCommon {
     this.checkAuthentication();
     this.setupNavigation();
     this.displayAdminName();
+    this.setupLogoutModal();
   }
 
   checkAuthentication() {
@@ -54,7 +55,7 @@ class AdminCommon {
     const membershipBtn = document.querySelector(".membership-btn");
     if (membershipBtn) {
       membershipBtn.addEventListener("click", () => {
-        window.location.href = "/admin/membership";
+        window.location.href = "/admin/membership-manager";
       });
     }
 
@@ -62,8 +63,7 @@ class AdminCommon {
     const accountsBtn = document.querySelector(".accounts-btn");
     if (accountsBtn) {
       accountsBtn.addEventListener("click", () => {
-        // Update this when you create the accounts manager page
-        window.location.href = "/admin/accounts";
+        window.location.href = "/admin/account-manager";
       });
     }
 
@@ -71,8 +71,7 @@ class AdminCommon {
     const reportsBtn = document.querySelector(".reports-btn");
     if (reportsBtn) {
       reportsBtn.addEventListener("click", () => {
-        // Update this when you create the reports manager page
-        window.location.href = "/admin/reports";
+        window.location.href = "/admin/reports-manager";
       });
     }
 
@@ -85,38 +84,60 @@ class AdminCommon {
     }
   }
 
-  showLogoutModal() {
+  setupLogoutModal() {
     // Create logout modal if it doesn't exist
     if (!document.getElementById("logoutModal")) {
       this.createLogoutModal();
     }
-    document.getElementById("logoutModal").style.display = "flex";
+
+    // Add event listeners to modal buttons
+    const confirmBtn = document.getElementById("logoutConfirmBtn");
+    const cancelBtn = document.getElementById("logoutCancelBtn");
+
+    if (confirmBtn) {
+      confirmBtn.addEventListener("click", () => {
+        this.handleLogout();
+      });
+    }
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", () => {
+        this.hideLogoutModal();
+      });
+    }
+
+    // Close modal when clicking outside
+    const modal = document.getElementById("logoutModal");
+    if (modal) {
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          this.hideLogoutModal();
+        }
+      });
+    }
   }
 
   createLogoutModal() {
     const modalHTML = `
-            <div id="logoutModal" class="logout-modal">
-                <div class="logout-modal-content">
-                    <h4>Confirm Logout</h4>
-                    <p>Are you sure you want to log out?</p>
-                    <div class="logout-modal-buttons">
-                        <button id="logoutCancelBtn" class="logout-cancel-btn">Cancel</button>
-                        <button id="logoutConfirmBtn" class="logout-confirm-btn">Yes, Logout</button>
-                    </div>
-                </div>
-            </div>
-        `;
+      <div id="logoutModal" class="logout-modal" style="display: none;">
+        <div class="logout-modal-content">
+          <h4>Confirm Logout</h4>
+          <p>Are you sure you want to log out?</p>
+          <div class="logout-modal-buttons">
+            <button id="logoutCancelBtn" class="logout-cancel-btn">Cancel</button>
+            <button id="logoutConfirmBtn" class="logout-confirm-btn">Yes, Logout</button>
+          </div>
+        </div>
+      </div>
+    `;
     document.body.insertAdjacentHTML("beforeend", modalHTML);
+  }
 
-    // Add event listeners
-    document
-      .getElementById("logoutConfirmBtn")
-      .addEventListener("click", () => {
-        this.handleLogout();
-      });
-    document.getElementById("logoutCancelBtn").addEventListener("click", () => {
-      this.hideLogoutModal();
-    });
+  showLogoutModal() {
+    const modal = document.getElementById("logoutModal");
+    if (modal) {
+      modal.style.display = "flex";
+    }
   }
 
   hideLogoutModal() {
@@ -127,8 +148,38 @@ class AdminCommon {
   }
 
   handleLogout() {
+    const adminToken = this.adminToken;
+
+    // Show loading state
+    this.showLoading(true);
+
+    if (adminToken) {
+      fetch("/admin/logout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          console.log("Logout result:", result);
+        })
+        .catch((error) => {
+          console.error("Logout error:", error);
+        })
+        .finally(() => {
+          this.performLogoutCleanup();
+        });
+    } else {
+      this.performLogoutCleanup();
+    }
+  }
+
+  performLogoutCleanup() {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("currentAdmin");
+    this.showLoading(false);
     window.location.href = "/admin/login";
   }
 
@@ -139,9 +190,9 @@ class AdminCommon {
       loadingOverlay.id = "loadingOverlay";
       loadingOverlay.className = "loading-overlay";
       loadingOverlay.innerHTML = `
-                <div class="spinner"></div>
-                <p class="mt-2 text-white">Loading...</p>
-            `;
+        <div class="spinner"></div>
+        <p class="mt-2 text-white">Loading...</p>
+      `;
       document.body.appendChild(loadingOverlay);
     }
     loadingOverlay.style.display = show ? "flex" : "none";
@@ -159,9 +210,9 @@ class AdminCommon {
     const alertDiv = document.createElement("div");
     alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
     alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
     alertContainer.appendChild(alertDiv);
 
     // Auto remove after 5 seconds

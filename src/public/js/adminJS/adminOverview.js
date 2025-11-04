@@ -75,8 +75,6 @@ function loadAdminData() {
   if (currentAdmin) {
     document.getElementById("adminName").textContent =
       (currentAdmin.firstName || "Admin") + " " + (currentAdmin.lastName || "");
-    document.getElementById("adminEmail").textContent =
-      currentAdmin.email || "admin@example.com";
     document.getElementById("adminRole").textContent = currentAdmin.isAdmin
       ? "Administrator"
       : "User";
@@ -122,124 +120,41 @@ function updateDashboardWithRealData() {
 }
 
 function setupEventListeners() {
-  // Logout button - Show confirmation modal
-  document.querySelector(".logout-btn").addEventListener("click", function () {
-    showLogoutConfirmation();
-  });
-
-  // Logout confirmation modal buttons
-  document
-    .getElementById("logoutCancelBtn")
-    .addEventListener("click", function () {
-      hideLogoutConfirmation();
-    });
-
-  document
-    .getElementById("logoutConfirmBtn")
-    .addEventListener("click", function () {
-      performLogout();
-    });
-
-  // Close modal when clicking outside
-  document
-    .getElementById("logoutModal")
-    .addEventListener("click", function (e) {
-      if (e.target === this) {
-        hideLogoutConfirmation();
-      }
-    });
-
-  // Navigation buttons
-  document
-    .querySelector(".overview-btn")
-    .addEventListener("click", function () {
-      // Already on overview
-    });
-
-  // FIXED: Redirect to membership manager instead of showing alert
-  document
-    .querySelector(".membership-btn")
-    .addEventListener("click", function () {
-      window.location.href = "/admin/membership-manager";
-    });
-
-  document
-    .querySelector(".accounts-btn")
-    .addEventListener("click", function () {
-      showAlert("Accounts Manager - Coming Soon", "info");
-    });
-
-  document.querySelector(".reports-btn").addEventListener("click", function () {
-    showAlert("Reports Manager - Coming Soon", "info");
-  });
-}
-
-function showLogoutConfirmation() {
-  const logoutModal = document.getElementById("logoutModal");
-  logoutModal.style.display = "flex";
-}
-
-function hideLogoutConfirmation() {
-  const logoutModal = document.getElementById("logoutModal");
-  logoutModal.style.display = "none";
-}
-
-function performLogout() {
-  hideLogoutConfirmation();
-
-  const adminToken = localStorage.getItem("adminToken");
-
-  // Show loading state
-  showLoading(true);
-
-  if (adminToken) {
-    fetch("/admin/logout", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${adminToken}`,
-        "Content-Type": "application/json",
-      },
-    })
-      .then((response) => response.json())
-      .then((result) => {
-        console.log("Logout result:", result);
-      })
-      .catch((error) => {
-        console.error("Logout error:", error);
-      })
-      .finally(() => {
-        localStorage.removeItem("adminToken");
-        localStorage.removeItem("currentAdmin");
-        showLoading(false);
-        window.location.href = "/admin/login";
-      });
-  } else {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("currentAdmin");
-    showLoading(false);
-    window.location.href = "/admin/login";
-  }
+  // Navigation is now handled by adminCommon.js
+  // Logout functionality is now handled by adminCommon.js
 }
 
 function showLoading(show) {
-  const loadingOverlay = document.getElementById("loadingOverlay");
-  loadingOverlay.style.display = show ? "flex" : "none";
+  // Use the common loading function if available, otherwise create one
+  if (window.adminCommon && window.adminCommon.showLoading) {
+    window.adminCommon.showLoading(show);
+  } else {
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    if (loadingOverlay) {
+      loadingOverlay.style.display = show ? "flex" : "none";
+    }
+  }
 }
 
 function showAlert(message, type) {
-  const alertContainer = document.getElementById("alertContainer");
-  const alertDiv = document.createElement("div");
-  alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-  alertDiv.innerHTML = `
+  // Use the common alert function if available, otherwise create one
+  if (window.adminCommon && window.adminCommon.showAlert) {
+    window.adminCommon.showAlert(message, type);
+  } else {
+    const alertContainer = document.getElementById("alertContainer");
+    const alertDiv = document.createElement("div");
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
                 ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
-  alertContainer.appendChild(alertDiv);
+    alertContainer.appendChild(alertDiv);
 
-  // Auto remove after 5 seconds
-  setTimeout(() => {
-    if (alertDiv.parentNode) {
-      alertDiv.remove();
-    }
-  }, 5000);
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      if (alertDiv.parentNode) {
+        alertDiv.remove();
+      }
+    }, 5000);
+  }
 }

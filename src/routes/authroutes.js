@@ -15,6 +15,9 @@ const { sendResetEmail } = require("../utils/emailService");
 const router = express.Router();
 const passport = require("passport");
 const jwt = require("jsonwebtoken");
+const { logUserAction } = require("../utils/userActionLogger");
+const { logoutUser } = require("../handlers/logoutHandler");
+
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_here";
 
 // Google OAuth Routes
@@ -25,6 +28,70 @@ router.get(
   })
 );
 
+function getClientInfo(req) {
+  return {
+    ipAddress:
+      req.ip || req.connection.remoteAddress || req.socket.remoteAddress,
+    userAgent: req.get("User-Agent") || "Unknown",
+  };
+}
+
+// FIXED: Updated logout route with proper parameter handling
+router.post("/api/logout", verifyToken, async (req, res) => {
+  try {
+    console.log("=== LOGOUT API CALLED ===");
+    console.log("User from token:", req.user);
+    console.log("Headers:", req.headers);
+
+    const clientInfo = getClientInfo(req);
+    console.log("Client info:", clientInfo);
+
+    // FIX: Ensure all parameters are properly passed
+    const userId = req.user.userId;
+    const authMethod = req.user.authMethod || "local"; // Ensure authMethod has a default
+    const qrCodeId = req.user.qrCodeId || null;
+
+    console.log("Logout parameters:", {
+      userId,
+      authMethod,
+      qrCodeId,
+      clientInfo,
+    });
+
+    const logoutResult = await logoutUser(
+      userId,
+      authMethod,
+      qrCodeId,
+      clientInfo
+    );
+
+    console.log("Logout result:", logoutResult);
+
+    if (logoutResult.success) {
+      res.json({
+        success: true,
+        message: "Logout successful",
+        redirect: "/?logout=success",
+      });
+    } else {
+      res.json({
+        success: true, // Still allow logout even if logging failed
+        message: "Logout completed",
+        warning: logoutResult.message,
+        redirect: "/?logout=success",
+      });
+    }
+  } catch (error) {
+    console.error("Logout route error:", error);
+    res.json({
+      success: true,
+      message: "Logout completed",
+      warning: "Error logging logout action",
+      redirect: "/?logout=success",
+    });
+  }
+});
+
 router.get(
   "/auth/google/callback",
   passport.authenticate("google", {
@@ -33,13 +100,26 @@ router.get(
   }),
   async (req, res) => {
     try {
-      // Generate JWT token for the user
+      // Log the OAuth login
+      await logUserAction(
+        req.user._id.toString(),
+        "login",
+        "google",
+        req.user.qrCodeId,
+        {
+          ipAddress: req.ip || req.connection.remoteAddress,
+          userAgent: req.get("User-Agent"),
+        }
+      );
+
+      // Generate JWT token for the user - ADD authMethod HERE
       const token = jwt.sign(
         {
           userId: req.user._id.toString(),
           username: req.user.username,
           email: req.user.email,
           qrCodeId: req.user.qrCodeId,
+          authMethod: "google", // ADD THIS LINE
         },
         JWT_SECRET,
         { expiresIn: "24h" }
@@ -78,7 +158,6 @@ router.get(
       };
 
       if (needsProfileCompletion) {
-        // Redirect to profile completion page
         res.redirect(
           `/auth/success?token=${encodeURIComponent(
             token
@@ -87,7 +166,6 @@ router.get(
           )}&needsProfile=true`
         );
       } else {
-        // Redirect to homepage
         res.redirect(
           `/auth/success?token=${encodeURIComponent(
             token
@@ -113,6 +191,7 @@ router.get("/complete-profile", (req, res) => {
 router.get("/auth/success", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/user_pages/auth-success.html"));
 });
+
 router.get(
   "/auth/facebook",
   passport.authenticate("facebook", {
@@ -128,13 +207,26 @@ router.get(
   }),
   async (req, res) => {
     try {
-      // Generate JWT token for the user (same logic as Google)
+      // Log the OAuth login
+      await logUserAction(
+        req.user._id.toString(),
+        "login",
+        "facebook",
+        req.user.qrCodeId,
+        {
+          ipAddress: req.ip || req.connection.remoteAddress,
+          userAgent: req.get("User-Agent"),
+        }
+      );
+
+      // Generate JWT token for the user - ADD authMethod HERE
       const token = jwt.sign(
         {
           userId: req.user._id.toString(),
           username: req.user.username,
           email: req.user.email,
           qrCodeId: req.user.qrCodeId,
+          authMethod: "facebook", // ADD THIS LINE
         },
         JWT_SECRET,
         { expiresIn: "24h" }
@@ -173,7 +265,6 @@ router.get(
       };
 
       if (needsProfileCompletion) {
-        // Redirect to profile completion page
         res.redirect(
           `/auth/success?token=${encodeURIComponent(
             token
@@ -182,7 +273,6 @@ router.get(
           )}&needsProfile=true`
         );
       } else {
-        // Redirect to homepage
         res.redirect(
           `/auth/success?token=${encodeURIComponent(
             token
@@ -360,7 +450,7 @@ router.post("/login", async (req, res) => {
   console.log("Received login request:", req.body);
 
   try {
-    const { username, password, recaptchaToken } = req.body; // Add recaptchaToken
+    const { username, password, recaptchaToken } = req.body;
 
     // Basic validation
     if (!username || !password) {
@@ -381,11 +471,14 @@ router.post("/login", async (req, res) => {
     }
 
     console.log("Calling loginUser function");
-    const result = await loginUser({
-      username,
-      password,
-      recaptchaToken, // Pass the token to login handler
-    });
+    const result = await loginUser(
+      {
+        username,
+        password,
+        recaptchaToken,
+      },
+      getClientInfo(req)
+    ); // Pass client info
 
     console.log("Login result:", result);
 

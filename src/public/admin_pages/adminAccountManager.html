@@ -4,16 +4,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tough Athletics Gym</title>
+    <title>Tough Athletics Gym - Admin Account Manager</title>
     <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../css/adminDashboard.css">
+    <link rel="stylesheet" href="../css/adminAccountManager.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="preconnect" href="https://rsms.me/">
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 </head>
 
 <body>
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="text-center">
+            <div class="spinner-border mb-3" role="status"></div>
+            <p>Checking authentication...</p>
+        </div>
+    </div>
 
+    <div class="sideBar d-flex flex-column">
+        <div class="titleLogo">
+            <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-2"
+                style="width: 250px; height: 120px;">
+            <h3 class="" style="font-family: 'League Gothic' sans-serif;">Admin Dashboard</h3>
+            <!-- Admin Info Section -->
+            <div class="admin-info">
+                <div class="admin-welcome">Welcome back,</div>
+                <div class="admin-name" id="adminNameDisplay">Loading...</div>
+            </div>
+        </div>
+        <div class="sideBarContent">
+            <button type="button" class="btn btn-custom overview-btn">Overview</button>
+            <button type="button" class="btn btn-custom membership-btn">Membership Manager</button>
+            <button type="button" class="btn btn-custom accounts-btn">Accounts Manager</button>
+            <button type="button" class="btn btn-custom reports-btn">Reports Manager</button>
+            <button type="button" class="btn btn-custom logout-btn mt-4"
+                style="background-color: rgb(124, 0, 0);">Logout</button>
+        </div>
+    </div>
+
+    <div class="container mainContent">
+        <h1>Hello accounts</h1>
+    </div>
+
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/adminJS/adminCommon.js"></script>
 </body>
-<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 </html>

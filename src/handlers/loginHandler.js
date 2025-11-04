@@ -2,14 +2,15 @@ const { connectToDatabase } = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { verifyRecaptcha } = require("../utils/recaptcha");
+const { logUserAction } = require("../utils/userActionLogger");
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_here";
 
-async function loginUser(loginData) {
+async function loginUser(loginData, requestInfo = {}) {
   console.log("Received login data:", loginData);
 
   try {
-    const { username, password, recaptchaToken } = loginData; // Add recaptchaToken
+    const { username, password, recaptchaToken } = loginData;
 
     // Basic validation
     if (!username || !password) {
@@ -33,7 +34,6 @@ async function loginUser(loginData) {
       recaptchaResult.score
     );
 
-    // Continue with existing login logic...
     const db = await connectToDatabase();
     console.log("Database connected successfully for login");
 
@@ -54,6 +54,7 @@ async function loginUser(loginData) {
       email: user.email,
       qrCodeId: user.qrCodeId,
       profilePicture: user.profilePicture,
+      authMethod: user.authMethod, // Log the authMethod
     });
 
     // Verify password
@@ -65,16 +66,32 @@ async function loginUser(loginData) {
 
     console.log("Password verified successfully");
 
-    // Generate JWT token
+    // FIXED: Ensure authMethod is properly included in JWT
+    const userAuthMethod = user.authMethod || "local";
+
+    // Generate JWT token - ADD authMethod HERE
     const token = jwt.sign(
       {
         userId: user._id.toString(),
         username: user.username,
         email: user.email,
         qrCodeId: user.qrCodeId,
+        authMethod: userAuthMethod, // THIS IS CRITICAL - use the variable
       },
       JWT_SECRET,
       { expiresIn: "24h" }
+    );
+
+    // Log the login action
+    await logUserAction(
+      user._id.toString(),
+      "login",
+      userAuthMethod, // Use the same variable
+      user.qrCodeId,
+      {
+        ipAddress: requestInfo.ipAddress,
+        userAgent: requestInfo.userAgent,
+      }
     );
 
     // Return user data (excluding password) including QR code

@@ -14,8 +14,6 @@ document.addEventListener("DOMContentLoaded", function () {
       const script = document.createElement("script");
       script.src = `https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`;
       document.head.appendChild(script);
-
-      console.log("reCAPTCHA script loaded with key:", recaptchaSiteKey);
     } catch (error) {
       console.error("Failed to load reCAPTCHA config:", error);
       showError(
@@ -113,9 +111,18 @@ document.addEventListener("DOMContentLoaded", function () {
         if (result.success) {
           // Store JWT token and user data in localStorage
           localStorage.setItem("token", result.token);
-          localStorage.setItem("currentUser", JSON.stringify(result.user));
 
-          console.log("Stored user data:", result.user);
+          // FIX: Ensure all user data including authMethod is stored
+          const userData = {
+            ...result.user,
+            // Ensure authMethod is included in stored user data
+            authMethod: result.user.authMethod || "local",
+          };
+          localStorage.setItem("currentUser", JSON.stringify(userData));
+
+          console.log("Stored user data:", userData);
+          console.log("User authMethod:", userData.authMethod);
+
           showSuccess(result.message);
           console.log("Redirecting to:", result.redirect);
 

@@ -7,6 +7,7 @@ const passport = require("./src/config/passport"); // Unified passport config
 
 const app = express();
 
+// Middleware
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your_session_secret_here",
@@ -29,12 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from src/public
 app.use(express.static(path.join(__dirname, "src", "public")));
 
-app.get("/api/config", (req, res) => {
-  res.json({
-    recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY,
-  });
-});
-
+// Static file serving for external libraries
 app.use(
   "/fonts",
   express.static(
@@ -48,22 +44,24 @@ app.use(
   )
 );
 
-// Serve html5-qrcode from node_modules
 app.use(
   "/lib/html5-qrcode",
   express.static(path.join(__dirname, "node_modules/html5-qrcode"))
 );
 
-// Serve Bootstrap
 app.use(
   "/bootstrap",
   express.static(path.join(__dirname, "node_modules", "bootstrap", "dist"))
 );
 
-const activeMembersRoutes = require("./src/routes/activeMembersRoutes");
-app.use("/api/admin", activeMembersRoutes);
+// API Routes
+app.get("/api/config", (req, res) => {
+  res.json({
+    recaptchaSiteKey: process.env.RECAPTCHA_SITE_KEY,
+  });
+});
 
-// Import handlers
+// Import route handlers
 const { loginUser, verifyToken } = require("./src/handlers/loginHandler");
 const {
   updateUserProfile,
@@ -72,9 +70,27 @@ const {
   upload,
 } = require("./src/handlers/profileHandler");
 
-// Fix: Mount auth routes correctly
+// Mount routes
 const authRoutes = require("./src/routes/authroutes");
 app.use("/", authRoutes);
+
+const adminRoutes = require("./src/routes/adminroutes");
+app.use("/", adminRoutes);
+
+const activeMembersRoutes = require("./src/routes/activeMembersRoutes");
+app.use("/api/admin", activeMembersRoutes);
+
+const membershipRoutes = require("./src/routes/membershipRoutes");
+app.use("/api/membership", membershipRoutes);
+
+const checkinRoutes = require("./src/routes/checkinRoutes");
+app.use("/api/membership", checkinRoutes);
+
+const membershipUtilsRoutes = require("./src/routes/membershipUtilsRoutes");
+app.use("/api/membership-utils", membershipUtilsRoutes);
+
+const notificationRoutes = require("./src/routes/notificationRoutes");
+app.use("/api/notifications", notificationRoutes);
 
 // Profile Routes
 app.get("/profile", verifyToken, async (req, res) => {
@@ -135,21 +151,13 @@ app.post(
   }
 );
 
-const membershipRoutes = require("./src/routes/membershipRoutes");
-app.use("/api/membership", membershipRoutes);
-
-// FIX: Add this line to mount checkin routes
-const checkinRoutes = require("./src/routes/checkinRoutes");
-app.use("/api/membership", checkinRoutes); // Add this line
-
-// Homepage route
+// User Pages Routes
 app.get("/", (req, res) => {
   res.sendFile(
     path.join(__dirname, "src", "public", "user_pages", "index.html")
   );
 });
 
-// Route for user pages - ADD THESE ROUTES
 app.get("/userhomepage", (req, res) => {
   res.sendFile(
     path.join(__dirname, "src", "public", "user_pages", "userhomepage.html")
@@ -183,19 +191,6 @@ app.get("/usermembershippremium", (req, res) => {
       "user_pages",
       "usermembershippremium.html"
     )
-  );
-});
-
-app.get("/privacy-policy", (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "src", "public", "user_pages", "privacy-policy.html")
-  );
-});
-
-// Data Deletion Instructions Page
-app.get("/data-deletion", (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "src", "public", "user_pages", "data-deletion.html")
   );
 });
 
@@ -235,13 +230,25 @@ app.get("/usermembershipstatus", (req, res) => {
   );
 });
 
-// Add with your other route imports
-const membershipUtilsRoutes = require("./src/routes/membershipUtilsRoutes");
+app.get("/privacy-policy", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "src", "public", "user_pages", "privacy-policy.html")
+  );
+});
 
-// Add with your other route uses
-app.use("/api/membership-utils", membershipUtilsRoutes);
+app.get("/data-deletion", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "src", "public", "user_pages", "data-deletion.html")
+  );
+});
 
-// Serve admin membership manager page
+// Admin Pages Routes
+app.get("/admin/overview", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "src", "public", "admin_pages", "adminOverview.html")
+  );
+});
+
 app.get("/admin/membership-manager", (req, res) => {
   res.sendFile(
     path.join(
@@ -254,15 +261,25 @@ app.get("/admin/membership-manager", (req, res) => {
   );
 });
 
-// Add with your other route imports
-const notificationRoutes = require("./src/routes/notificationRoutes");
+app.get("/admin/account-manager", (req, res) => {
+  res.sendFile(
+    path.join(
+      __dirname,
+      "src",
+      "public",
+      "admin_pages",
+      "adminAccountManager.html"
+    )
+  );
+});
 
-// Add with your other route uses
-app.use("/api/notifications", notificationRoutes);
+app.get("/admin/reports-manager", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "src", "public", "admin_pages", "adminReports.html")
+  );
+});
 
-const adminRoutes = require("./src/routes/adminroutes");
-app.use("/", adminRoutes);
-
+// Debug route
 app.post("/debug-token", (req, res) => {
   const authHeader = req.headers["authorization"];
   console.log("Debug - Authorization header:", authHeader);
@@ -284,6 +301,7 @@ app.post("/debug-token", (req, res) => {
   }
 });
 
+// Server startup
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running at http://127.0.0.1:${PORT}`);
