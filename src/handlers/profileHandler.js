@@ -57,15 +57,22 @@ async function updateUserProfile(profileData) {
   console.log("Received profile update data:", profileData);
 
   try {
-    const { userId, firstName, lastName, email, age, gender } = profileData;
+    const { userId, firstName, lastName, email, mobile, age, gender } =
+      profileData;
 
     // Basic validation
     if (!userId) {
       throw new Error("User ID is required");
     }
 
-    if (!firstName || !lastName || !email) {
-      throw new Error("First name, last name, and email are required");
+    // For profile completion, only require mobile, gender, and age
+    // For regular profile updates, require name and email
+    const isProfileCompletion = !firstName && !lastName && !email;
+
+    if (!isProfileCompletion && (!firstName || !lastName || !email)) {
+      throw new Error(
+        "First name, last name, and email are required for profile updates"
+      );
     }
 
     const db = await connectToDatabase();
@@ -73,27 +80,35 @@ async function updateUserProfile(profileData) {
 
     const usersCollection = db.collection("users");
 
-    // Check if email is already taken by another user
-    const existingUser = await usersCollection.findOne({
-      email: email,
-      _id: { $ne: new ObjectId(userId) },
-    });
+    // If email is being updated, check if it's already taken by another user
+    if (email) {
+      const existingUser = await usersCollection.findOne({
+        email: email,
+        _id: { $ne: new ObjectId(userId) },
+      });
 
-    if (existingUser) {
-      throw new Error("Email is already taken by another user");
+      if (existingUser) {
+        throw new Error("Email is already taken by another user");
+      }
     }
 
     // Update user profile
     const updateData = {
-      firstName: firstName,
-      lastName: lastName,
-      email: email,
       updatedAt: new Date(),
     };
 
-    // Add optional fields if provided
+    // Add fields if provided
+    if (firstName) updateData.firstName = firstName;
+    if (lastName) updateData.lastName = lastName;
+    if (email) updateData.email = email;
+    if (mobile) updateData.mobile = mobile;
     if (age) updateData.age = parseInt(age);
     if (gender) updateData.gender = gender;
+
+    // For profile completion, mark as completed
+    if (isProfileCompletion && mobile && gender && age) {
+      updateData.needsProfileCompletion = false;
+    }
 
     const result = await usersCollection.updateOne(
       { _id: new ObjectId(userId) },

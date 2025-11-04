@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { verifyRecaptcha } = require("../utils/recaptcha");
 
-const JWT_SECRET = "your_jwt_secret_key_here"; // Change this to a strong secret in production
+const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_here";
 
 async function loginUser(loginData) {
   console.log("Received login data:", loginData);
@@ -96,27 +96,52 @@ async function loginUser(loginData) {
   }
 }
 
-// Middleware to verify JWT token (for future protected routes)
 function verifyToken(req, res, next) {
-  const token = req.headers.authorization?.split(" ")[1]; // Bearer token
+  const authHeader = req.headers["authorization"];
 
-  if (!token) {
+  if (!authHeader) {
+    console.log("No authorization header found");
     return res.status(401).json({
       success: false,
-      message: "Access denied. No token provided.",
+      message: "No token provided",
     });
   }
 
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(400).json({
+  // Check if it's in Bearer token format
+  const parts = authHeader.split(" ");
+  if (parts.length !== 2 || parts[0] !== "Bearer") {
+    console.log("Invalid authorization header format:", authHeader);
+    return res.status(401).json({
       success: false,
-      message: "Invalid token.",
+      message: "Invalid token format",
     });
   }
+
+  const token = parts[1];
+
+  if (!token) {
+    console.log("No token found in authorization header");
+    return res.status(401).json({
+      success: false,
+      message: "No token provided",
+    });
+  }
+
+  console.log("Verifying token:", token.substring(0, 20) + "...");
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      console.log("JWT verification error:", err.message);
+      return res.status(401).json({
+        success: false,
+        message: "Failed to authenticate token: " + err.message,
+      });
+    }
+
+    console.log("Token decoded successfully, user:", decoded);
+    req.user = decoded;
+    next();
+  });
 }
 
 module.exports = { loginUser, verifyToken };

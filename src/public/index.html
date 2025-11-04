@@ -8,13 +8,107 @@
     <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/splashstyles.css">
     <link rel="stylesheet" href="/css/indexstyles.css">
-    <!-- Add reCAPTCHA script -->
-    <script src="https://www.google.com/recaptcha/api.js?render=YOUR_SITE_KEY"></script>
-    <script>
-        // Set reCAPTCHA site key from environment (you'll need to pass this from server)
-        const RECAPTCHA_SITE_KEY = '<?= process.env.RECAPTCHA_SITE_KEY ?>';
-        // For static HTML, you'll need to set this manually or create a dynamic route
-    </script>
+    <style>
+        /* Mobile-friendly button styles */
+        .social-btn {
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            margin-top: 12px;
+            width: 100%;
+            font-size: 16px;
+            /* Larger text for mobile */
+            min-height: 52px;
+            /* Minimum touch target size */
+            border: 1px solid;
+            text-decoration: none;
+        }
+
+        .facebook-btn {
+            background: #1877F2;
+            color: white;
+            border-color: #1877F2;
+        }
+
+        .facebook-btn:hover {
+            background: #166fe5;
+            border-color: #166fe5;
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .google-btn {
+            background: white;
+            color: #3c4043;
+            border-color: #dadce0;
+        }
+
+        .google-btn:hover {
+            background: #f8f9fa;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .social-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 24px 0;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .divider::before {
+            margin-right: 12px;
+        }
+
+        .divider::after {
+            margin-left: 12px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 576px) {
+            .social-btn {
+                padding: 16px;
+                min-height: 56px;
+                font-size: 17px;
+            }
+
+            .social-icon {
+                width: 22px;
+                height: 22px;
+            }
+
+            .divider {
+                margin: 28px 0;
+            }
+        }
+
+        /* For very small screens */
+        @media (max-width: 360px) {
+            .social-btn {
+                padding: 14px 12px;
+                font-size: 15px;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -45,15 +139,40 @@
                         <input type="password" class="form-control" id="password" name="password" placeholder="Password"
                             required>
                     </div>
-                    <!-- Hidden input for reCAPTCHA token -->
-                    <input type="hidden" id="recaptchaToken" name="recaptchaToken">
-
                     <div class="forgotPass text-end mb-4">
                         <a href="/user_pages/forgotEmail.html" class="text-decoration-none"
                             style="font-size: 13px; color: rgb(255, 255, 255);">Forgot
                             Password?</a>
                     </div>
-                    <button type="submit" class="btn btn-custom w-100 mt-2" id="loginButton">Login</button>
+                    <button type="submit" class="btn btn-custom w-100 mt-2">Login</button>
+
+                    <!-- Divider -->
+                    <div class="divider">or</div>
+
+                    <!-- Google Sign-In Button -->
+                    <a href="/auth/google" class="social-btn google-btn">
+                        <svg class="social-icon" viewBox="0 0 24 24" width="20" height="20">
+                            <path fill="#4285F4"
+                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                            <path fill="#34A853"
+                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                            <path fill="#FBBC05"
+                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                            <path fill="#EA4335"
+                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                        </svg>
+                        Continue with Google
+                    </a>
+
+                    <!-- Facebook Sign-In Button -->
+                    <a href="/auth/facebook" class="social-btn facebook-btn">
+                        <svg class="social-icon" viewBox="0 0 24 24" width="20" height="20" fill="white">
+                            <path
+                                d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                        </svg>
+                        Continue with Facebook
+                    </a>
+
                     <div class="forgotPass text-center mt-3" style="font-size: 13px; color: #fff;">
                         Don't have an account?
                         <a href="/user_pages/register.html" class="text-decoration-none"
@@ -96,7 +215,30 @@
                 }, 5000);
             }
         }
+
+        // Check for Google auth errors
+        if (urlParams.get('error') === 'google_auth_failed') {
+            showError('Google authentication failed. Please try again.');
+        }
     });
+
+    function showError(message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+        alertDiv.style.cssText = 'margin: 10px 0; width: 100%; max-width: 100%;';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        const formContainer = document.querySelector('.formContainer');
+        if (formContainer) {
+            const form = formContainer.querySelector('form');
+            if (form) {
+                formContainer.insertBefore(alertDiv, form);
+            }
+        }
+    }
 </script>
 <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="/js/splashscreen.js"></script>

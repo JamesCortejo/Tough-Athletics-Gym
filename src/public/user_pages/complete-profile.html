@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Your Profile - Tough Athletics Gym</title>
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/registerstyles.css">
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        .alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            width: calc(100% - 40px);
+            max-width: 350px;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 0;
+            border: none;
+            font-size: 14px;
+            line-height: 1.4;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-left: 4px solid transparent;
+            text-align: center;
+            word-wrap: break-word;
+        }
+
+        .alert-danger {
+            background: #fff5f5;
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            color: #0c5460;
+            border-left-color: #28a745;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .profile-picture {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #0d6efd;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <div class="bannerLogo">
+            <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-5"
+                style="width: 250px; height: 120px;">
+        </div>
+
+        <div class="registerBox d-flex flex-column mb-4">
+            <div class="profile-header">
+                <img id="profilePicture" src="/images/default-profile.png" alt="Profile" class="profile-picture">
+                <h3 class="text-center mb-3"><b>Complete Your Profile</b></h3>
+                <p class="text-muted">Please provide the following information to continue</p>
+            </div>
+
+            <div class="formContainer">
+                <form id="completeProfileForm">
+                    <!-- Mobile Number -->
+                    <div class="mb-3">
+                        <input type="tel" class="form-control" id="mobile" name="mobile" placeholder="Mobile Number"
+                            required>
+                    </div>
+
+                    <!-- Gender Dropdown -->
+                    <div class="mb-3">
+                        <select class="form-control" id="gender" name="gender" required>
+                            <option value="" disabled selected>Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Age -->
+                    <div class="mb-3">
+                        <input type="number" class="form-control" id="age" name="age" placeholder="Age" min="16"
+                            max="100" required>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn btn-custom w-100 mt-2">Complete Profile</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Load user data from localStorage
+            const userData = localStorage.getItem('currentUser');
+            const token = localStorage.getItem('token');
+
+            console.log('Token from localStorage:', token);
+            console.log('User data from localStorage:', userData);
+
+            if (!userData || !token) {
+                console.error('Missing user data or token');
+                window.location.href = '/?error=missing_user_data';
+                return;
+            }
+
+            const user = JSON.parse(userData);
+
+            // Set profile picture if available
+            if (user.profilePicture) {
+                document.getElementById('profilePicture').src = user.profilePicture;
+            }
+
+            // Set existing values if available
+            if (user.mobile) document.getElementById('mobile').value = user.mobile;
+            if (user.gender) document.getElementById('gender').value = user.gender;
+            if (user.age) document.getElementById('age').value = user.age;
+
+            const form = document.getElementById('completeProfileForm');
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const formData = {
+                    mobile: document.getElementById('mobile').value.trim(),
+                    gender: document.getElementById('gender').value,
+                    age: parseInt(document.getElementById('age').value)
+                };
+
+                // Client-side validation
+                if (!formData.mobile) {
+                    showError('Mobile number is required!');
+                    return;
+                }
+
+                if (!formData.gender) {
+                    showError('Please select your gender!');
+                    return;
+                }
+
+                if (!formData.age || formData.age < 16 || formData.age > 100) {
+                    showError('Please enter a valid age between 16 and 100!');
+                    return;
+                }
+
+                try {
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    submitBtn.textContent = 'Updating...';
+                    submitBtn.disabled = true;
+
+                    console.log('Sending profile update request with token:', token.substring(0, 20) + '...');
+                    console.log('Form data:', formData);
+
+                    const response = await fetch('/profile/update', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+
+                    const result = await response.json();
+                    console.log('Update result:', result);
+
+                    if (result.success) {
+                        showSuccess('Profile completed successfully!');
+
+                        // Update local user data
+                        const updatedUser = { ...user, ...formData, needsProfileCompletion: false };
+                        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+                        // Redirect to homepage after delay
+                        setTimeout(() => {
+                            window.location.href = '/userhomepage';
+                        }, 2000);
+                    } else {
+                        showError('Profile update failed: ' + result.message);
+                        submitBtn.textContent = 'Complete Profile';
+                        submitBtn.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showError('An error occurred. Please try again.');
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    submitBtn.textContent = 'Complete Profile';
+                    submitBtn.disabled = false;
+                }
+            });
+
+            function showError(message) {
+                removeExistingAlerts();
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger';
+                alertDiv.innerHTML = `
+            <div style="padding-right: 30px;">${message}</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" 
+                style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);"
+                onclick="this.parentElement.remove()"></button>
+        `;
+                document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.bannerLogo'));
+            }
+
+            function showSuccess(message) {
+                removeExistingAlerts();
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success';
+                alertDiv.innerHTML = `
+            <div style="padding-right: 30px;">${message}</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" 
+                style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%);"
+                onclick="this.parentElement.remove()"></button>
+        `;
+                document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.bannerLogo'));
+            }
+
+            function removeExistingAlerts() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => alert.remove());
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -12,8 +12,189 @@ const {
   validatePassword,
 } = require("../handlers/passwordResetHandler");
 const { sendResetEmail } = require("../utils/emailService");
-
 const router = express.Router();
+const passport = require("passport");
+const jwt = require("jsonwebtoken");
+const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_here";
+
+// Google OAuth Routes
+router.get(
+  "/auth/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+  })
+);
+
+router.get(
+  "/auth/google/callback",
+  passport.authenticate("google", {
+    failureRedirect: "/?error=google_auth_failed",
+    session: false,
+  }),
+  async (req, res) => {
+    try {
+      // Generate JWT token for the user
+      const token = jwt.sign(
+        {
+          userId: req.user._id.toString(),
+          username: req.user.username,
+          email: req.user.email,
+          qrCodeId: req.user.qrCodeId,
+        },
+        JWT_SECRET,
+        { expiresIn: "24h" }
+      );
+
+      // Check if user needs to complete their profile
+      const needsProfileCompletion =
+        req.user.needsProfileCompletion ||
+        !req.user.mobile ||
+        !req.user.gender ||
+        !req.user.age;
+
+      // Store user data and token
+      const userResponse = {
+        success: true,
+        message: "Google login successful!",
+        token: token,
+        user: {
+          _id: req.user._id,
+          firstName: req.user.firstName,
+          lastName: req.user.lastName,
+          username: req.user.username,
+          email: req.user.email,
+          profilePicture: req.user.profilePicture,
+          qrCode: req.user.qrCode,
+          qrCodeId: req.user.qrCodeId,
+          authMethod: req.user.authMethod,
+          mobile: req.user.mobile,
+          gender: req.user.gender,
+          age: req.user.age,
+          needsProfileCompletion: needsProfileCompletion,
+        },
+        redirect: needsProfileCompletion
+          ? "/complete-profile"
+          : "/userhomepage",
+      };
+
+      if (needsProfileCompletion) {
+        // Redirect to profile completion page
+        res.redirect(
+          `/auth/success?token=${encodeURIComponent(
+            token
+          )}&user=${encodeURIComponent(
+            JSON.stringify(userResponse.user)
+          )}&needsProfile=true`
+        );
+      } else {
+        // Redirect to homepage
+        res.redirect(
+          `/auth/success?token=${encodeURIComponent(
+            token
+          )}&user=${encodeURIComponent(JSON.stringify(userResponse.user))}`
+        );
+      }
+    } catch (error) {
+      console.error("Google OAuth callback error:", error);
+      res.redirect("/?error=google_auth_failed");
+    }
+  }
+);
+
+// Profile completion page
+router.get("/complete-profile", (req, res) => {
+  console.log("Serving profile completion page");
+  res.sendFile(
+    path.join(__dirname, "../public/user_pages/complete-profile.html")
+  );
+});
+
+// Success route to handle the OAuth callback
+router.get("/auth/success", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/user_pages/auth-success.html"));
+});
+router.get(
+  "/auth/facebook",
+  passport.authenticate("facebook", {
+    scope: ["email", "public_profile"],
+  })
+);
+
+router.get(
+  "/auth/facebook/callback",
+  passport.authenticate("facebook", {
+    failureRedirect: "/?error=facebook_auth_failed",
+    session: false,
+  }),
+  async (req, res) => {
+    try {
+      // Generate JWT token for the user (same logic as Google)
+      const token = jwt.sign(
+        {
+          userId: req.user._id.toString(),
+          username: req.user.username,
+          email: req.user.email,
+          qrCodeId: req.user.qrCodeId,
+        },
+        JWT_SECRET,
+        { expiresIn: "24h" }
+      );
+
+      // Check if user needs to complete their profile
+      const needsProfileCompletion =
+        req.user.needsProfileCompletion ||
+        !req.user.mobile ||
+        !req.user.gender ||
+        !req.user.age;
+
+      // Store user data and token
+      const userResponse = {
+        success: true,
+        message: "Facebook login successful!",
+        token: token,
+        user: {
+          _id: req.user._id,
+          firstName: req.user.firstName,
+          lastName: req.user.lastName,
+          username: req.user.username,
+          email: req.user.email,
+          profilePicture: req.user.profilePicture,
+          qrCode: req.user.qrCode,
+          qrCodeId: req.user.qrCodeId,
+          authMethod: req.user.authMethod,
+          mobile: req.user.mobile,
+          gender: req.user.gender,
+          age: req.user.age,
+          needsProfileCompletion: needsProfileCompletion,
+        },
+        redirect: needsProfileCompletion
+          ? "/complete-profile"
+          : "/userhomepage",
+      };
+
+      if (needsProfileCompletion) {
+        // Redirect to profile completion page
+        res.redirect(
+          `/auth/success?token=${encodeURIComponent(
+            token
+          )}&user=${encodeURIComponent(
+            JSON.stringify(userResponse.user)
+          )}&needsProfile=true`
+        );
+      } else {
+        // Redirect to homepage
+        res.redirect(
+          `/auth/success?token=${encodeURIComponent(
+            token
+          )}&user=${encodeURIComponent(JSON.stringify(userResponse.user))}`
+        );
+      }
+    } catch (error) {
+      console.error("Facebook OAuth callback error:", error);
+      res.redirect("/?error=facebook_auth_failed");
+    }
+  }
+);
 
 // Serve static pages
 router.get("/register", (req, res) => {

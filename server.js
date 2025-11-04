@@ -2,7 +2,25 @@ require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
+const session = require("express-session");
+const passport = require("./src/config/passport"); // Unified passport config
+
 const app = express();
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "your_session_secret_here",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // Set to true if using HTTPS
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Body parsing middleware
 app.use(express.json());
@@ -75,15 +93,22 @@ app.get("/profile", verifyToken, async (req, res) => {
   }
 });
 
-// Update user profile
 app.post("/profile/update", verifyToken, async (req, res) => {
   try {
+    console.log("Profile update request received");
+    console.log("User from token:", req.user);
+    console.log("Request body:", req.body);
+
     const profileData = {
       userId: req.user.userId,
       ...req.body,
     };
 
+    console.log("Profile data to update:", profileData);
+
     const result = await updateUserProfile(profileData);
+
+    console.log("Update result:", result);
 
     if (result.success) {
       res.json(result);
@@ -91,6 +116,7 @@ app.post("/profile/update", verifyToken, async (req, res) => {
       res.status(400).json(result);
     }
   } catch (error) {
+    console.error("Profile update route error:", error);
     res.status(500).json({
       success: false,
       message: "Server error",
@@ -160,6 +186,19 @@ app.get("/usermembershippremium", (req, res) => {
   );
 });
 
+app.get("/privacy-policy", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "src", "public", "user_pages", "privacy-policy.html")
+  );
+});
+
+// Data Deletion Instructions Page
+app.get("/data-deletion", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "src", "public", "user_pages", "data-deletion.html")
+  );
+});
+
 app.get("/usermembershipvip", (req, res) => {
   res.sendFile(
     path.join(
@@ -223,6 +262,27 @@ app.use("/api/notifications", notificationRoutes);
 
 const adminRoutes = require("./src/routes/adminroutes");
 app.use("/", adminRoutes);
+
+app.post("/debug-token", (req, res) => {
+  const authHeader = req.headers["authorization"];
+  console.log("Debug - Authorization header:", authHeader);
+
+  if (!authHeader) {
+    return res.json({ success: false, message: "No authorization header" });
+  }
+
+  const token = authHeader.split(" ")[1];
+  console.log("Debug - Token:", token);
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    console.log("Debug - Decoded token:", decoded);
+    res.json({ success: true, decoded });
+  } catch (error) {
+    console.log("Debug - Token error:", error.message);
+    res.json({ success: false, error: error.message });
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
