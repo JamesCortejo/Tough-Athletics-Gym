@@ -13,7 +13,6 @@ router.get("/checkins/:membershipId", verifyToken, async (req, res) => {
     const db = await connectToDatabase();
     const usercheckinCollection = db.collection("usercheckin");
 
-    // Get all check-ins for this membership, sorted by date (newest first)
     const checkins = await usercheckinCollection
       .find({
         membershipId: new ObjectId(membershipId),
@@ -48,13 +47,53 @@ router.post("/checkin/:qrCodeId", verifyAdminToken, async (req, res) => {
   }
 });
 
-// Record check-in in database
+// Record check-in in database - FIXED VERSION
 router.post("/record-checkin", verifyAdminToken, async (req, res) => {
   try {
     const checkinData = req.body;
-    const result = await recordCheckin(checkinData);
+
+    console.log("🔍 Record check-in request received:", {
+      checkinData: {
+        qrCodeId: checkinData.qrCodeId,
+        membershipId: checkinData.membershipId,
+        firstName: checkinData.firstName,
+        lastName: checkinData.lastName,
+      },
+      adminUser: req.admin, // Log the admin data from token
+    });
+
+    const db = await connectToDatabase();
+    const usersCollection = db.collection("users");
+
+    // Get admin user details for logging
+    const adminUser = await usersCollection.findOne({
+      _id: new ObjectId(req.admin.userId),
+      isAdmin: true,
+    });
+
+    console.log("🔍 Admin user found:", {
+      adminId: req.admin.userId,
+      adminUserFound: !!adminUser,
+      username: adminUser?.username,
+    });
+
+    if (!adminUser) {
+      console.error("❌ Admin user not found in database");
+    }
+
+    const adminInfo = {
+      userId: req.admin.userId,
+      username: adminUser?.username || "Unknown Admin",
+    };
+
+    // Pass adminInfo to recordCheckin
+    const result = await recordCheckin(checkinData, adminInfo);
+
+    console.log("✅ Record check-in result:", result);
+
     res.json(result);
   } catch (error) {
+    console.error("❌ Error in record-checkin route:", error);
     res.status(500).json({
       success: false,
       message: error.message,

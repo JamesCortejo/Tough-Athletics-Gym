@@ -1,3 +1,5 @@
+// membershipHandler.js - Updated with admin action logging
+
 const { connectToDatabase } = require("../config/db");
 const { ObjectId } = require("mongodb");
 const { calculateEndDate } = require("../utils/membershipDateUtils");
@@ -171,6 +173,283 @@ async function registerMembership(membershipData) {
   }
 }
 
+// Admin function to approve a pending membership with admin action logging
+async function approveMembership(membershipId, adminInfo = null) {
+  try {
+    const db = await connectToDatabase();
+    const membershipsCollection = db.collection("memberships");
+
+    // First get the membership to get the plan type and user ID
+    const membership = await membershipsCollection.findOne({
+      _id: new ObjectId(membershipId),
+    });
+
+    if (!membership) {
+      throw new Error("Membership not found");
+    }
+
+    console.log("🔍 Approving membership with admin info:", {
+      membershipId: membershipId,
+      memberName: `${membership.firstName} ${membership.lastName}`,
+      planType: membership.planType,
+      adminInfo: adminInfo,
+    });
+
+    // Calculate new start and end dates based on current date
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0); // Set to start of day
+
+    const endDate = calculateEndDate(startDate, membership.planType);
+
+    const result = await membershipsCollection.updateOne(
+      {
+        _id: new ObjectId(membershipId),
+        status: "Pending",
+      },
+      {
+        $set: {
+          status: "Active",
+          startDate: startDate,
+          endDate: endDate,
+          updatedAt: new Date(),
+          approvedAt: new Date(),
+        },
+      }
+    );
+
+    if (result.modifiedCount === 0) {
+      throw new Error("Membership not found or already approved");
+    }
+
+    // Log admin action if adminInfo is provided
+    if (adminInfo) {
+      console.log("🔍 Logging admin approval action...");
+      const logResult = await logAdminMembershipAction(
+        db,
+        "approve_membership",
+        membership,
+        adminInfo,
+        {
+          startDate: startDate,
+          endDate: endDate,
+        }
+      );
+
+      if (logResult.success) {
+        console.log("✅ Admin approval action logged successfully");
+      } else {
+        console.error(
+          "❌ Failed to log admin approval action:",
+          logResult.message
+        );
+      }
+    }
+
+    // Send notification to user about approval
+    try {
+      const notificationResult = await createNotification({
+        userId: membership.userId,
+        title: "🎉 Membership Approved!",
+        message: `Your ${
+          membership.planType
+        } membership application has been approved and is now active. Welcome to Tough Athletics Gym! Your membership is valid until ${endDate.toLocaleDateString()}.`,
+        type: "success",
+        relatedId: membershipId,
+      });
+      console.log("Membership approval notification:", notificationResult);
+    } catch (notificationError) {
+      console.error("Failed to send approval notification:", notificationError);
+      // Don't throw error, just log it
+    }
+
+    return {
+      success: true,
+      message: "Membership approved successfully",
+      startDate: startDate,
+      endDate: endDate,
+    };
+  } catch (error) {
+    console.error("Error approving membership:", error);
+    return {
+      success: false,
+      message: error.message,
+    };
+  }
+}
+
+// Decline pending membership with admin action logging
+async function declineMembership(membershipId, reason, adminInfo = null) {
+  try {
+    const db = await connectToDatabase();
+    const membershipsCollection = db.collection("memberships");
+
+    // First get the membership to get user ID
+    const membership = await membershipsCollection.findOne({
+      _id: new ObjectId(membershipId),
+    });
+
+    if (!membership) {
+      throw new Error("Membership not found");
+    }
+
+    console.log("🔍 Declining membership with admin info:", {
+      membershipId: membershipId,
+      memberName: `${membership.firstName} ${membership.lastName}`,
+      planType: membership.planType,
+      reason: reason,
+      adminInfo: adminInfo,
+    });
+
+    const result = await membershipsCollection.updateOne(
+      {
+        _id: new ObjectId(membershipId),
+        status: "Pending",
+      },
+      {
+        $set: {
+          status: "Declined",
+          declineReason: reason,
+          updatedAt: new Date(),
+          declinedAt: new Date(),
+        },
+      }
+    );
+
+    if (result.modifiedCount === 0) {
+      throw new Error("Membership not found or already processed");
+    }
+
+    // Log admin action if adminInfo is provided
+    if (adminInfo) {
+      console.log("🔍 Logging admin decline action...");
+      const logResult = await logAdminMembershipAction(
+        db,
+        "decline_membership",
+        membership,
+        adminInfo,
+        {
+          reason: reason,
+        }
+      );
+
+      if (logResult.success) {
+        console.log("✅ Admin decline action logged successfully");
+      } else {
+        console.error(
+          "❌ Failed to log admin decline action:",
+          logResult.message
+        );
+      }
+    }
+
+    // Send notification to user about decline with the reason
+    try {
+      const notificationMessage = reason
+        ? `Your ${membership.planType} membership application has been declined.\n\nReason: ${reason}\n\nYou can apply again with corrected information.`
+        : `Your ${membership.planType} membership application has been declined.\n\nYou can apply again with corrected information.`;
+
+      const notificationResult = await createNotification({
+        userId: membership.userId,
+        title: "❌ Membership Declined",
+        message: notificationMessage,
+        type: "error",
+        relatedId: membershipId,
+      });
+      console.log("Membership decline notification:", notificationResult);
+    } catch (notificationError) {
+      console.error("Failed to send decline notification:", notificationError);
+      // Don't throw error, just log it
+    }
+
+    return {
+      success: true,
+      message: "Membership declined successfully",
+    };
+  } catch (error) {
+    console.error("Error declining membership:", error);
+    return {
+      success: false,
+      message: error.message,
+    };
+  }
+}
+
+// Helper function to log admin membership actions
+async function logAdminMembershipAction(
+  db,
+  action,
+  membership,
+  adminInfo,
+  additionalDetails = {}
+) {
+  try {
+    console.log("📝 Creating admin membership action log entry...");
+
+    const adminAction = {
+      action: action,
+      membershipId: membership._id,
+      memberName: `${membership.firstName} ${membership.lastName}`,
+      membershipPlan: membership.planType,
+      adminId: new ObjectId(adminInfo.userId),
+      adminName: adminInfo.username || "Unknown Admin",
+      timestamp: new Date(),
+      details: {
+        ...additionalDetails,
+      },
+    };
+
+    console.log("🔍 Admin membership action document to insert:", {
+      action: adminAction.action,
+      member: adminAction.memberName,
+      plan: adminAction.membershipPlan,
+      admin: adminAction.adminName,
+      timestamp: adminAction.timestamp,
+    });
+
+    const result = await db.collection("admin_actions").insertOne(adminAction);
+
+    console.log(
+      "✅ Admin membership action inserted successfully, insertedId:",
+      result.insertedId
+    );
+
+    // Verify the document was inserted
+    const insertedDoc = await db
+      .collection("admin_actions")
+      .findOne({ _id: result.insertedId });
+    if (insertedDoc) {
+      console.log("✅ Admin membership action document verified in database");
+    } else {
+      console.error(
+        "❌ Failed to verify admin membership action document insertion"
+      );
+    }
+
+    return {
+      success: true,
+      insertedId: result.insertedId,
+    };
+  } catch (error) {
+    console.error("❌ Error logging admin membership action:", error);
+
+    // Provide more specific error information
+    let errorMessage = error.message;
+    if (error.name === "MongoError" || error.name === "MongoServerError") {
+      if (error.code === 13) {
+        errorMessage = "Permission denied to write to admin_actions collection";
+      } else if (error.code === 26) {
+        errorMessage = "admin_actions collection namespace not found";
+      }
+    }
+
+    // Return error but don't throw - we don't want to fail the membership action
+    return {
+      success: false,
+      message: errorMessage,
+    };
+  }
+}
+
 // Helper function to get membership amount
 function getMembershipAmount(planType) {
   switch (planType) {
@@ -328,145 +607,6 @@ async function getMembershipApplication(membershipId) {
   } catch (error) {
     console.error("Error getting membership application:", error);
     return null;
-  }
-}
-
-// Admin function to approve a pending membership
-async function approveMembership(membershipId) {
-  try {
-    const db = await connectToDatabase();
-    const membershipsCollection = db.collection("memberships");
-
-    // First get the membership to get the plan type and user ID
-    const membership = await membershipsCollection.findOne({
-      _id: new ObjectId(membershipId),
-    });
-
-    if (!membership) {
-      throw new Error("Membership not found");
-    }
-
-    // Calculate new start and end dates based on current date
-    const startDate = new Date();
-    startDate.setHours(0, 0, 0, 0); // Set to start of day
-
-    const endDate = calculateEndDate(startDate, membership.planType);
-
-    const result = await membershipsCollection.updateOne(
-      {
-        _id: new ObjectId(membershipId),
-        status: "Pending",
-      },
-      {
-        $set: {
-          status: "Active",
-          startDate: startDate,
-          endDate: endDate,
-          updatedAt: new Date(),
-          approvedAt: new Date(),
-        },
-      }
-    );
-
-    if (result.modifiedCount === 0) {
-      throw new Error("Membership not found or already approved");
-    }
-
-    // Send notification to user about approval
-    try {
-      const notificationResult = await createNotification({
-        userId: membership.userId,
-        title: "🎉 Membership Approved!",
-        message: `Your ${
-          membership.planType
-        } membership application has been approved and is now active. Welcome to Tough Athletics Gym! Your membership is valid until ${endDate.toLocaleDateString()}.`,
-        type: "success",
-        relatedId: membershipId,
-      });
-      console.log("Membership approval notification:", notificationResult);
-    } catch (notificationError) {
-      console.error("Failed to send approval notification:", notificationError);
-      // Don't throw error, just log it
-    }
-
-    return {
-      success: true,
-      message: "Membership approved successfully",
-      startDate: startDate,
-      endDate: endDate,
-    };
-  } catch (error) {
-    console.error("Error approving membership:", error);
-    return {
-      success: false,
-      message: error.message,
-    };
-  }
-}
-
-// Decline pending membership (admin only)
-async function declineMembership(membershipId, reason) {
-  try {
-    const db = await connectToDatabase();
-    const membershipsCollection = db.collection("memberships");
-
-    // First get the membership to get user ID
-    const membership = await membershipsCollection.findOne({
-      _id: new ObjectId(membershipId),
-    });
-
-    if (!membership) {
-      throw new Error("Membership not found");
-    }
-
-    const result = await membershipsCollection.updateOne(
-      {
-        _id: new ObjectId(membershipId),
-        status: "Pending",
-      },
-      {
-        $set: {
-          status: "Declined",
-          declineReason: reason,
-          updatedAt: new Date(),
-          declinedAt: new Date(),
-        },
-      }
-    );
-
-    if (result.modifiedCount === 0) {
-      throw new Error("Membership not found or already processed");
-    }
-
-    // Send notification to user about decline with the reason
-    try {
-      const notificationMessage = reason
-        ? `Your ${membership.planType} membership application has been declined.\n\nReason: ${reason}\n\nYou can apply again with corrected information.`
-        : `Your ${membership.planType} membership application has been declined.\n\nYou can apply again with corrected information.`;
-
-      const notificationResult = await createNotification({
-        userId: membership.userId,
-        title: "❌ Membership Declined",
-        message: notificationMessage,
-        type: "error",
-        relatedId: membershipId,
-      });
-      console.log("Membership decline notification:", notificationResult);
-    } catch (notificationError) {
-      console.error("Failed to send decline notification:", notificationError);
-      // Don't throw error, just log it
-    }
-
-    return {
-      success: true,
-      message: "Membership declined successfully",
-    };
-  } catch (error) {
-    console.error("Error declining membership:", error);
-    return {
-      success: false,
-      message: error.message,
-    };
   }
 }
 

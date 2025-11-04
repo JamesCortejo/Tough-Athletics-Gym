@@ -97,6 +97,8 @@ class AdminCheckin {
       return;
     }
 
+    // Set flag to indicate this is a manual entry (not QR scan)
+    this.manualEntry = true;
     await this.searchMember(qrCodeId);
   }
 
@@ -620,6 +622,13 @@ class AdminCheckin {
           `Successfully checked in ${this.currentMembership.firstName} ${this.currentMembership.lastName}`,
           "success"
         );
+
+        // Log successful check-in in console
+        console.log("✅ Admin check-in completed and logged:", {
+          member: `${this.currentMembership.firstName} ${this.currentMembership.lastName}`,
+          qrCodeId: this.currentQrCode,
+          time: new Date().toISOString(),
+        });
       } else {
         throw new Error(result.message || "Failed to record check-in");
       }
@@ -775,7 +784,8 @@ class AdminCheckin {
           startDate: membership.startDate,
           endDate: membership.endDate,
           appliedAt: membership.appliedAt,
-          // Removed: profilePicture: membership.profilePicture
+          // Add manual entry flag for logging
+          manualEntry: !this.isScannerActive, // True if manual search, false if QR scan
         }),
       });
 

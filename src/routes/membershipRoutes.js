@@ -1,3 +1,5 @@
+// membershipRoutes.js - Updated with admin info passing
+
 const express = require("express");
 const router = express.Router();
 const { connectToDatabase } = require("../config/db");
@@ -48,7 +50,7 @@ router.get("/checkins/:membershipId", verifyToken, async (req, res) => {
   }
 });
 
-// Decline pending membership (admin only)
+// Decline pending membership (admin only) - UPDATED
 router.post("/admin/decline/:membershipId", verifyToken, async (req, res) => {
   try {
     const { membershipId } = req.params;
@@ -61,7 +63,33 @@ router.post("/admin/decline/:membershipId", verifyToken, async (req, res) => {
       });
     }
 
-    const result = await declineMembership(membershipId, reason.trim());
+    // Get admin user details for logging
+    const db = await connectToDatabase();
+    const usersCollection = db.collection("users");
+    const adminUser = await usersCollection.findOne({
+      _id: new ObjectId(req.user.userId),
+      isAdmin: true,
+    });
+
+    if (!adminUser) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin only.",
+      });
+    }
+
+    const adminInfo = {
+      userId: req.user.userId,
+      username: adminUser.username || "Unknown Admin",
+    };
+
+    console.log("🔍 Processing membership decline with admin:", adminInfo);
+
+    const result = await declineMembership(
+      membershipId,
+      reason.trim(),
+      adminInfo
+    );
 
     if (result.success) {
       res.status(200).json(result);
@@ -263,12 +291,34 @@ router.get(
   }
 );
 
-// Approve pending membership (admin only)
+// Approve pending membership (admin only) - UPDATED
 router.post("/admin/approve/:membershipId", verifyToken, async (req, res) => {
   try {
     const { membershipId } = req.params;
 
-    const result = await approveMembership(membershipId);
+    // Get admin user details for logging
+    const db = await connectToDatabase();
+    const usersCollection = db.collection("users");
+    const adminUser = await usersCollection.findOne({
+      _id: new ObjectId(req.user.userId),
+      isAdmin: true,
+    });
+
+    if (!adminUser) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin only.",
+      });
+    }
+
+    const adminInfo = {
+      userId: req.user.userId,
+      username: adminUser.username || "Unknown Admin",
+    };
+
+    console.log("🔍 Processing membership approval with admin:", adminInfo);
+
+    const result = await approveMembership(membershipId, adminInfo);
 
     if (result.success) {
       res.status(200).json(result);
