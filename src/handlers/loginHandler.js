@@ -54,8 +54,22 @@ async function loginUser(loginData, requestInfo = {}) {
       email: user.email,
       qrCodeId: user.qrCodeId,
       profilePicture: user.profilePicture,
-      authMethod: user.authMethod, // Log the authMethod
+      authMethod: user.authMethod,
+      isArchived: user.isArchived,
+      isAdmin: user.isAdmin, // Log admin status
     });
+
+    // Check if account is archived
+    if (user.isArchived) {
+      throw new Error(
+        "This account has been archived. Please contact support."
+      );
+    }
+
+    // NEW: Check if user is an admin
+    if (user.isAdmin) {
+      throw new Error("Invalid user and password");
+    }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);

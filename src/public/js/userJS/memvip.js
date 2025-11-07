@@ -118,8 +118,61 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // Form submit event listener
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
+
+    const paymentMethod = document.querySelector(
+      'input[name="paymentMethod"]:checked'
+    ).value;
+
+    // Update confirmation popup content
+    document.getElementById("confirmPlanType").textContent = planType;
+    document.getElementById("confirmPlanAmount").textContent = planAmount;
+    document.getElementById("confirmPlanDuration").textContent = planDuration;
+    document.getElementById("confirmPaymentMethod").textContent = paymentMethod;
+
+    // Show confirmation popup
+    showConfirmationPopup();
+  });
+
+  // Confirmation Popup Functions
+  function showConfirmationPopup() {
+    const popup = document.getElementById("confirmationPopup");
+    popup.style.display = "flex";
+    document.body.classList.add("popup-open");
+
+    // Add event listeners for confirmation buttons
+    document.getElementById("confirmSubmitBtn").onclick = handleFormSubmission;
+    document.getElementById("cancelConfirmBtn").onclick = hideConfirmationPopup;
+
+    // Close popup when clicking outside
+    popup.onclick = function (e) {
+      if (e.target === popup) {
+        hideConfirmationPopup();
+      }
+    };
+
+    // Close on escape key
+    document.addEventListener("keydown", handleEscapeKey);
+  }
+
+  function hideConfirmationPopup() {
+    const popup = document.getElementById("confirmationPopup");
+    popup.style.display = "none";
+    document.body.classList.remove("popup-open");
+    document.removeEventListener("keydown", handleEscapeKey);
+  }
+
+  function handleEscapeKey(e) {
+    if (e.key === "Escape") {
+      hideConfirmationPopup();
+      hideSuccessPopup();
+    }
+  }
+
+  async function handleFormSubmission() {
+    hideConfirmationPopup();
 
     const paymentMethod = document.querySelector(
       'input[name="paymentMethod"]:checked'
@@ -131,7 +184,7 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     try {
-      // Show loading state
+      // Show loading state on submit button
       const submitBtn = form.querySelector('button[type="submit"]');
       const originalText = submitBtn.textContent;
       submitBtn.textContent = "Submitting...";
@@ -149,23 +202,86 @@ document.addEventListener("DOMContentLoaded", function () {
       const result = await response.json();
 
       if (result.success) {
-        alert(
-          `✅ ${result.message}\n\nYour application is now pending approval. Please visit the gym to complete your payment and activation.`
-        );
-        window.location.href = "/userhomepage";
+        showSuccessPopup(result.message);
       } else {
-        alert("Error: " + result.message);
+        // Show error message
+        const errorPopup = document.getElementById("confirmationPopup");
+        const errorHeader = errorPopup.querySelector(".custom-popup-header");
+        const errorBody = errorPopup.querySelector(".custom-popup-body");
+        const errorFooter = errorPopup.querySelector(".custom-popup-footer");
+
+        errorHeader.innerHTML =
+          '<h3 style="color: white;">❌ Application Error</h3>';
+        errorHeader.style.background = "#dc3545";
+        errorBody.innerHTML = `<p>${result.message}</p>`;
+        errorFooter.innerHTML =
+          '<button type="button" class="btn btn-primary" id="errorOkBtn" style="width: 100%;">OK</button>';
+
+        errorPopup.style.display = "flex";
+        document.getElementById("errorOkBtn").onclick = function () {
+          errorPopup.style.display = "none";
+          document.body.classList.remove("popup-open");
+        };
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("An error occurred while submitting your application");
+      // Show error popup for network errors
+      const errorPopup = document.getElementById("confirmationPopup");
+      const errorHeader = errorPopup.querySelector(".custom-popup-header");
+      const errorBody = errorPopup.querySelector(".custom-popup-body");
+      const errorFooter = errorPopup.querySelector(".custom-popup-footer");
+
+      errorHeader.innerHTML = '<h3 style="color: white;">❌ Network Error</h3>';
+      errorHeader.style.background = "#dc3545";
+      errorBody.innerHTML = `<p>An error occurred while submitting your application. Please check your internet connection and try again.</p>`;
+      errorFooter.innerHTML =
+        '<button type="button" class="btn btn-primary" id="networkErrorOkBtn" style="width: 100%;">OK</button>';
+
+      errorPopup.style.display = "flex";
+      document.getElementById("networkErrorOkBtn").onclick = function () {
+        errorPopup.style.display = "none";
+        document.body.classList.remove("popup-open");
+      };
     } finally {
       // Reset button state
       const submitBtn = form.querySelector('button[type="submit"]');
-      submitBtn.textContent = "Submit Membership Application";
-      submitBtn.disabled = false;
+      if (submitBtn) {
+        submitBtn.textContent = "Submit Membership Application";
+        submitBtn.disabled = false;
+      }
     }
-  });
+  }
+
+  function showSuccessPopup(message) {
+    const popup = document.getElementById("successPopup");
+    document.getElementById("successMessage").textContent = message;
+    popup.style.display = "flex";
+    document.body.classList.add("popup-open");
+
+    // Add event listener for OK button
+    document.getElementById("successOkBtn").onclick = function () {
+      hideSuccessPopup();
+      window.location.href = "/userhomepage";
+    };
+
+    // Close popup when clicking outside
+    popup.onclick = function (e) {
+      if (e.target === popup) {
+        hideSuccessPopup();
+        window.location.href = "/userhomepage";
+      }
+    };
+
+    // Close on escape key
+    document.addEventListener("keydown", handleEscapeKey);
+  }
+
+  function hideSuccessPopup() {
+    const popup = document.getElementById("successPopup");
+    popup.style.display = "none";
+    document.body.classList.remove("popup-open");
+    document.removeEventListener("keydown", handleEscapeKey);
+  }
 
   // Add some basic form validation
   form.addEventListener("input", function () {
@@ -182,6 +298,14 @@ document.addEventListener("DOMContentLoaded", function () {
     if (submitBtn) {
       submitBtn.disabled = !allValid;
     }
+  });
+
+  // Payment method change listener to update confirmation popup in real-time
+  const paymentMethods = form.querySelectorAll('input[name="paymentMethod"]');
+  paymentMethods.forEach((method) => {
+    method.addEventListener("change", function () {
+      // This will update when the confirmation popup is shown
+    });
   });
 
   // Check membership status when page loads

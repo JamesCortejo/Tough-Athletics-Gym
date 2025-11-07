@@ -6,19 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tough Athletics Gym - Admin Reports Manager</title>
     <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../css/adminReportsManager.css">
+    <link rel="stylesheet" href="../css/adminReports.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="preconnect" href="https://rsms.me/">
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 </head>
 
 <body>
-    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
-        <div class="text-center">
-            <div class="spinner-border mb-3" role="status"></div>
-            <p>Checking authentication...</p>
-        </div>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p class="mt-2 text-white">Loading...</p>
     </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="alert-container"></div>
 
     <div class="sideBar d-flex flex-column">
         <div class="titleLogo">
@@ -41,12 +43,252 @@
         </div>
     </div>
 
-    <div class="container mainContent">
-        <h1>Hello reports</h1>
+    <div class="main-content">
+        <!-- Reports Manager Section -->
+        <div class="reports-manager-section">
+            <div class="dashboard-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-chart-bar me-2 mb-4" style="font-size: 1.8rem;"></i>
+                        <div>
+                            <h3 style="font-weight: bold; margin: 0;">Reports Manager</h3>
+                            <p class="text-muted mb-0">Monitor system activities and user actions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <ul class="nav nav-tabs" id="reportsTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="admin-actions-tab" data-bs-toggle="tab"
+                        data-bs-target="#admin-actions" type="button" role="tab">
+                        <i class="fas fa-user-shield me-2"></i>Admin Actions
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="user-actions-tab" data-bs-toggle="tab" data-bs-target="#user-actions"
+                        type="button" role="tab">
+                        <i class="fas fa-users me-2"></i>User Actions
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="reportsTabContent">
+                <!-- Admin Actions Tab -->
+                <div class="tab-pane fade show active" id="admin-actions" role="tabpanel">
+                    <div class="tab-header">
+                        <h4><i class="fas fa-user-shield me-2"></i>Admin Activity Log</h4>
+                        <div class="filter-controls">
+                            <div class="filter-group">
+                                <label for="adminFilter">Filter by Admin:</label>
+                                <select id="adminFilter" class="form-select">
+                                    <option value="all">All Admins</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="actionTypeFilter">Action Type:</label>
+                                <select id="actionTypeFilter" class="form-select">
+                                    <option value="all">All Actions</option>
+                                    <option value="extend_membership">Extend Membership</option>
+                                    <option value="change_plan">Change Plan</option>
+                                    <option value="withdraw_membership">Withdraw Membership</option>
+                                    <option value="archive_user_account">Archive Account</option>
+                                    <option value="unarchive_user_account">Activate Account</option>
+                                    <option value="update_user_account">Update Account</option>
+                                    <option value="approve_membership">Approve Membership</option>
+                                    <option value="decline_membership">Decline Membership</option>
+                                    <option value="member_checkin">Member Check-in</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="sortOrderAdmin">Sort Order:</label>
+                                <select id="sortOrderAdmin" class="form-select">
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                </select>
+                            </div>
+                            <button id="refreshAdminActions" class="btn btn-dark">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="command-interface mb-3">
+                        <div class="command-header">
+                            <div class="command-title">Admin Actions Terminal</div>
+                            <div class="command-stats" id="adminActionsStats">0 actions</div>
+                        </div>
+                        <div class="command-output" id="adminActionsOutput">
+                            <!-- Admin actions will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Actions Tab -->
+                <div class="tab-pane fade" id="user-actions" role="tabpanel">
+                    <div class="tab-header">
+                        <h4><i class="fas fa-users me-2"></i>User Activity Log</h4>
+                        <div class="filter-controls">
+                            <div class="filter-group">
+                                <label for="userFilter">Filter by User:</label>
+                                <select id="userFilter" class="form-select">
+                                    <option value="all">All Users</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="userActionTypeFilter">Action Type:</label>
+                                <select id="userActionTypeFilter" class="form-select">
+                                    <option value="all">All Actions</option>
+                                    <option value="login">Login</option>
+                                    <option value="logout">Logout</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="sortOrderUser">Sort Order:</label>
+                                <select id="sortOrderUser" class="form-select">
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                </select>
+                            </div>
+                            <button id="refreshUserActions" class="btn btn-dark">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="command-interface">
+                        <div class="command-header">
+                            <div class="command-title">User Actions Terminal</div>
+                            <div class="command-stats" id="userActionsStats">0 actions</div>
+                        </div>
+                        <div class="command-output" id="userActionsOutput">
+                            <!-- User actions will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Add this after the dashboard-header div -->
+        <div class="pdf-reports-section mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-file-pdf me-2"></i>PDF Reports</h5>
+                    <p class="card-text">Generate and download comprehensive reports in PDF format.</p>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="pdf-report-card">
+                                <div class="pdf-icon revenue">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <h6>Revenue Report</h6>
+                                <p class="text-muted">Financial overview and revenue analytics</p>
+                                <div class="period-selector mb-2">
+                                    <select class="form-select form-select-sm" id="revenuePeriod">
+                                        <option value="today">Today</option>
+                                        <option value="week">Last 7 Days</option>
+                                        <option value="month">Last 30 Days</option>
+                                        <option value="year">Last Year</option>
+                                        <option value="all" selected>All Time</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-danger btn-sm w-100" id="downloadRevenueReport">
+                                    <i class="fas fa-download me-1"></i>Download PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="pdf-report-card">
+                                <div class="pdf-icon membership">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <h6>Membership Report</h6>
+                                <p class="text-muted">Member statistics and plan distribution</p>
+                                <div class="period-selector mb-2">
+                                    <select class="form-select form-select-sm" id="membershipPeriod">
+                                        <option value="today">Today</option>
+                                        <option value="week">Last 7 Days</option>
+                                        <option value="month">Last 30 Days</option>
+                                        <option value="year">Last Year</option>
+                                        <option value="all" selected>All Time</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-primary btn-sm w-100" id="downloadMembershipReport">
+                                    <i class="fas fa-download me-1"></i>Download PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="pdf-report-card">
+                                <div class="pdf-icon checkin">
+                                    <i class="fas fa-door-open"></i>
+                                </div>
+                                <h6>Check-in Report</h6>
+                                <p class="text-muted">Gym attendance and check-in analytics</p>
+                                <div class="period-selector mb-2">
+                                    <select class="form-select form-select-sm" id="checkinPeriod">
+                                        <option value="today">Today</option>
+                                        <option value="week">Last 7 Days</option>
+                                        <option value="month">Last 30 Days</option>
+                                        <option value="year">Last Year</option>
+                                        <option value="all" selected>All Time</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-success btn-sm w-100" id="downloadCheckinReport">
+                                    <i class="fas fa-download me-1"></i>Download PDF
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <!-- Download Confirmation Modal -->
+    <div class="modal fade" id="downloadConfirmModal" tabindex="-1" aria-labelledby="downloadModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="downloadModalLabel">Security Confirmation Required</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="downloadActionDescription" class="mb-3">
+                        <!-- Description will be inserted here -->
+                    </div>
+                    <div class="mb-3">
+                        <label for="downloadAdminPassword" class="form-label">Admin Password</label>
+                        <input type="password" class="form-control" id="downloadAdminPassword"
+                            placeholder="Enter your admin password">
+                    </div>
+                    <div class="mb-3">
+                        <label for="downloadConfirmText" class="form-label">Type <strong>CONFIRM</strong> to
+                            proceed</label>
+                        <input type="text" class="form-control" id="downloadConfirmText" placeholder="CONFIRM">
+                    </div>
+                    <div id="downloadSecurityError" class="alert alert-danger mt-3" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmDownloadBtn">
+                        <i class="fas fa-download me-1"></i>Confirm & Download
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="../js/adminJS/adminCommon.js"></script>
+    <script src="../js/adminJS/adminReports.js"></script>
 </body>
 
 </html>

@@ -1,5 +1,3 @@
-// membershipHandler.js - Updated with admin action logging
-
 const { connectToDatabase } = require("../config/db");
 const { ObjectId } = require("mongodb");
 const { calculateEndDate } = require("../utils/membershipDateUtils");

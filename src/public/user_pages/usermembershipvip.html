@@ -154,6 +154,44 @@
             </div>
         </div>
     </footer>
+
+    <!-- Confirmation Popup -->
+    <div id="confirmationPopup" class="custom-popup-overlay" style="display: none;">
+        <div class="custom-popup">
+            <div class="custom-popup-header">
+                <h3>Confirm Membership Application</h3>
+            </div>
+            <div class="custom-popup-body">
+                <p>You are applying for the <strong id="confirmPlanType">VIP</strong> membership.</p>
+                <p><strong>Amount:</strong> ₱<span id="confirmPlanAmount">2000</span></p>
+                <p><strong>Duration:</strong> <span id="confirmPlanDuration">6 Months</span></p>
+                <p><strong>Payment Method:</strong> <span id="confirmPaymentMethod">Cash at Gym</span></p>
+                <p class="confirmation-note">Are you sure you want to submit this application?</p>
+            </div>
+            <div class="custom-popup-footer">
+                <button type="button" class="btn btn-secondary" id="cancelConfirmBtn">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmSubmitBtn">Yes, Submit Application</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Popup -->
+    <div id="successPopup" class="custom-popup-overlay" style="display: none;">
+        <div class="custom-popup">
+            <div class="custom-popup-header success-header">
+                <div class="success-icon">✅</div>
+                <h3>Application Submitted!</h3>
+            </div>
+            <div class="custom-popup-body">
+                <p id="successMessage">Your application has been submitted successfully!</p>
+                <p class="success-note">Your application is now pending approval. Please visit the gym to complete your
+                    payment and activation.</p>
+            </div>
+            <div class="custom-popup-footer">
+                <button type="button" class="btn btn-primary" id="successOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
 </body>
 <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="../js/notifications.js"></script>

@@ -13,10 +13,197 @@
 </head>
 
 <body>
-    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
-        <div class="text-center">
-            <div class="spinner-border mb-3" role="status"></div>
-            <p>Checking authentication...</p>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p class="mt-2 text-white">Loading...</p>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="alert-container"></div>
+
+    <!-- Edit Account Modal -->
+    <div class="modal fade" id="editAccountModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit me-2"></i>
+                        Edit User Account
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editAccountForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editFirstName" class="form-label">First Name</label>
+                                    <input type="text" class="form-control" id="editFirstName" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editLastName" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" id="editLastName" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editUsername" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="editUsername" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editEmail" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="editEmail" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editMobile" class="form-label">Mobile Number</label>
+                                    <input type="tel" class="form-control" id="editMobile">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editGender" class="form-label">Gender</label>
+                                    <select class="form-select" id="editGender">
+                                        <option value="">Select Gender</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editAge" class="form-label">Age</label>
+                                    <input type="number" class="form-control" id="editAge" min="1" max="120">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editAuthMethod" class="form-label">Authentication Method</label>
+                                    <input type="text" class="form-control" id="editAuthMethod" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Account Status</label>
+                            <div>
+                                <span id="accountStatusBadge" class="badge bg-secondary">Loading...</span>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" id="saveAccountBtn">
+                        <i class="fas fa-save me-1"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Archive Confirmation Modal -->
+    <div class="modal fade" id="archiveConfirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="archiveModalTitle">Archive User Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="archiveDescription">
+                        <!-- Archive description will be inserted here -->
+                    </div>
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> Archived accounts cannot log in and will be hidden from active users
+                        list.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmArchiveBtn">Archive Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unarchive Confirmation Modal -->
+    <div class="modal fade" id="unarchiveConfirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Activate User Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="unarchiveDescription">
+                        <!-- Unarchive description will be inserted here -->
+                    </div>
+                    <div class="alert alert-success mt-3">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Note:</strong> This will allow the user to log in again.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" id="confirmUnarchiveBtn">Activate Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Confirmation Modal -->
+    <div class="modal fade" id="securityConfirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="securityModalTitle">Security Confirmation Required</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="securityActionDescription" class="mb-3">
+                        <!-- Action description will be inserted here -->
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="adminPassword" class="form-label">Admin Password</label>
+                        <input type="password" class="form-control" id="adminPassword"
+                            placeholder="Enter your admin password">
+                        <div class="form-text">You must verify your identity to perform this action.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="confirmText" class="form-label">Type "CONFIRM" to proceed</label>
+                        <input type="text" class="form-control" id="confirmText" placeholder="Type CONFIRM here">
+                        <div class="form-text">This extra step ensures the security of user accounts.</div>
+                    </div>
+
+                    <div id="securityError" class="alert alert-danger mt-2" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmSecurityBtn">Confirm Action</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -41,12 +228,124 @@
         </div>
     </div>
 
-    <div class="container mainContent">
-        <h1>Hello accounts</h1>
+    <div class="main-content">
+        <!-- User Accounts Section -->
+        <div class="accounts-manager-section">
+            <div class="dashboard-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-users me-2 mb-4" style="font-size: 1.8rem;"></i>
+                        <div>
+                            <h3 style="font-weight: bold; margin: 0;">User Accounts Manager</h3>
+                            <p class="text-muted mb-0">Manage all gym user accounts (Admin accounts are excluded)</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-dark" id="refreshAccountsBtn">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalUsers">-</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="activeUsers">-</div>
+                        <div class="stat-label">Active Users</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-archive"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="archivedUsers">-</div>
+                        <div class="stat-label">Archived Users</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-week"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="newUsersThisWeek">-</div>
+                        <div class="stat-label">New This Week</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="accounts-section">
+                <div class="section-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        User Accounts
+                    </h3>
+                    <div class="section-actions">
+                        <span class="badge bg-black" id="usersCount">0 Users</span>
+                        <!-- Search Bar -->
+                        <div class="search-container">
+                            <div class="search-box">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" class="search-input" id="usersSearch" placeholder="Search users...">
+                                <button class="search-clear" id="clearUsersSearch" style="display: none;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container table-container-md">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Contact Info</th>
+                                    <th>Auth Method</th>
+                                    <th>Joined Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Users will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="noUsersMessage" class="no-applications">
+                        <i class="fas fa-users fa-3x mb-3"></i>
+                        <h4>No Users Found</h4>
+                        <p class="text-muted">There are no user accounts in the system.</p>
+                    </div>
+
+                    <div id="noUsersSearchResults" class="no-applications" style="display: none;">
+                        <i class="fas fa-search fa-3x mb-3"></i>
+                        <h4>No Users Found</h4>
+                        <p class="text-muted">No users match your search criteria.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="../js/adminJS/adminCommon.js"></script>
+    <script src="../js/adminJS/adminAccountManager.js"></script>
 </body>
 
 </html>

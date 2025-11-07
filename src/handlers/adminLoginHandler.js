@@ -1,4 +1,3 @@
-// src/handlers/adminLoginHandler.js
 const { connectToDatabase } = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -35,6 +34,7 @@ async function adminLogin(loginData) {
       username: user.username,
       email: user.email,
       isAdmin: user.isAdmin,
+      isAssistant: user.isAssistant || false, // NEW: Log assistant status
     });
 
     // Verify password
@@ -46,14 +46,15 @@ async function adminLogin(loginData) {
 
     console.log("Admin password verified successfully");
 
-    // Generate JWT token with admin role
+    // Generate JWT token with admin role - NEW: Include isAssistant in token
     const token = jwt.sign(
       {
         userId: user._id.toString(),
         username: user.username,
         email: user.email,
         isAdmin: true,
-        role: "admin",
+        isAssistant: user.isAssistant || false, // NEW: Include assistant status
+        role: user.isAssistant ? "assistant" : "admin", // NEW: Set role based on assistant status
       },
       JWT_SECRET,
       { expiresIn: "24h" }

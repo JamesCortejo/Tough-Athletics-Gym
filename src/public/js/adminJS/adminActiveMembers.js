@@ -8,6 +8,7 @@ class AdminActiveMembers {
     this.searchTimeout = null;
     this.currentAction = null;
     this.currentActionData = null;
+    this.isAssistantAdmin = false; // NEW: Track admin role
 
     this.init();
   }
@@ -15,8 +16,49 @@ class AdminActiveMembers {
   init() {
     this.bindEvents();
     this.loadActiveMembers();
+    this.checkAdminRole(); // NEW: Check admin role on init
   }
 
+  // NEW: Check if current admin is an assistant
+  checkAdminRole() {
+    try {
+      const adminData = JSON.parse(localStorage.getItem("adminData") || "{}");
+      this.isAssistantAdmin = adminData.isAssistant === true;
+
+      if (this.isAssistantAdmin) {
+        console.log("🔒 Assistant admin detected - restricting actions");
+        this.disableManagementActions();
+      }
+    } catch (error) {
+      console.error("Error checking admin role:", error);
+    }
+  }
+
+  // NEW: Disable management actions for assistant admins
+  disableManagementActions() {
+    // Hide or disable action buttons in the member details modal
+    const actionButtons = document.querySelectorAll(`
+      .extend-option,
+      .change-option,
+      #withdrawMembershipBtn
+    `);
+
+    actionButtons.forEach((button) => {
+      button.style.display = "none";
+    });
+
+    // Add assistant restriction notice
+    const actionSection = document.querySelector(".action-buttons-section");
+    if (actionSection) {
+      const restrictionNotice = document.createElement("div");
+      restrictionNotice.className = "alert alert-info mt-3";
+      restrictionNotice.innerHTML = `
+        <i class="fas fa-info-circle"></i>
+        <strong>Assistant Admin:</strong> Membership modifications are restricted to full administrators.
+      `;
+      actionSection.appendChild(restrictionNotice);
+    }
+  }
   bindEvents() {
     // Refresh active members
     document
@@ -52,6 +94,12 @@ class AdminActiveMembers {
   }
 
   bindMembershipActions() {
+    // NEW: Check if assistant admin before binding actions
+    if (this.isAssistantAdmin) {
+      console.log("🔒 Skipping action binding for assistant admin");
+      return;
+    }
+
     // Extend membership options
     document.querySelectorAll(".extend-option").forEach((button) => {
       button.addEventListener("click", (e) => {
@@ -203,6 +251,13 @@ class AdminActiveMembers {
       if (result.success) {
         this.activeMembers = result.members;
         this.filteredMembers = [...this.activeMembers];
+
+        // NEW: Update admin role from response if available
+        if (result.adminRole === "assistant") {
+          this.isAssistantAdmin = true;
+          this.disableManagementActions();
+        }
+
         this.renderActiveMembers();
         this.updatePlanTypeStatistics();
         this.clearSearch(); // Reset search when reloading
@@ -327,6 +382,13 @@ class AdminActiveMembers {
 
       if (result.success) {
         this.currentMemberDetails = result.memberDetails;
+
+        // NEW: Update admin role from response if available
+        if (result.adminRole === "assistant") {
+          this.isAssistantAdmin = true;
+          this.disableManagementActions();
+        }
+
         await this.populateMemberDetailsModal();
         this.showMemberDetailsModal();
       } else {
@@ -341,6 +403,35 @@ class AdminActiveMembers {
     } finally {
       this.showLoading(false);
     }
+  }
+
+  prepareExtendMembership(months) {
+    if (this.isAssistantAdmin) {
+      this.showAlert(
+        "Assistant admins are not authorized to extend memberships.",
+        "warning"
+      );
+      return;
+    }
+
+    if (!this.currentMemberDetails) return;
+
+    const { membership } = this.currentMemberDetails;
+    const currentEndDate = new Date(membership.endDate);
+    const newEndDate = new Date(currentEndDate);
+    newEndDate.setMonth(newEndDate.getMonth() + months);
+
+    this.currentAction = "extend";
+    this.currentActionData = {
+      months: months,
+      newEndDate: newEndDate.toISOString().split("T")[0],
+    };
+
+    this.showPasswordConfirmation(
+      "Extend Membership",
+      `Extend membership by ${months} month${months > 1 ? "s" : ""}`,
+      `This will extend the membership from ${currentEndDate.toLocaleDateString()} to ${newEndDate.toLocaleDateString()}.`
+    );
   }
 
   async populateMemberDetailsModal() {
@@ -502,8 +593,15 @@ class AdminActiveMembers {
       `This will extend the membership from ${currentEndDate.toLocaleDateString()} to ${newEndDate.toLocaleDateString()}.`
     );
   }
-
   prepareChangePlan(newPlan, months) {
+    if (this.isAssistantAdmin) {
+      this.showAlert(
+        "Assistant admins are not authorized to change membership plans.",
+        "warning"
+      );
+      return;
+    }
+
     if (!this.currentMemberDetails) return;
 
     const { membership } = this.currentMemberDetails;
@@ -531,6 +629,14 @@ class AdminActiveMembers {
   }
 
   prepareWithdrawMembership() {
+    if (this.isAssistantAdmin) {
+      this.showAlert(
+        "Assistant admins are not authorized to withdraw memberships.",
+        "warning"
+      );
+      return;
+    }
+
     if (!this.currentMemberDetails) return;
 
     const { membership } = this.currentMemberDetails;
@@ -561,6 +667,24 @@ class AdminActiveMembers {
   }
 
   async confirmAction() {
+    // NEW: Final check before confirming action
+    if (this.isAssistantAdmin) {
+      this.showAlert(
+        "Assistant admins are not authorized to perform membership modifications.",
+        "warning"
+      );
+
+      // Close the password modal
+      const passwordModalElement = document.getElementById(
+        "passwordConfirmModal"
+      );
+      const passwordModal = bootstrap.Modal.getInstance(passwordModalElement);
+      if (passwordModal) {
+        passwordModal.hide();
+      }
+      return;
+    }
+
     const password = document.getElementById("adminPassword").value;
     const errorElement = document.getElementById("passwordError");
 
@@ -605,6 +729,7 @@ class AdminActiveMembers {
       this.showLoading(false);
     }
   }
+
   async executeMembershipAction() {
     if (!this.currentMemberDetails || !this.currentAction) {
       this.showLoading(false);

@@ -8,6 +8,12 @@ const bcrypt = require("bcryptjs");
 // Get all active members with their details
 router.get("/active-members", verifyAdminToken, async (req, res) => {
   try {
+    // NEW: Check if admin is assistant
+    if (req.admin.isAssistant) {
+      console.log("🔒 Assistant admin attempted to access active members");
+      // Allow assistants to view but restrict actions on frontend
+    }
+
     const db = await connectToDatabase();
     const membershipsCollection = db.collection("memberships");
     const usersCollection = db.collection("users");
@@ -82,6 +88,8 @@ router.get("/active-members", verifyAdminToken, async (req, res) => {
       success: true,
       members: membersWithDetails,
       totalCount: membersWithDetails.length,
+      // NEW: Send admin role info to frontend
+      adminRole: req.admin.isAssistant ? "assistant" : "admin",
     });
   } catch (error) {
     console.error("Error fetching active members:", error);
@@ -98,6 +106,12 @@ router.get(
   verifyAdminToken,
   async (req, res) => {
     try {
+      // NEW: Check if admin is assistant
+      if (req.admin.isAssistant) {
+        console.log("🔒 Assistant admin attempted to access member details");
+        // Allow viewing but restrict actions
+      }
+
       const { membershipId } = req.params;
       const db = await connectToDatabase();
       const membershipsCollection = db.collection("memberships");
@@ -188,6 +202,8 @@ router.get(
       res.json({
         success: true,
         memberDetails: memberDetails,
+        // NEW: Send admin role info to frontend
+        adminRole: req.admin.isAssistant ? "assistant" : "admin",
       });
     } catch (error) {
       console.error("Error fetching member details:", error);
@@ -233,6 +249,18 @@ router.get("/qr-code-image/:userId", verifyAdminToken, async (req, res) => {
 // Verify admin password for security confirmation
 router.post("/verify-password", verifyAdminToken, async (req, res) => {
   try {
+    // NEW: Check if admin is assistant and block password verification for actions
+    if (req.admin.isAssistant) {
+      console.log(
+        "🔒 Assistant admin attempted to verify password for actions"
+      );
+      return res.status(403).json({
+        success: false,
+        message:
+          "Assistant admins are not authorized to perform membership modifications.",
+      });
+    }
+
     const { password } = req.body;
 
     if (!password) {
@@ -291,6 +319,15 @@ router.post("/verify-password", verifyAdminToken, async (req, res) => {
 // Extend membership
 router.post("/members/:memberId/extend", verifyAdminToken, async (req, res) => {
   try {
+    // NEW: Check if admin is assistant
+    if (req.admin.isAssistant) {
+      console.log("🔒 Assistant admin attempted to extend membership");
+      return res.status(403).json({
+        success: false,
+        message: "Assistant admins are not authorized to extend memberships.",
+      });
+    }
+
     const { memberId } = req.params;
     const { months, newEndDate } = req.body;
 
@@ -337,6 +374,7 @@ router.post("/members/:memberId/extend", verifyAdminToken, async (req, res) => {
       newEndDate: new Date(newEndDate),
       adminId: req.admin.userId,
       adminName: adminUser?.username || "Unknown Admin",
+      adminRole: "admin", // Log the role
       timestamp: new Date(),
     });
 
@@ -359,6 +397,16 @@ router.post(
   verifyAdminToken,
   async (req, res) => {
     try {
+      // NEW: Check if admin is assistant
+      if (req.admin.isAssistant) {
+        console.log("🔒 Assistant admin attempted to change membership plan");
+        return res.status(403).json({
+          success: false,
+          message:
+            "Assistant admins are not authorized to change membership plans.",
+        });
+      }
+
       const { memberId } = req.params;
       const { newPlan, startDate, endDate } = req.body;
 
@@ -421,6 +469,7 @@ router.post(
         endDate: new Date(endDate),
         adminId: req.admin.userId,
         adminName: adminUser?.username || "Unknown Admin",
+        adminRole: "admin", // Log the role
         timestamp: new Date(),
       });
 
@@ -444,6 +493,16 @@ router.post(
   verifyAdminToken,
   async (req, res) => {
     try {
+      // NEW: Check if admin is assistant
+      if (req.admin.isAssistant) {
+        console.log("🔒 Assistant admin attempted to withdraw membership");
+        return res.status(403).json({
+          success: false,
+          message:
+            "Assistant admins are not authorized to withdraw memberships.",
+        });
+      }
+
       const { memberId } = req.params;
 
       const db = await connectToDatabase();
@@ -495,6 +554,7 @@ router.post(
         oldEndDate: currentMembership.endDate,
         adminId: req.admin.userId,
         adminName: adminUser?.username || "Unknown Admin",
+        adminRole: "admin", // Log the role
         timestamp: new Date(),
       });
 

@@ -521,3 +521,190 @@ body {
   border-color: #6c757d;
   cursor: not-allowed;
 }
+
+/* Custom Popup Styles */
+.custom-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.custom-popup {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: popup-appear 0.3s ease-out;
+}
+
+@keyframes popup-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.custom-popup-header {
+  background: #000000;
+  color: white;
+  padding: 20px;
+  border-radius: 12px 12px 0 0;
+  text-align: center;
+  border-bottom: 2px solid #000000;
+}
+
+.custom-popup-header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.success-header {
+  background: #28a745;
+}
+
+.success-icon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.custom-popup-body {
+  padding: 25px;
+  color: #333;
+  background: white;
+}
+
+.custom-popup-body p {
+  margin-bottom: 12px;
+  line-height: 1.5;
+  font-size: 15px;
+}
+
+.confirmation-note,
+.success-note {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+  margin-top: 20px !important;
+  font-size: 14px !important;
+}
+
+.success-note {
+  border-left-color: #28a745;
+  background: #f8fff9;
+}
+
+.custom-popup-footer {
+  padding: 20px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
+  border-radius: 0 0 12px 12px;
+}
+
+.custom-popup-footer .btn {
+  padding: 10px 20px;
+  font-weight: 500;
+  min-width: 100px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#confirmSubmitBtn {
+  background: #28a745;
+  color: white;
+}
+
+#confirmSubmitBtn:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+#cancelConfirmBtn {
+  background: #6c757d;
+  color: white;
+}
+
+#cancelConfirmBtn:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+#successOkBtn {
+  background: #007bff;
+  color: white;
+  width: 100%;
+}
+
+#successOkBtn:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 480px) {
+  .custom-popup-overlay {
+    padding: 15px;
+  }
+
+  .custom-popup {
+    max-width: 100%;
+    margin: 10px;
+  }
+
+  .custom-popup-header {
+    padding: 15px;
+  }
+
+  .custom-popup-header h3 {
+    font-size: 1.2rem;
+  }
+
+  .custom-popup-body {
+    padding: 20px;
+  }
+
+  .custom-popup-body p {
+    font-size: 14px;
+  }
+
+  .custom-popup-footer {
+    padding: 15px;
+    flex-direction: column;
+  }
+
+  .custom-popup-footer .btn {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .custom-popup-footer .btn:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* Ensure form is disabled when popup is open */
+body.popup-open {
+  overflow: hidden;
+}

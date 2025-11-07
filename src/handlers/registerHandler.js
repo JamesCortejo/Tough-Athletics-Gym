@@ -133,6 +133,9 @@ async function registerUser(userData) {
       password: hashedPassword,
       qrCodeId: qrCodeId,
       profilePicture: "/images/default-profile.png", // Default profile picture
+      authMethod: "local", // Add authMethod for local login
+      isAdmin: false, // Default to false
+      isArchived: false, // Default to false
       createdAt: new Date(),
       updatedAt: new Date(),
     };

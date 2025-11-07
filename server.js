@@ -71,6 +71,15 @@ const {
 } = require("./src/handlers/profileHandler");
 
 // Mount routes
+const overviewRoutes = require("./src/routes/overviewRoutes");
+app.use("/api/overview", overviewRoutes);
+
+const reportsRoutes = require("./src/routes/reportsRoutes");
+app.use("/api/reports", reportsRoutes);
+
+const accountRoutes = require("./src/routes/accountRoutes");
+app.use("/api/accounts", accountRoutes);
+
 const authRoutes = require("./src/routes/authroutes");
 app.use("/", authRoutes);
 

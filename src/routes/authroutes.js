@@ -100,6 +100,14 @@ router.get(
   }),
   async (req, res) => {
     try {
+      if (req.user.isArchived) {
+        return res.redirect("/?error=account_archived");
+      }
+
+      if (req.user.isAdmin) {
+        return res.redirect("/?error=admin_cannot_login_here");
+      }
+
       // Log the OAuth login
       await logUserAction(
         req.user._id.toString(),
@@ -207,6 +215,14 @@ router.get(
   }),
   async (req, res) => {
     try {
+      if (req.user.isArchived) {
+        return res.redirect("/?error=account_archived");
+      }
+
+      if (req.user.isAdmin) {
+        return res.redirect("/?error=admin_cannot_login_here");
+      }
+
       // Log the OAuth login
       await logUserAction(
         req.user._id.toString(),
