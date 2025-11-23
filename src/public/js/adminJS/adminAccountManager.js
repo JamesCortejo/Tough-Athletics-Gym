@@ -15,12 +15,188 @@ document.addEventListener("DOMContentLoaded", function () {
   let currentAction = null; // 'edit', 'archive', 'unarchive'
   let searchTimeout = null;
   let editFormData = null;
-  let isAssistantAdmin = false; // NEW: Track admin role
+  let isAssistantAdmin = false;
+
+  // TSOP Implementation Variables
+  let activeEditSessions = new Map();
+  let currentEditSessionId = null;
+  let editSessionCheckInterval = null;
+  let editModal = null;
+  let editModalHideHandler = null;
 
   // Initialize the page
   initializePage();
 
-  // NEW: Check if current admin is an assistant
+  // TSOP Functions
+  function initializeTSOPSystem() {
+    // Start checking for active edit sessions every 10 seconds
+    editSessionCheckInterval = setInterval(checkActiveEditSessions, 10000);
+
+    // Initialize modal instance
+    editModal = new bootstrap.Modal(
+      document.getElementById("editAccountModal")
+    );
+
+    // Clean up on page unload
+    window.addEventListener("beforeunload", cleanupEditSessions);
+  }
+
+  function cleanupEditSessions() {
+    if (currentEditSessionId) {
+      endEditSession(currentEditSessionId);
+    }
+    if (editSessionCheckInterval) {
+      clearInterval(editSessionCheckInterval);
+    }
+  }
+
+  async function startEditSession(userId, userData) {
+    // Check if assistant admin
+    if (isAssistantAdmin) {
+      showAlert(
+        "Assistant admins are not authorized to edit user accounts.",
+        "warning"
+      );
+      return null;
+    }
+
+    const sessionData = {
+      sessionId: generateSessionId(),
+      userId: userId,
+      adminId: JSON.parse(localStorage.getItem("currentAdmin"))._id,
+      adminName: JSON.parse(localStorage.getItem("currentAdmin")).username,
+      userName: `${userData.firstName} ${userData.lastName}`,
+      startTime: new Date(),
+      timestamp: Date.now(),
+    };
+
+    try {
+      const response = await fetch("/api/accounts/admin/edit-sessions/start", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(sessionData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        currentEditSessionId = sessionData.sessionId;
+        activeEditSessions.set(userId, sessionData);
+
+        // Show timestamp info modal
+        showEditTimestampModal(sessionData);
+
+        return sessionData.sessionId;
+      } else {
+        // Another admin is editing this user
+        if (result.conflict) {
+          showEditSessionModal(result.activeSession);
+          return null;
+        }
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error("Error starting edit session:", error);
+      showAlert("Error starting edit session. Please try again.", "danger");
+      return null;
+    }
+  }
+
+  async function endEditSession(sessionId) {
+    if (!sessionId) return;
+
+    try {
+      await fetch("/api/accounts/admin/edit-sessions/end", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ sessionId }),
+      });
+
+      // Remove from local tracking
+      for (let [userId, session] of activeEditSessions.entries()) {
+        if (session.sessionId === sessionId) {
+          activeEditSessions.delete(userId);
+          break;
+        }
+      }
+
+      if (currentEditSessionId === sessionId) {
+        currentEditSessionId = null;
+      }
+    } catch (error) {
+      console.error("Error ending edit session:", error);
+    }
+  }
+
+  async function checkActiveEditSessions() {
+    if (!currentEditSessionId) return;
+
+    try {
+      const response = await fetch(
+        `/api/accounts/admin/edit-sessions/check?sessionId=${currentEditSessionId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (!result.isActive) {
+        // Session was terminated (maybe by another admin or timeout)
+        showAlert(
+          "Your edit session has ended. Please refresh the page.",
+          "warning"
+        );
+        if (editModal) {
+          editModal.hide();
+        }
+        currentEditSessionId = null;
+      }
+    } catch (error) {
+      console.error("Error checking edit session:", error);
+    }
+  }
+
+  function generateSessionId() {
+    return `edit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  function showEditSessionModal(activeSession) {
+    document.getElementById("currentEditorName").textContent =
+      activeSession.adminName;
+    document.getElementById("editSessionStartTime").textContent = new Date(
+      activeSession.startTime
+    ).toLocaleString();
+    document.getElementById("editingUserName").textContent =
+      activeSession.userName;
+
+    const modal = new bootstrap.Modal(
+      document.getElementById("editSessionModal")
+    );
+    modal.show();
+  }
+
+  function showEditTimestampModal(sessionData) {
+    document.getElementById("yourEditStartTime").textContent =
+      sessionData.startTime.toLocaleString();
+    document.getElementById("yourEditingUserName").textContent =
+      sessionData.userName;
+
+    const modal = new bootstrap.Modal(
+      document.getElementById("editTimestampModal")
+    );
+    modal.show();
+  }
+
+  // Check if current admin is an assistant
   function checkAdminRole() {
     try {
       const adminData = JSON.parse(currentAdmin || "{}");
@@ -37,7 +213,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // NEW: Disable account management actions for assistant admins
+  // Disable account management actions for assistant admins
   function disableAccountActions() {
     // Hide action buttons in the table
     const actionButtons = document.querySelectorAll(`
@@ -104,6 +280,44 @@ document.addEventListener("DOMContentLoaded", function () {
     .getElementById("confirmSecurityBtn")
     .addEventListener("click", handleSecurityConfirmation);
 
+  // TSOP Event Listeners
+  document
+    .getElementById("refreshEditStatusBtn")
+    ?.addEventListener("click", async function () {
+      bootstrap.Modal.getInstance(
+        document.getElementById("editSessionModal")
+      )?.hide();
+    });
+
+  // NEW: Handle edit modal cancellation
+  document
+    .getElementById("editAccountModal")
+    ?.addEventListener("hide.bs.modal", function () {
+      // If modal is being hidden and we have an active session, end it
+      if (currentEditSessionId && !currentAction) {
+        console.log(
+          "Edit modal closed without saving - ending session:",
+          currentEditSessionId
+        );
+        endEditSession(currentEditSessionId);
+        currentEditSessionId = null;
+      }
+    });
+
+  // NEW: Handle cancel button click explicitly
+  document
+    .querySelector("#editAccountModal .btn-secondary")
+    ?.addEventListener("click", function () {
+      console.log(
+        "Cancel button clicked - ending session:",
+        currentEditSessionId
+      );
+      if (currentEditSessionId) {
+        endEditSession(currentEditSessionId);
+        currentEditSessionId = null;
+      }
+    });
+
   // Search functionality
   const searchInput = document.getElementById("usersSearch");
   const clearSearchBtn = document.getElementById("clearUsersSearch");
@@ -125,7 +339,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function initializePage() {
-    checkAdminRole(); // NEW: Check admin role on init
+    checkAdminRole();
+    initializeTSOPSystem(); // Initialize TSOP system
     await loadUsers();
   }
 
@@ -232,7 +447,7 @@ document.addEventListener("DOMContentLoaded", function () {
         allUsers = result.users;
         filteredUsers = [...allUsers];
 
-        // NEW: Update admin role from response if available
+        // Update admin role from response if available
         if (result.adminRole === "assistant") {
           isAssistantAdmin = true;
           disableAccountActions();
@@ -290,7 +505,7 @@ document.addEventListener("DOMContentLoaded", function () {
           : "Local";
         const isArchived = user.isArchived || false;
 
-        // NEW: Conditionally show action buttons based on admin role
+        // Conditionally show action buttons based on admin role
         const actionButtons = isAssistantAdmin
           ? `<span class="text-muted small">View only</span>`
           : `
@@ -397,7 +612,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function showEditAccountModal(userId) {
-    // NEW: Check if assistant admin
+    // Check if assistant admin
     if (isAssistantAdmin) {
       showAlert(
         "Assistant admins are not authorized to edit user accounts.",
@@ -422,7 +637,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const result = await response.json();
 
       if (result.success) {
-        // NEW: Update admin role from response if available
+        // Update admin role from response if available
         if (result.adminRole === "assistant") {
           isAssistantAdmin = true;
           disableAccountActions();
@@ -434,8 +649,18 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
 
-        displayEditAccountModal(result.user);
-        currentUserId = userId;
+        // Reset current action when starting new edit
+        currentAction = null;
+
+        // Start TSOP edit session
+        const sessionId = await startEditSession(userId, result.user);
+
+        if (sessionId) {
+          // Only show edit modal if we got the session
+          displayEditAccountModal(result.user);
+          currentUserId = userId;
+        }
+        // If sessionId is null, the edit session modal is already shown
       } else {
         showAlert("Failed to load user details: " + result.message, "danger");
       }
@@ -476,14 +701,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Show modal
-    const modal = new bootstrap.Modal(
-      document.getElementById("editAccountModal")
-    );
-    modal.show();
+    if (editModal) {
+      editModal.show();
+    }
   }
 
   function showSecurityConfirmationForEdit() {
-    // NEW: Check if assistant admin
+    // Check if assistant admin
     if (isAssistantAdmin) {
       showAlert(
         "Assistant admins are not authorized to edit user accounts.",
@@ -526,7 +750,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function showSecurityConfirmationForArchive() {
-    // NEW: Check if assistant admin
+    // Check if assistant admin
     if (isAssistantAdmin) {
       showAlert(
         "Assistant admins are not authorized to archive user accounts.",
@@ -548,7 +772,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function showSecurityConfirmationForUnarchive() {
-    // NEW: Check if assistant admin
+    // Check if assistant admin
     if (isAssistantAdmin) {
       showAlert(
         "Assistant admins are not authorized to activate user accounts.",
@@ -570,7 +794,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function showSecurityConfirmationModal(title, description) {
-    // NEW: Final check for assistant admin
+    // Final check for assistant admin
     if (isAssistantAdmin) {
       showAlert(
         "Assistant admins are not authorized to perform account modifications.",
@@ -590,9 +814,9 @@ document.addEventListener("DOMContentLoaded", function () {
       description;
 
     // Close other modals and show security modal
-    bootstrap.Modal.getInstance(
-      document.getElementById("editAccountModal")
-    )?.hide();
+    if (editModal && currentAction !== "edit") {
+      editModal.hide();
+    }
     bootstrap.Modal.getInstance(
       document.getElementById("archiveConfirmModal")
     )?.hide();
@@ -607,7 +831,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function handleSecurityConfirmation() {
-    // NEW: Final check for assistant admin
+    // Final check for assistant admin
     if (isAssistantAdmin) {
       showAlert(
         "Assistant admins are not authorized to perform account modifications.",
@@ -663,6 +887,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 updateData: editFormData,
                 adminPassword: adminPassword,
                 confirmText: confirmText,
+                editSessionId: currentEditSessionId, // Include session ID
               }),
             }
           );
@@ -673,6 +898,18 @@ document.addEventListener("DOMContentLoaded", function () {
             bootstrap.Modal.getInstance(
               document.getElementById("securityConfirmModal")
             ).hide();
+
+            // Close edit modal and end session
+            if (editModal) {
+              editModal.hide();
+            }
+
+            // End the edit session
+            if (currentEditSessionId) {
+              await endEditSession(currentEditSessionId);
+              currentEditSessionId = null;
+            }
+
             await loadUsers();
           } else {
             throw new Error(result.message);
@@ -751,7 +988,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function showArchiveConfirmation(userId) {
-    // NEW: Check if assistant admin
+    // Check if assistant admin
     if (isAssistantAdmin) {
       showAlert(
         "Assistant admins are not authorized to archive user accounts.",
@@ -781,7 +1018,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function showUnarchiveConfirmation(userId) {
-    // NEW: Check if assistant admin
+    // Check if assistant admin
     if (isAssistantAdmin) {
       showAlert(
         "Assistant admins are not authorized to activate user accounts.",
@@ -812,7 +1049,6 @@ document.addEventListener("DOMContentLoaded", function () {
     modal.show();
   }
 
-  // ... rest of the existing functions (updateStatistics, formatDate, showLoading, showAlert) remain the same ...
   function updateStatistics(users) {
     const today = new Date();
     const startOfWeek = new Date(today);

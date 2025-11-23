@@ -13,14 +13,14 @@ document.addEventListener("DOMContentLoaded", function () {
   let currentUserActions = [];
   let allAdmins = [];
   let allUsers = [];
-  let isAssistantAdmin = false; // NEW: Track admin role
-  let currentDownloadType = null; // NEW: Track which report is being downloaded
-  let currentDownloadPeriod = null; // NEW: Track download period
+  let isAssistantAdmin = false;
+  let currentDownloadType = null;
+  let currentDownloadPeriod = null;
 
   // Initialize the page
   initializePage();
 
-  // NEW: Check if current admin is an assistant
+  // Check if current admin is an assistant
   function checkAdminRole() {
     try {
       const adminData = JSON.parse(currentAdmin || "{}");
@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // NEW: Disable report downloads for assistant admins
+  // Disable report downloads for assistant admins
   function disableReportDownloads() {
     const downloadButtons = document.querySelectorAll(`
       #downloadRevenueReport,
@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", function () {
     .getElementById("sortOrderUser")
     .addEventListener("change", loadUserActions);
 
-  // PDF Download Event Listeners - UPDATED to show security confirmation
+  // PDF Download Event Listeners
   document
     .getElementById("downloadRevenueReport")
     .addEventListener("click", () => showDownloadConfirmation("revenue"));
@@ -124,17 +124,17 @@ document.addEventListener("DOMContentLoaded", function () {
     .getElementById("downloadCheckinReport")
     .addEventListener("click", () => showDownloadConfirmation("checkin"));
 
-  // NEW: Security confirmation event listener
+  // Security confirmation event listener
   document
     .getElementById("confirmDownloadBtn")
     .addEventListener("click", handleDownloadConfirmation);
 
   async function initializePage() {
-    checkAdminRole(); // NEW: Check admin role on init
+    checkAdminRole();
     await Promise.all([loadAdminActions(), loadUserActions()]);
   }
 
-  // NEW: Show download confirmation modal
+  // Show download confirmation modal
   function showDownloadConfirmation(type) {
     // Check if assistant admin
     if (isAssistantAdmin) {
@@ -151,14 +151,13 @@ document.addEventListener("DOMContentLoaded", function () {
     currentDownloadType = type;
     currentDownloadPeriod = period;
 
-    // Set modal content - FIXED: Use correct ID "downloadModalLabel"
+    // Set modal content
     const reportTitles = {
       revenue: "Revenue Report",
       membership: "Membership Report",
       checkin: "Check-in Report",
     };
 
-    // FIX: Changed from "downloadModalTitle" to "downloadModalLabel"
     document.getElementById(
       "downloadModalLabel"
     ).textContent = `Download ${reportTitles[type]}`;
@@ -182,7 +181,7 @@ document.addEventListener("DOMContentLoaded", function () {
     modal.show();
   }
 
-  // NEW: Handle download confirmation with security checks
+  // Handle download confirmation with security checks
   async function handleDownloadConfirmation() {
     // Final check for assistant admin
     if (isAssistantAdmin) {
@@ -229,7 +228,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const response = await fetch(
         `/api/reports/${currentDownloadType}-pdf?period=${currentDownloadPeriod}`,
         {
-          method: "POST", // Changed to POST for security data
+          method: "POST",
           headers: {
             Authorization: `Bearer ${adminToken}`,
             "Content-Type": "application/json",
@@ -315,7 +314,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // NEW: Helper function to get period display
+  // Helper function to get period display
   function getPeriodDisplay(period) {
     const periods = {
       today: "Today",
@@ -326,8 +325,6 @@ document.addEventListener("DOMContentLoaded", function () {
     };
     return periods[period] || "All Time";
   }
-
-  // ... rest of the existing functions (loadAdminActions, loadUserActions, displayAdminActions, etc.) remain the same ...
 
   async function loadAdminActions() {
     showLoading(true);
@@ -637,7 +634,13 @@ document.addEventListener("DOMContentLoaded", function () {
           : "(QR Scan)";
         return `🎫 Member check-in ${checkinType} - ${checkinMember}`;
 
-      case "download_report": // NEW: Handle report download actions
+      case "add_walkin_customer": // Handle walk-in customer actions
+        const walkinName = action.walkinCustomerName || userName;
+        const amount = action.amount ? `₱${action.amount}` : "Unknown amount";
+        const paymentMethod = action.paymentMethod || "Unknown method";
+        return `👤 Added walk-in customer: ${walkinName} | ${amount} via ${paymentMethod}`;
+
+      case "download_report":
         const reportType = action.reportType || "unknown";
         const period = action.period || "all";
         return `📊 Downloaded ${reportType} report for period: ${getPeriodDisplay(period)}`;
@@ -673,7 +676,8 @@ document.addEventListener("DOMContentLoaded", function () {
       approve_membership: "approve",
       decline_membership: "decline",
       member_checkin: "checkin",
-      download_report: "download", // NEW: Add download action class
+      add_walkin_customer: "walkin", // Add walk-in action class
+      download_report: "download",
     };
     return actionMap[action] || "update";
   }
@@ -689,7 +693,8 @@ document.addEventListener("DOMContentLoaded", function () {
       approve_membership: "Approve Membership",
       decline_membership: "Decline Membership",
       member_checkin: "Member Check-in",
-      download_report: "Download Report", // NEW: Add download action type
+      add_walkin_customer: "Add Walk-in Customer", // Add walk-in action type
+      download_report: "Download Report",
     };
     return actionMap[action] || action;
   }

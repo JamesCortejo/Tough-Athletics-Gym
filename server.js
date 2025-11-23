@@ -3,7 +3,7 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const session = require("express-session");
-const passport = require("./src/config/passport"); // Unified passport config
+const passport = require("./src/config/passport");
 
 const app = express();
 
@@ -76,6 +76,9 @@ app.use("/api/overview", overviewRoutes);
 
 const reportsRoutes = require("./src/routes/reportsRoutes");
 app.use("/api/reports", reportsRoutes);
+
+const nonMemberRoutes = require("./src/routes/nonMemberRoutes");
+app.use("/api", nonMemberRoutes);
 
 const accountRoutes = require("./src/routes/accountRoutes");
 app.use("/api/accounts", accountRoutes);
@@ -270,6 +273,18 @@ app.get("/admin/membership-manager", (req, res) => {
   );
 });
 
+app.get("/admin/non-member-manager", (req, res) => {
+  res.sendFile(
+    path.join(
+      __dirname,
+      "src",
+      "public",
+      "admin_pages",
+      "adminNonMemberManager.html"
+    )
+  );
+});
+
 app.get("/admin/account-manager", (req, res) => {
   res.sendFile(
     path.join(
@@ -313,6 +328,6 @@ app.post("/debug-token", (req, res) => {
 // Server startup
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running at http://127.0.0.1:${PORT}`);
+  console.log(`Server running at http://192.168.1.12:${PORT}`);
   console.log(`Make sure MongoDB is running on localhost:27017`);
 });

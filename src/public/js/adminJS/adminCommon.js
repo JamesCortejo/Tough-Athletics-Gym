@@ -67,6 +67,14 @@ class AdminCommon {
       });
     }
 
+    // Non-Member Manager button
+    const nonMemberBtn = document.querySelector(".non-member-btn");
+    if (nonMemberBtn) {
+      nonMemberBtn.addEventListener("click", () => {
+        window.location.href = "/admin/non-member-manager";
+      });
+    }
+
     // Reports Manager button
     const reportsBtn = document.querySelector(".reports-btn");
     if (reportsBtn) {

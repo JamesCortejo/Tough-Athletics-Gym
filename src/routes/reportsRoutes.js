@@ -6,19 +6,16 @@ const { ObjectId } = require("mongodb");
 const { verifyToken } = require("../handlers/loginHandler");
 const PDFGenerator = require("../utils/pdfGenerator");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs"); // NEW: Import bcrypt for password verification
+const bcrypt = require("bcryptjs");
 
 const pdfGenerator = new PDFGenerator();
 
 // Middleware for token verification from header or query
 function verifyTokenFromSource(req, res, next) {
-  // Try to get token from Authorization header first
   let token = req.headers["authorization"];
   if (token && token.startsWith("Bearer ")) {
     token = token.slice(7);
-  }
-  // If no token in header, try query parameter (fallback)
-  else if (req.query.token) {
+  } else if (req.query.token) {
     token = req.query.token;
     console.warn(
       "Token used in URL parameter - consider using Authorization header for better security"
@@ -64,8 +61,8 @@ const verifyAdmin = async (req, res, next) => {
       });
     }
 
-    req.db = db; // Attach db to request for use in routes
-    req.adminUser = adminUser; // NEW: Attach admin user for role checking
+    req.db = db;
+    req.adminUser = adminUser;
     next();
   } catch (error) {
     console.error("Admin verification error:", error);
@@ -76,7 +73,7 @@ const verifyAdmin = async (req, res, next) => {
   }
 };
 
-// NEW: Middleware for security confirmation (password + CONFIRM text)
+// Middleware for security confirmation (password + CONFIRM text)
 const verifySecurityConfirmation = async (req, res, next) => {
   try {
     const { adminPassword, confirmText } = req.body;
@@ -125,6 +122,7 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
     const adminActionsCollection = db.collection("admin_actions");
     const usersCollection = db.collection("users");
     const membershipsCollection = db.collection("memberships");
+    const nonmembersCollection = db.collection("nonmembers"); // ADD THIS LINE
 
     // Verify admin user
     const adminUser = await usersCollection.findOne({
@@ -182,8 +180,132 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
         let enrichedAction = { ...action };
 
         try {
+          // For walk-in customer actions, use the walk-in customer name from nonmembers collection
+          if (action.action === "add_walkin_customer") {
+            console.log(`🔄 Enriching walk-in customer action: ${action._id}`);
+
+            // METHOD 1: Try to use top-level fields first (new structure)
+            if (action.walkinCustomerName) {
+              console.log(
+                `✅ Using top-level customer data: ${action.walkinCustomerName}`
+              );
+              enrichedAction.walkinCustomerName = action.walkinCustomerName;
+              enrichedAction.memberName = action.walkinCustomerName;
+              enrichedAction.memberFirstName =
+                action.walkinCustomerName.split(" ")[0];
+              enrichedAction.memberLastName = action.walkinCustomerName
+                .split(" ")
+                .slice(1)
+                .join(" ");
+              enrichedAction.amount = action.amount;
+              enrichedAction.paymentMethod = action.paymentMethod;
+            }
+            // METHOD 2: Try to use details fields (old structure)
+            else if (action.details && action.details.customerName) {
+              console.log(
+                `✅ Using details customer data: ${action.details.customerName}`
+              );
+              enrichedAction.walkinCustomerName = action.details.customerName;
+              enrichedAction.memberName = action.details.customerName;
+              enrichedAction.memberFirstName =
+                action.details.customerName.split(" ")[0];
+              enrichedAction.memberLastName = action.details.customerName
+                .split(" ")
+                .slice(1)
+                .join(" ");
+              enrichedAction.amount = action.details.amount;
+              enrichedAction.paymentMethod = action.details.paymentMethod;
+            }
+            // METHOD 3: Try to lookup from nonmembers collection using walkinCheckinId
+            else if (action.walkinCheckinId) {
+              console.log(
+                `🔍 Looking up nonmember by ID: ${action.walkinCheckinId}`
+              );
+              const walkinCustomer = await nonmembersCollection.findOne({
+                _id: new ObjectId(action.walkinCheckinId),
+              });
+
+              if (walkinCustomer) {
+                console.log(
+                  `✅ Found walk-in customer by ID: ${walkinCustomer.firstName} ${walkinCustomer.lastName}`
+                );
+                enrichedAction.walkinCustomerName = `${walkinCustomer.firstName} ${walkinCustomer.lastName}`;
+                enrichedAction.memberName = `${walkinCustomer.firstName} ${walkinCustomer.lastName}`;
+                enrichedAction.memberFirstName = walkinCustomer.firstName;
+                enrichedAction.memberLastName = walkinCustomer.lastName;
+                enrichedAction.amount = walkinCustomer.amount;
+                enrichedAction.paymentMethod = walkinCustomer.paymentMethod;
+              }
+            }
+            // METHOD 4: Try to lookup from nonmembers collection using nonMemberId in details
+            else if (action.details && action.details.nonMemberId) {
+              console.log(
+                `🔍 Looking up nonmember by nonMemberId: ${action.details.nonMemberId}`
+              );
+              const walkinCustomer = await nonmembersCollection.findOne({
+                _id: new ObjectId(action.details.nonMemberId),
+              });
+
+              if (walkinCustomer) {
+                console.log(
+                  `✅ Found walk-in customer by nonMemberId: ${walkinCustomer.firstName} ${walkinCustomer.lastName}`
+                );
+                enrichedAction.walkinCustomerName = `${walkinCustomer.firstName} ${walkinCustomer.lastName}`;
+                enrichedAction.memberName = `${walkinCustomer.firstName} ${walkinCustomer.lastName}`;
+                enrichedAction.memberFirstName = walkinCustomer.firstName;
+                enrichedAction.memberLastName = walkinCustomer.lastName;
+                enrichedAction.amount = walkinCustomer.amount;
+                enrichedAction.paymentMethod = walkinCustomer.paymentMethod;
+              }
+            }
+            // METHOD 5: Last resort - try to find by timestamp
+            else {
+              console.log(
+                `🔍 No direct ID found, trying timestamp lookup for action: ${action._id}`
+              );
+              const actionTime = new Date(action.timestamp);
+              const startTime = new Date(actionTime.getTime() - 5 * 60 * 1000); // 5 minutes before
+              const endTime = new Date(actionTime.getTime() + 5 * 60 * 1000); // 5 minutes after
+
+              const recentNonmembers = await nonmembersCollection
+                .find({
+                  checkInTime: {
+                    $gte: startTime,
+                    $lte: endTime,
+                  },
+                })
+                .sort({ checkInTime: -1 })
+                .toArray();
+
+              if (recentNonmembers.length > 0) {
+                const nonmember = recentNonmembers[0];
+                console.log(
+                  `✅ Found matching nonmember by timestamp: ${nonmember.firstName} ${nonmember.lastName}`
+                );
+                enrichedAction.walkinCustomerName = `${nonmember.firstName} ${nonmember.lastName}`;
+                enrichedAction.memberName = `${nonmember.firstName} ${nonmember.lastName}`;
+                enrichedAction.memberFirstName = nonmember.firstName;
+                enrichedAction.memberLastName = nonmember.lastName;
+                enrichedAction.amount = nonmember.amount;
+                enrichedAction.paymentMethod = nonmember.paymentMethod;
+              } else {
+                console.log(
+                  `❌ No matching nonmember found for action: ${action._id}`
+                );
+                // Set default values to avoid "Unknown User"
+                enrichedAction.walkinCustomerName = "Walk-in Customer";
+                enrichedAction.memberName = "Walk-in Customer";
+                enrichedAction.memberFirstName = "Walk-in";
+                enrichedAction.memberLastName = "Customer";
+              }
+            }
+          }
+
           // For membership actions, get member information
-          if (action.membershipId && typeof action.membershipId === "object") {
+          else if (
+            action.membershipId &&
+            typeof action.membershipId === "object"
+          ) {
             const membership = await membershipsCollection.findOne({
               _id: action.membershipId,
             });
@@ -206,7 +328,10 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
           }
 
           // For user account actions, get target user information
-          if (action.targetUserId && typeof action.targetUserId === "object") {
+          else if (
+            action.targetUserId &&
+            typeof action.targetUserId === "object"
+          ) {
             const targetUser = await usersCollection.findOne({
               _id: action.targetUserId,
             });
@@ -229,7 +354,7 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
           }
 
           // For check-in actions, get member information from membership
-          if (action.action === "member_checkin" && action.qrCodeId) {
+          else if (action.action === "member_checkin" && action.qrCodeId) {
             const membership = await membershipsCollection.findOne({
               qrCodeId: action.qrCodeId,
               status: "Active",
@@ -353,7 +478,7 @@ router.get("/admin/user-actions", verifyToken, async (req, res) => {
   }
 });
 
-// PDF Report Routes - UPDATED with security confirmation and assistant restriction
+// PDF Report Routes
 router.post(
   "/revenue-pdf",
   verifyTokenFromSource,
@@ -363,7 +488,7 @@ router.post(
     try {
       const { period = "all" } = req.query;
 
-      // NEW: Check if admin is assistant
+      // Check if admin is assistant
       if (req.adminUser.isAssistant) {
         console.log("🔒 Assistant admin attempted to download revenue report");
         return res.status(403).json({
@@ -381,13 +506,13 @@ router.post(
         `Generating revenue PDF with ${memberships.length} memberships`
       );
 
-      // Generate PDF (removed unused checkins parameter)
+      // Generate PDF
       const pdfBuffer = await pdfGenerator.generateRevenueReport(
         memberships,
         period
       );
 
-      // NEW: Log admin action
+      // Log admin action
       await req.db.collection("admin_actions").insertOne({
         action: "download_report",
         reportType: "revenue",
@@ -428,7 +553,7 @@ router.post(
     try {
       const { period = "all" } = req.query;
 
-      // NEW: Check if admin is assistant
+      // Check if admin is assistant
       if (req.adminUser.isAssistant) {
         console.log(
           "🔒 Assistant admin attempted to download membership report"
@@ -459,7 +584,7 @@ router.post(
         period
       );
 
-      // NEW: Log admin action
+      // Log admin action
       await req.db.collection("admin_actions").insertOne({
         action: "download_report",
         reportType: "membership",
@@ -500,7 +625,7 @@ router.post(
     try {
       const { period = "all" } = req.query;
 
-      // NEW: Check if admin is assistant
+      // Check if admin is assistant
       if (req.adminUser.isAssistant) {
         console.log("🔒 Assistant admin attempted to download checkin report");
         return res.status(403).json({
@@ -516,13 +641,13 @@ router.post(
 
       console.log(`Generating checkin PDF with ${checkins.length} checkins`);
 
-      // Generate PDF (removed unused memberships parameter)
+      // Generate PDF
       const pdfBuffer = await pdfGenerator.generateCheckInReport(
         checkins,
         period
       );
 
-      // NEW: Log admin action
+      // Log admin action
       await req.db.collection("admin_actions").insertOne({
         action: "download_report",
         reportType: "checkin",

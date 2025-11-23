@@ -13,15 +13,21 @@ router.get("/stats", verifyToken, async (req, res) => {
     const usersCollection = db.collection("users");
     const membershipsCollection = db.collection("memberships");
     const usercheckinCollection = db.collection("usercheckin");
+    const nonmembersCollection = db.collection("nonmembers");
 
     // Get all non-admin users
     const allUsers = await usersCollection.find({ isAdmin: false }).toArray();
     const totalUsers = allUsers.length;
 
-    // Get active memberships
+    // Get active memberships (status = Active AND endDate is in future)
+    const now = new Date();
     const activeMemberships = await membershipsCollection
-      .find({ status: "Active" })
+      .find({
+        status: "Active",
+        endDate: { $gt: now },
+      })
       .toArray();
+
     const activeMembers = activeMemberships.length;
 
     // Get pending applications
@@ -42,30 +48,68 @@ router.get("/stats", verifyToken, async (req, res) => {
       },
     });
 
-    // Calculate monthly revenue
-    const monthlyRevenue = activeMemberships.reduce((total, membership) => {
-      let monthlyAmount = 0;
-      if (membership.planType === "Basic") monthlyAmount = membership.amount; // 1 month
-      if (membership.planType === "Premium")
-        monthlyAmount = membership.amount / 3; // 3 months
-      if (membership.planType === "VIP") monthlyAmount = membership.amount / 6; // 6 months
-      return total + monthlyAmount;
+    // Calculate revenue from active memberships - USING ACTUAL AMOUNTS FROM DATABASE
+    let basicRevenue = 0;
+    let premiumRevenue = 0;
+    let vipRevenue = 0;
+
+    const membershipRevenue = basicRevenue + premiumRevenue + vipRevenue;
+
+    // Calculate monthly revenue from non-members (walk-ins)
+    const currentMonthStart = new Date();
+    currentMonthStart.setDate(1);
+    currentMonthStart.setHours(0, 0, 0, 0);
+
+    const currentMonthEnd = new Date(currentMonthStart);
+    currentMonthEnd.setMonth(currentMonthEnd.getMonth() + 1);
+
+    // Get non-members from the nonmembers collection for current month
+    const nonMemberCheckins = await nonmembersCollection
+      .find({
+        checkInTime: {
+          $gte: currentMonthStart,
+          $lt: currentMonthEnd,
+        },
+      })
+      .toArray();
+
+    const nonMemberRevenue = nonMemberCheckins.reduce((total, checkin) => {
+      return total + (checkin.amount || 75);
     }, 0);
+
+    // Total revenue = membership revenue + non-member revenue
+    const totalMonthlyRevenue = membershipRevenue + nonMemberRevenue;
 
     // Calculate average daily attendance (last 7 days)
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-    const recentCheckins = await usercheckinCollection
+    // Get member checkins
+    const recentMemberCheckins = await usercheckinCollection
       .find({
         checkinTime: { $gte: oneWeekAgo },
       })
       .toArray();
 
+    // Get non-member checkins
+    const recentNonMemberCheckins = await nonmembersCollection
+      .find({
+        checkInTime: { $gte: oneWeekAgo },
+      })
+      .toArray();
+
+    // Combine both member and non-member checkins
+    const allRecentCheckins = [
+      ...recentMemberCheckins,
+      ...recentNonMemberCheckins,
+    ];
+
     // Group checkins by day
     const checkinsByDay = {};
-    recentCheckins.forEach((checkin) => {
-      const date = new Date(checkin.checkinTime).toDateString();
+    allRecentCheckins.forEach((checkin) => {
+      const date = new Date(
+        checkin.checkinTime || checkin.checkInTime
+      ).toDateString();
       checkinsByDay[date] = (checkinsByDay[date] || 0) + 1;
     });
 
@@ -84,8 +128,18 @@ router.get("/stats", verifyToken, async (req, res) => {
         activeMembers,
         pendingApplications: pendingApplications.length,
         todayCheckins,
-        monthlyRevenue: Math.round(monthlyRevenue),
+        monthlyRevenue: Math.round(totalMonthlyRevenue),
         avgAttendance: parseFloat(avgAttendance),
+        // Include breakdown for debugging
+        revenueBreakdown: {
+          membershipRevenue: Math.round(membershipRevenue),
+          nonMemberRevenue: Math.round(nonMemberRevenue),
+          membershipDetails: {
+            basic: Math.round(basicRevenue),
+            premium: Math.round(premiumRevenue),
+            vip: Math.round(vipRevenue),
+          },
+        },
       },
     });
   } catch (error) {
@@ -107,17 +161,20 @@ router.get("/charts", verifyToken, async (req, res) => {
     const usersCollection = db.collection("users");
     const membershipsCollection = db.collection("memberships");
     const usercheckinCollection = db.collection("usercheckin");
+    const nonmembersCollection = db.collection("nonmembers");
 
     // Get all data needed for charts
     const users = await usersCollection.find({ isAdmin: false }).toArray();
     const memberships = await membershipsCollection.find({}).toArray();
     const checkins = await usercheckinCollection.find({}).toArray();
+    const nonmembers = await nonmembersCollection.find({}).toArray();
 
     // Process chart data
     const chartData = await processChartData(
       users,
       memberships,
       checkins,
+      nonmembers,
       days
     );
 
@@ -135,16 +192,31 @@ router.get("/charts", verifyToken, async (req, res) => {
 });
 
 // Helper function to process chart data
-async function processChartData(users, memberships, checkins, timeRange) {
+async function processChartData(
+  users,
+  memberships,
+  checkins,
+  nonmembers,
+  timeRange
+) {
+  // Filter active memberships (status = Active AND endDate in future)
+  const now = new Date();
+  const activeMemberships = memberships.filter(
+    (m) => m.status === "Active" && new Date(m.endDate) > now
+  );
+
   // Membership Growth Chart Data
   const membershipGrowth = calculateMembershipGrowth(memberships, timeRange);
 
   // Plan Distribution Chart Data
-  const activeMemberships = memberships.filter((m) => m.status === "Active");
   const planDistribution = calculatePlanDistribution(activeMemberships);
 
   // Check-in Activity Chart Data
-  const checkinActivity = calculateCheckinActivity(checkins, timeRange);
+  const checkinActivity = calculateCheckinActivity(
+    checkins,
+    nonmembers,
+    timeRange
+  );
 
   // Gender Distribution Chart Data
   const genderDistribution = calculateGenderDistribution(users);
@@ -152,8 +224,11 @@ async function processChartData(users, memberships, checkins, timeRange) {
   // Age Distribution Chart Data
   const ageDistribution = calculateAgeDistribution(users);
 
-  // Revenue Breakdown Chart Data
-  const revenueBreakdown = calculateRevenueBreakdown(activeMemberships);
+  // Revenue Breakdown Chart Data - USING ACTUAL DATABASE AMOUNTS
+  const revenueBreakdown = calculateRevenueBreakdown(
+    activeMemberships,
+    nonmembers
+  );
 
   // Application Status Chart Data
   const applicationStatus = calculateApplicationStatus(memberships);
@@ -234,7 +309,7 @@ function calculatePlanDistribution(activeMemberships) {
   };
 }
 
-function calculateCheckinActivity(checkins, days) {
+function calculateCheckinActivity(checkins, nonmembers, days) {
   const labels = [];
   const data = [];
 
@@ -248,11 +323,20 @@ function calculateCheckinActivity(checkins, days) {
     const dayEnd = new Date(date);
     dayEnd.setHours(23, 59, 59, 999);
 
-    const dayCheckins = checkins.filter((checkin) => {
+    // Count member checkins
+    const memberCheckins = checkins.filter((checkin) => {
       const checkinDate = new Date(checkin.checkinTime);
       return checkinDate >= dayStart && checkinDate <= dayEnd;
     }).length;
 
+    // Count non-member checkins
+    const nonMemberCheckins = nonmembers.filter((nonmember) => {
+      const checkinDate = new Date(nonmember.checkInTime);
+      return checkinDate >= dayStart && checkinDate <= dayEnd;
+    }).length;
+
+    // Total checkins = member + non-member
+    const dayCheckins = memberCheckins + nonMemberCheckins;
     data.push(dayCheckins);
   }
 
@@ -335,23 +419,52 @@ function calculateAgeDistribution(users) {
   };
 }
 
-function calculateRevenueBreakdown(activeMemberships) {
-  const revenueByPlan = {
-    Basic: 0,
-    Premium: 0,
-    VIP: 0,
-  };
+function calculateRevenueBreakdown(activeMemberships, nonmembers) {
+  let basicRevenue = 0;
+  let premiumRevenue = 0;
+  let vipRevenue = 0;
 
+  // Calculate revenue from active memberships using ACTUAL AMOUNTS from database
   activeMemberships.forEach((membership) => {
-    if (revenueByPlan.hasOwnProperty(membership.planType)) {
-      revenueByPlan[membership.planType] += membership.amount;
+    const amount = membership.amount || 0;
+
+    if (membership.planType === "Basic") {
+      basicRevenue += amount;
+    } else if (membership.planType === "Premium") {
+      premiumRevenue += amount;
+    } else if (membership.planType === "VIP") {
+      vipRevenue += amount;
     }
   });
+
+  // Calculate non-member (walk-in) revenue from nonmembers collection for current month
+  const currentMonthStart = new Date();
+  currentMonthStart.setDate(1);
+  currentMonthStart.setHours(0, 0, 0, 0);
+
+  const currentMonthEnd = new Date(currentMonthStart);
+  currentMonthEnd.setMonth(currentMonthEnd.getMonth() + 1);
+
+  const currentMonthNonMembers = nonmembers.filter((nonmember) => {
+    const checkinDate = new Date(nonmember.checkInTime);
+    return checkinDate >= currentMonthStart && checkinDate < currentMonthEnd;
+  });
+
+  const walkInRevenue = currentMonthNonMembers.reduce((total, nonmember) => {
+    return total + (nonmember.amount || 75);
+  }, 0);
+
+  const revenueByPlan = {
+    Basic: basicRevenue,
+    Premium: premiumRevenue,
+    VIP: vipRevenue,
+    "Walk-in": walkInRevenue,
+  };
 
   return {
     labels: Object.keys(revenueByPlan),
     data: Object.values(revenueByPlan),
-    colors: ["#4e73df", "#1cc88a", "#36b9cc"],
+    colors: ["#4e73df", "#1cc88a", "#36b9cc", "#f6c23e"],
   };
 }
 
@@ -360,6 +473,7 @@ function calculateApplicationStatus(memberships) {
     Active: 0,
     Pending: 0,
     Declined: 0,
+    Expired: 0,
   };
 
   memberships.forEach((membership) => {
@@ -368,12 +482,11 @@ function calculateApplicationStatus(memberships) {
     }
   });
 
-  console.log("📊 Application status counts:", statusCounts);
-
   return {
     labels: Object.keys(statusCounts),
     data: Object.values(statusCounts),
-    colors: ["#1cc88a", "#f6c23e", "#e74a3b"],
+    colors: ["#1cc88a", "#f6c23e", "#e74a3b", "#858796"],
   };
 }
+
 module.exports = router;

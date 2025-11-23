@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tough Athletics Gym - Non-Member Manager</title>
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/adminNonMemberManager.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+</head>
+
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p class="mt-2 text-white">Loading...</p>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="alert-container"></div>
+
+    <!-- Add Non-Member Modal -->
+    <div class="modal fade" id="addNonMemberModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Add Walk-in Customer
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addNonMemberForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="firstName" class="form-label">First Name <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="firstName" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="lastName" class="form-label">Last Name <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="lastName" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="gender" class="form-label">Gender <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select" id="gender" required>
+                                        <option value="">Select Gender</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">Phone Number <span
+                                            class="text-danger">*</span></label>
+                                    <input type="tel" class="form-control" id="phone" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" id="email" placeholder="Optional">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="paymentMethod" class="form-label">Payment Method</label>
+                                    <input type="text" class="form-control" id="paymentMethod" value="Cash at Gym"
+                                        readonly>
+                                    <div class="form-text">Current rate: ₱75.00 per day</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="address" rows="3" required></textarea>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> This will log a walk-in customer with a one-day gym access for
+                            ₱75.00.
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" id="saveNonMemberBtn">
+                        <i class="fas fa-check me-1"></i>Check In Customer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sideBar d-flex flex-column">
+        <div class="titleLogo">
+            <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-2"
+                style="width: 250px; height: 120px;">
+            <h3 class="" style="font-family: 'League Gothic' sans-serif;">Admin Dashboard</h3>
+            <!-- Admin Info Section -->
+            <div class="admin-info">
+                <div class="admin-welcome">Welcome back,</div>
+                <div class="admin-name" id="adminNameDisplay">Loading...</div>
+            </div>
+        </div>
+        <div class="sideBarContent">
+            <button type="button" class="btn btn-custom overview-btn">Overview</button>
+            <button type="button" class="btn btn-custom membership-btn">Membership Manager</button>
+            <button type="button" class="btn btn-custom non-member-btn">Non-Member Manager</button>
+            <button type="button" class="btn btn-custom accounts-btn">Accounts Manager</button>
+            <button type="button" class="btn btn-custom reports-btn">Reports Manager</button>
+            <button type="button" class="btn btn-custom logout-btn mt-4"
+                style="background-color: rgb(124, 0, 0);">Logout</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Non-Member Manager Section -->
+        <div class="non-member-manager-section">
+            <div class="dashboard-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-walking me-2 mb-4" style="font-size: 1.8rem;"></i>
+                        <div>
+                            <h3 style="font-weight: bold; margin: 0;">Non-Member Manager</h3>
+                            <p class="text-muted mb-0">Manage walk-in customers and daily gym access</p>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-dark" id="refreshNonMembersBtn">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <button type="button" class="btn btn-dark" id="addNonMemberBtn">
+                            <i class="fas fa-user-plus"></i> Add Walk-in
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-walking"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalNonMembers">-</div>
+                        <div class="stat-label">Total Walk-ins</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="todayNonMembers">-</div>
+                        <div class="stat-label">Today's Walk-ins</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalRevenue">₱0</div>
+                        <div class="stat-label">Total Revenue</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Non-Members Table -->
+            <div class="non-members-section">
+                <div class="section-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Walk-in Customers
+                    </h3>
+                    <div class="section-actions">
+                        <span class="badge bg-black" id="nonMembersCount">0 Customers</span>
+                        <!-- Search Bar -->
+                        <div class="search-container">
+                            <div class="search-box">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" class="search-input" id="nonMembersSearch"
+                                    placeholder="Search customers...">
+                                <button class="search-clear" id="clearNonMembersSearch" style="display: none;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container table-container-md">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="nonMembersTable">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Contact Info</th>
+                                    <th>Address</th>
+                                    <th>Check-in Time</th>
+                                    <th>Payment</th>
+                                </tr>
+                            </thead>
+                            <tbody id="nonMembersTableBody">
+                                <!-- Non-members will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="noNonMembersMessage" class="no-applications">
+                        <i class="fas fa-walking fa-3x mb-3"></i>
+                        <h4>No Walk-in Customers</h4>
+                        <p class="text-muted">There are no walk-in customer records.</p>
+                        <button type="button" class="btn btn-primary mt-2" id="addFirstNonMemberBtn">
+                            <i class="fas fa-user-plus me-1"></i>Add First Customer
+                        </button>
+                    </div>
+
+                    <div id="noNonMembersSearchResults" class="no-applications" style="display: none;">
+                        <i class="fas fa-search fa-3x mb-3"></i>
+                        <h4>No Customers Found</h4>
+                        <p class="text-muted">No customers match your search criteria.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/adminJS/adminCommon.js"></script>
+    <script src="../js/adminJS/adminNonMemberManager.js"></script>
+</body>
+
+</html>

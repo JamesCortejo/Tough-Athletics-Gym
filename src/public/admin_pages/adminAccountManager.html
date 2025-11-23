@@ -54,13 +54,13 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="editUsername" class="form-label">Username</label>
-                                    <input type="text" class="form-control" id="editUsername" required>
+                                    <input type="text" class="form-control" id="editUsername" required disabled>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="editEmail" class="form-label">Email</label>
-                                    <input type="email" class="form-control" id="editEmail" required>
+                                    <input type="email" class="form-control" id="editEmail" required disabled>
                                 </div>
                             </div>
                         </div>
@@ -69,7 +69,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="editMobile" class="form-label">Mobile Number</label>
-                                    <input type="tel" class="form-control" id="editMobile">
+                                    <input type="tel" class="form-control" id="editMobile" disabled>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -207,6 +207,111 @@
         </div>
     </div>
 
+    <!-- TSOP: Edit Session Modal -->
+    <div class="modal fade" id="editSessionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-clock me-2"></i>
+                        Edit Session Active
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Another admin is currently editing this user:</strong>
+                    </div>
+                    <div class="edit-session-info">
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Editing Admin:</strong>
+                                <div id="currentEditorName">Loading...</div>
+                            </div>
+                            <div class="col-6">
+                                <strong>Started At:</strong>
+                                <div id="editSessionStartTime">Loading...</div>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <strong>User Being Edited:</strong>
+                                <div id="editingUserName">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-muted small">
+                            <i class="fas fa-info-circle me-1"></i>
+                            According to Timestamp Ordering Protocol, the first admin to start editing has priority.
+                            You can try again after they finish.
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Close
+                    </button>
+                    <button type="button" class="btn btn-primary" id="refreshEditStatusBtn">
+                        <i class="fas fa-sync-alt me-1"></i>Refresh Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TSOP: Edit Timestamp Info Modal -->
+    <div class="modal fade" id="editTimestampModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-clock me-2"></i>
+                        Edit Session Started
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-user-check me-2"></i>
+                        <strong>You are now editing this user account</strong>
+                    </div>
+                    <div class="timestamp-info">
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Your Priority:</strong>
+                                <div class="text-success">First Editor</div>
+                            </div>
+                            <div class="col-6">
+                                <strong>Session Started:</strong>
+                                <div id="yourEditStartTime">Loading...</div>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <strong>User Being Edited:</strong>
+                                <div id="yourEditingUserName">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-muted small">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            <strong>Timestamp Ordering Protocol Active:</strong>
+                            Other admins will be notified that you are editing this account and will have to wait.
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                        <i class="fas fa-check me-1"></i>Continue Editing
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="sideBar d-flex flex-column">
         <div class="titleLogo">
             <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-2"
@@ -215,12 +320,13 @@
             <!-- Admin Info Section -->
             <div class="admin-info">
                 <div class="admin-welcome">Welcome back,</div>
-                <div class="admin-name" id="adminNameDisplay">Loading...</div>
+                <div class="admin-name" id="adminNameDisplay" style="color: white;">Loading...</div>
             </div>
         </div>
         <div class="sideBarContent">
             <button type="button" class="btn btn-custom overview-btn">Overview</button>
             <button type="button" class="btn btn-custom membership-btn">Membership Manager</button>
+            <button type="button" class="btn btn-custom non-member-btn">Non-Member Manager</button>
             <button type="button" class="btn btn-custom accounts-btn">Accounts Manager</button>
             <button type="button" class="btn btn-custom reports-btn">Reports Manager</button>
             <button type="button" class="btn btn-custom logout-btn mt-4"
@@ -240,6 +346,9 @@
                             <p class="text-muted mb-0">Manage all gym user accounts (Admin accounts are excluded)</p>
                         </div>
                     </div>
+                    <button type="button" class="btn btn-dark admin-management-btn">
+                        <i class="fas fa-user-shield me-2"></i>Admin Management
+                    </button>
                     <button type="button" class="btn btn-dark" id="refreshAccountsBtn">
                         <i class="fas fa-sync-alt"></i> Refresh
                     </button>
@@ -310,7 +419,7 @@
 
                 <div class="table-container table-container-md">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover" id="usersTable">
                             <thead>
                                 <tr>
                                     <th>User</th>
@@ -343,6 +452,146 @@
         </div>
     </div>
 
+    <!-- Admin Management Modal -->
+    <div class="modal fade" id="adminManagementModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-shield me-2"></i>
+                        Admin Account Management
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Promote User Section -->
+                    <div class="promote-section mb-4">
+                        <h6 class="border-bottom pb-2">
+                            <i class="fas fa-user-plus me-2"></i>Promote User to Admin
+                        </h6>
+
+                        <div class="mb-3">
+                            <label for="userSearch" class="form-label">Select User</label>
+                            <div class="search-container">
+                                <div class="search-box">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input type="text" class="search-input" id="userSearch"
+                                        placeholder="Search users by name, email, or username...">
+                                    <button class="search-clear" id="clearUserSearch" style="display: none;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="userSearchResults" class="search-results mt-2" style="display: none;"></div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="adminRole" class="form-label">Admin Role</label>
+                                    <select class="form-select" id="adminRole">
+                                        <option value="admin">Full Administrator</option>
+                                        <option value="assistant">Assistant Administrator</option>
+                                    </select>
+                                    <div class="form-text">
+                                        <small>
+                                            <strong>Full Admin:</strong> Full system access<br>
+                                            <strong>Assistant Admin:</strong> Limited view-only access
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Selected User</label>
+                                    <div id="selectedUserInfo" class="p-3 bg-light rounded" style="display: none;">
+                                        <!-- Selected user info will appear here -->
+                                    </div>
+                                    <div id="noUserSelected" class="text-muted">
+                                        No user selected
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-primary" id="promoteUserBtn" disabled>
+                                <i class="fas fa-user-shield me-1"></i>Promote User
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Current Admins Section -->
+                    <div class="current-admins-section">
+                        <h6 class="border-bottom pb-2">
+                            <i class="fas fa-users-cog me-2"></i>Current Administrators
+                        </h6>
+
+                        <div class="admins-table-container">
+                            <table class="table admins-table">
+                                <thead>
+                                    <tr>
+                                        <th>Admin</th>
+                                        <th>Role</th>
+                                        <th>Joined Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="currentAdminsList">
+                                    <!-- Current admins will be populated here as table rows -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div id="noAdminsMessage" class="no-admins text-center py-4" style="display: none;">
+                            <i class="fas fa-users fa-3x mb-3 text-muted"></i>
+                            <h5>No Administrators Found</h5>
+                            <p class="text-muted">There are no admin accounts in the system.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Action Security Modal -->
+    <div class="modal fade" id="adminActionSecurityModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="adminActionModalTitle">
+                        <i class="fas fa-shield-alt me-2"></i>Security Confirmation
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="adminActionDescription" class="mb-3">
+                        <!-- Action description will be inserted here -->
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="adminActionPassword" class="form-label">Admin Password</label>
+                        <input type="password" class="form-control" id="adminActionPassword"
+                            placeholder="Enter your admin password">
+                        <div class="form-text">You must verify your identity to perform this action.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="adminActionConfirmText" class="form-label">Type "CONFIRM" to proceed</label>
+                        <input type="text" class="form-control" id="adminActionConfirmText"
+                            placeholder="Type CONFIRM here">
+                        <div class="form-text">This extra step ensures the security of admin accounts.</div>
+                    </div>
+
+                    <div id="adminActionError" class="alert alert-danger mt-2" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmAdminActionBtn">Confirm Action</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../js/adminJS/adminAdminManager.js"></script>
     <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="../js/adminJS/adminCommon.js"></script>
     <script src="../js/adminJS/adminAccountManager.js"></script>

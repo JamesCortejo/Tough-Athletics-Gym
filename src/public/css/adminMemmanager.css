@@ -18,7 +18,7 @@ body {
   align-items: center;
   flex-direction: column;
   position: fixed;
-  padding: 2rem 1.5rem;
+  padding: 1rem 1.5rem;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
 }
@@ -984,32 +984,27 @@ body.modal-open {
   background: #a8a8a8;
 }
 
-/* Firefox scrollbar */
 .applications-section .table-container,
 .active-members-section .table-container {
   scrollbar-width: thin;
   scrollbar-color: #c1c1c1 #f1f1f1;
 }
 
-/* No applications/members message styling */
 .no-applications {
   padding: 3rem 1rem;
   text-align: center;
   color: #6c757d;
 }
 
-/* Ensure the table-responsive div doesn't add extra spacing */
 .table-responsive {
   margin-bottom: 0;
 }
 
-/* Header section spacing */
 .applications-section .section-header,
 .active-members-section .section-header {
   margin-bottom: 0;
 }
 
-/* Search container adjustments */
 .section-actions .search-container {
   margin-left: auto;
 }
