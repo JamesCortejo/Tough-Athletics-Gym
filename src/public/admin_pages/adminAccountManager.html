@@ -207,111 +207,6 @@
         </div>
     </div>
 
-    <!-- TSOP: Edit Session Modal -->
-    <div class="modal fade" id="editSessionModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-user-clock me-2"></i>
-                        Edit Session Active
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Another admin is currently editing this user:</strong>
-                    </div>
-                    <div class="edit-session-info">
-                        <div class="row">
-                            <div class="col-6">
-                                <strong>Editing Admin:</strong>
-                                <div id="currentEditorName">Loading...</div>
-                            </div>
-                            <div class="col-6">
-                                <strong>Started At:</strong>
-                                <div id="editSessionStartTime">Loading...</div>
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-12">
-                                <strong>User Being Edited:</strong>
-                                <div id="editingUserName">Loading...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <p class="text-muted small">
-                            <i class="fas fa-info-circle me-1"></i>
-                            According to Timestamp Ordering Protocol, the first admin to start editing has priority.
-                            You can try again after they finish.
-                        </p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Close
-                    </button>
-                    <button type="button" class="btn btn-primary" id="refreshEditStatusBtn">
-                        <i class="fas fa-sync-alt me-1"></i>Refresh Status
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- TSOP: Edit Timestamp Info Modal -->
-    <div class="modal fade" id="editTimestampModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-clock me-2"></i>
-                        Edit Session Started
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-user-check me-2"></i>
-                        <strong>You are now editing this user account</strong>
-                    </div>
-                    <div class="timestamp-info">
-                        <div class="row">
-                            <div class="col-6">
-                                <strong>Your Priority:</strong>
-                                <div class="text-success">First Editor</div>
-                            </div>
-                            <div class="col-6">
-                                <strong>Session Started:</strong>
-                                <div id="yourEditStartTime">Loading...</div>
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-12">
-                                <strong>User Being Edited:</strong>
-                                <div id="yourEditingUserName">Loading...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <p class="text-muted small">
-                            <i class="fas fa-shield-alt me-1"></i>
-                            <strong>Timestamp Ordering Protocol Active:</strong>
-                            Other admins will be notified that you are editing this account and will have to wait.
-                        </p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
-                        <i class="fas fa-check me-1"></i>Continue Editing
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="sideBar d-flex flex-column">
         <div class="titleLogo">
             <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-2"
@@ -404,6 +299,21 @@
                     </h3>
                     <div class="section-actions">
                         <span class="badge bg-black" id="usersCount">0 Users</span>
+
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                                id="statusFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-filter me-1"></i>
+                                <span id="statusFilterText">Active Accounts</span>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="statusFilterDropdown">
+                                <li><a class="dropdown-item status-filter-option active" href="#"
+                                        data-status="active">Active Accounts</a></li>
+                                <li><a class="dropdown-item status-filter-option" href="#"
+                                        data-status="archived">Archived Accounts</a></li>
+                            </ul>
+                        </div>
+
                         <!-- Search Bar -->
                         <div class="search-container">
                             <div class="search-box">
@@ -454,7 +364,7 @@
 
     <!-- Admin Management Modal -->
     <div class="modal fade" id="adminManagementModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">

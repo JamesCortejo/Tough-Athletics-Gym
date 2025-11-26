@@ -53,6 +53,17 @@ router.get("/stats", verifyToken, async (req, res) => {
     let premiumRevenue = 0;
     let vipRevenue = 0;
 
+    activeMemberships.forEach((membership) => {
+      const amount = Number(membership.amount) || 0;
+      if (membership.planType === "Basic") {
+        basicRevenue += amount;
+      } else if (membership.planType === "Premium") {
+        premiumRevenue += amount;
+      } else if (membership.planType === "VIP") {
+        vipRevenue += amount;
+      }
+    });
+
     const membershipRevenue = basicRevenue + premiumRevenue + vipRevenue;
 
     // Calculate monthly revenue from non-members (walk-ins)

@@ -6,9 +6,6 @@ const { ObjectId } = require("mongodb");
 const { verifyToken } = require("../handlers/loginHandler");
 const bcrypt = require("bcryptjs");
 
-// TSOP Edit Session Management
-const editSessions = new Map(); // In-memory store for active sessions
-
 // Get all user accounts (admin only) - UPDATED to exclude admin accounts
 router.get("/admin/accounts", verifyToken, async (req, res) => {
   try {
@@ -123,20 +120,13 @@ router.get("/admin/accounts/:userId", verifyToken, async (req, res) => {
   }
 });
 
-// TSOP Edit Session Management Routes
+// TSOP Edit Session Logging (without locking)
+const editSessions = new Map(); // Just for tracking, not for locking
 
-// Start edit session
+// Start edit session (logging only)
 router.post("/admin/edit-sessions/start", verifyToken, async (req, res) => {
   try {
-    const {
-      sessionId,
-      userId,
-      adminId,
-      adminName,
-      userName,
-      startTime,
-      timestamp,
-    } = req.body;
+    const { sessionId, userId, adminId, adminName, userName } = req.body;
     const db = await connectToDatabase();
     const usersCollection = db.collection("users");
 
@@ -161,49 +151,27 @@ router.post("/admin/edit-sessions/start", verifyToken, async (req, res) => {
       });
     }
 
-    // Check if there's already an active session for this user
-    const existingSession = Array.from(editSessions.values()).find(
-      (session) => session.userId === userId && session.isActive
+    // Get user details for logging
+    const targetUser = await usersCollection.findOne(
+      { _id: new ObjectId(userId) },
+      { projection: { username: 1, email: 1 } }
     );
 
-    if (existingSession) {
-      // Another admin is editing this user
-      return res.status(409).json({
-        success: false,
-        conflict: true,
-        activeSession: {
-          adminName: existingSession.adminName,
-          startTime: existingSession.startTime,
-          userName: existingSession.userName,
-        },
-        message: "Another admin is currently editing this user account.",
-      });
-    }
-
-    // Create new session
+    // Create session data for tracking (not for locking)
     const sessionData = {
       sessionId,
       userId,
       adminId,
       adminName,
       userName,
-      startTime: new Date(startTime),
-      timestamp,
-      isActive: true,
-      createdAt: new Date(),
+      startTime: new Date(),
+      timestamp: Date.now(),
     };
 
     editSessions.set(sessionId, sessionData);
 
-    // Set timeout to auto-remove session after 30 minutes
-    setTimeout(() => {
-      if (editSessions.has(sessionId)) {
-        editSessions.delete(sessionId);
-      }
-    }, 30 * 60 * 1000);
-
     // Log the edit session start
-    await db.collection("admin_actions").insertOne({
+    const logResult = await db.collection("admin_actions").insertOne({
       action: "start_edit_session",
       targetUserId: new ObjectId(userId),
       adminId: new ObjectId(req.user.userId),
@@ -213,8 +181,26 @@ router.post("/admin/edit-sessions/start", verifyToken, async (req, res) => {
       details: {
         sessionId: sessionId,
         userName: userName,
+        userUsername: targetUser?.username || "Unknown",
+        userEmail: targetUser?.email || "Unknown",
+        tsopProtocol: "last-write-wins", // Indicate the protocol type
       },
     });
+
+    console.log(`⚡ Performed action: start_edit_session for ${userName}`);
+    console.log(
+      `Admin: ${adminUser.username} | User: ${userName} (${targetUser?.username}) | Email: ${targetUser?.email} | Action: start_edit_session | ID: ${logResult.insertedId}`
+    );
+    console.log(
+      `${new Date().toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })}`
+    );
 
     res.status(200).json({
       success: true,
@@ -230,7 +216,7 @@ router.post("/admin/edit-sessions/start", verifyToken, async (req, res) => {
   }
 });
 
-// End edit session
+// End edit session (logging only)
 router.post("/admin/edit-sessions/end", verifyToken, async (req, res) => {
   try {
     const { sessionId } = req.body;
@@ -250,13 +236,21 @@ router.post("/admin/edit-sessions/end", verifyToken, async (req, res) => {
       });
     }
 
-    // Remove session
+    // Get session data before removing
+    const session = editSessions.get(sessionId);
+
+    // Remove session from tracking
     if (editSessions.has(sessionId)) {
-      const session = editSessions.get(sessionId);
       editSessions.delete(sessionId);
 
+      // Get user details for logging
+      const targetUser = await usersCollection.findOne(
+        { _id: new ObjectId(session.userId) },
+        { projection: { username: 1, email: 1 } }
+      );
+
       // Log the edit session end
-      await db.collection("admin_actions").insertOne({
+      const logResult = await db.collection("admin_actions").insertOne({
         action: "end_edit_session",
         targetUserId: new ObjectId(session.userId),
         adminId: new ObjectId(req.user.userId),
@@ -266,9 +260,29 @@ router.post("/admin/edit-sessions/end", verifyToken, async (req, res) => {
         details: {
           sessionId: sessionId,
           userName: session.userName,
+          userUsername: targetUser?.username || "Unknown",
+          userEmail: targetUser?.email || "Unknown",
           duration: Date.now() - new Date(session.startTime).getTime(),
+          tsopProtocol: "last-write-wins",
         },
       });
+
+      console.log(
+        `⚡ Performed action: end_edit_session for ${session.userName}`
+      );
+      console.log(
+        `Admin: ${adminUser.username} | User: ${session.userName} (${targetUser?.username}) | Email: ${targetUser?.email} | Action: end_edit_session | ID: ${logResult.insertedId}`
+      );
+      console.log(
+        `${new Date().toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })}`
+      );
     }
 
     res.status(200).json({
@@ -284,90 +298,17 @@ router.post("/admin/edit-sessions/end", verifyToken, async (req, res) => {
   }
 });
 
-// Check edit session status
-router.get("/admin/edit-sessions/check", verifyToken, async (req, res) => {
-  try {
-    const { sessionId } = req.query;
-    const db = await connectToDatabase();
-    const usersCollection = db.collection("users");
-
-    // Verify admin user
-    const adminUser = await usersCollection.findOne({
-      _id: new ObjectId(req.user.userId),
-      isAdmin: true,
-    });
-
-    if (!adminUser) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied. Admin only.",
-      });
-    }
-
-    const isActive =
-      editSessions.has(sessionId) && editSessions.get(sessionId).isActive;
-
-    res.status(200).json({
-      success: true,
-      isActive: isActive,
-    });
-  } catch (error) {
-    console.error("Check edit session error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-});
-
-// Get active edit sessions (for monitoring)
-router.get("/admin/edit-sessions/active", verifyToken, async (req, res) => {
-  try {
-    const db = await connectToDatabase();
-    const usersCollection = db.collection("users");
-
-    // Verify admin user
-    const adminUser = await usersCollection.findOne({
-      _id: new ObjectId(req.user.userId),
-      isAdmin: true,
-    });
-
-    if (!adminUser) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied. Admin only.",
-      });
-    }
-
-    const activeSessions = Array.from(editSessions.values())
-      .filter((session) => session.isActive)
-      .map((session) => ({
-        sessionId: session.sessionId,
-        userId: session.userId,
-        adminName: session.adminName,
-        userName: session.userName,
-        startTime: session.startTime,
-        duration: Date.now() - new Date(session.startTime).getTime(),
-      }));
-
-    res.status(200).json({
-      success: true,
-      activeSessions: activeSessions,
-    });
-  } catch (error) {
-    console.error("Get active sessions error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-});
-
-// Update user account - UPDATED with password confirmation, assistant restriction, and TSOP session validation
+// Update user account - UPDATED for last-write-wins TSOP with session logging
 router.put("/admin/accounts/:userId", verifyToken, async (req, res) => {
   try {
     const { userId } = req.params;
-    const { updateData, adminPassword, confirmText, editSessionId } = req.body; // Added editSessionId
+    const {
+      updateData,
+      adminPassword,
+      confirmText,
+      commitTimestamp,
+      editSessionId,
+    } = req.body;
     const db = await connectToDatabase();
     const usersCollection = db.collection("users");
 
@@ -393,23 +334,6 @@ router.put("/admin/accounts/:userId", verifyToken, async (req, res) => {
       });
     }
 
-    // TSOP: Verify edit session is still active
-    if (editSessionId) {
-      const activeSession = editSessions.get(editSessionId);
-      if (
-        !activeSession ||
-        !activeSession.isActive ||
-        activeSession.userId !== userId
-      ) {
-        return res.status(409).json({
-          success: false,
-          message:
-            "Edit session has expired or is no longer active. Please refresh and try again.",
-          sessionExpired: true,
-        });
-      }
-    }
-
     // Verify admin password
     const isPasswordValid = await bcrypt.compare(
       adminPassword,
@@ -430,6 +354,30 @@ router.put("/admin/accounts/:userId", verifyToken, async (req, res) => {
       });
     }
 
+    // Get current user data to check last update timestamp
+    const currentUser = await usersCollection.findOne({
+      _id: new ObjectId(userId),
+      isAdmin: { $ne: true },
+    });
+
+    if (!currentUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Check if this update is based on stale data (optional - for conflict detection)
+    let hasConflict = false;
+    if (currentUser.lastUpdateTimestamp && commitTimestamp) {
+      if (commitTimestamp < currentUser.lastUpdateTimestamp) {
+        hasConflict = true;
+        console.log(
+          `🔄 TSOP Conflict: Update based on stale data for user ${userId}`
+        );
+      }
+    }
+
     // Remove sensitive fields that shouldn't be updated
     delete updateData.password;
     delete updateData._id;
@@ -437,13 +385,19 @@ router.put("/admin/accounts/:userId", verifyToken, async (req, res) => {
     delete updateData.facebookId;
     delete updateData.isAdmin;
 
-    // Add updated timestamp
+    // Add updated timestamp and commit timestamp
     updateData.updatedAt = new Date();
+    updateData.lastUpdateTimestamp = Date.now(); // Server-side timestamp for last-write-wins
+    updateData.lastUpdatedBy = {
+      adminId: new ObjectId(req.user.userId),
+      adminName: adminUser.username,
+      timestamp: new Date(),
+    };
 
     const result = await usersCollection.updateOne(
       {
         _id: new ObjectId(userId),
-        isAdmin: { $ne: true }, // Ensure we're not updating admin accounts
+        isAdmin: { $ne: true },
       },
       { $set: updateData }
     );
@@ -461,7 +415,7 @@ router.put("/admin/accounts/:userId", verifyToken, async (req, res) => {
     }
 
     // Log admin action with TSOP info
-    await db.collection("admin_actions").insertOne({
+    const logData = {
       action: "update_user_account",
       targetUserId: new ObjectId(userId),
       adminId: new ObjectId(req.user.userId),
@@ -470,14 +424,43 @@ router.put("/admin/accounts/:userId", verifyToken, async (req, res) => {
       timestamp: new Date(),
       details: {
         updatedFields: Object.keys(updateData),
+        commitTimestamp: commitTimestamp,
+        serverTimestamp: updateData.lastUpdateTimestamp,
+        hasConflict: hasConflict,
+        tsopProtocol: "last-write-wins",
         editSessionId: editSessionId,
-        tsopProtocol: true,
       },
-    });
+    };
+
+    if (hasConflict) {
+      logData.details.conflictResolution =
+        "last-write-wins - newer update accepted";
+    }
+
+    const logResult = await db.collection("admin_actions").insertOne(logData);
+
+    console.log(
+      `⚡ Performed action: update_user_account for ${currentUser.firstName} ${currentUser.lastName}`
+    );
+    console.log(
+      `Admin: ${adminUser.username} | User: ${currentUser.firstName} ${currentUser.lastName} (${currentUser.username}) | Email: ${currentUser.email} | Action: update_user_account | ID: ${logResult.insertedId}`
+    );
+    console.log(
+      `${new Date().toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })}`
+    );
 
     res.status(200).json({
       success: true,
       message: "User account updated successfully",
+      serverTimestamp: updateData.lastUpdateTimestamp,
+      hadConflict: hasConflict,
     });
   } catch (error) {
     console.error("Update user error:", error);
@@ -542,6 +525,11 @@ router.post(
         });
       }
 
+      // Get user for logging
+      const targetUser = await usersCollection.findOne({
+        _id: new ObjectId(userId),
+      });
+
       const result = await usersCollection.updateOne(
         {
           _id: new ObjectId(userId),
@@ -552,6 +540,12 @@ router.post(
             isArchived: true,
             archivedAt: new Date(),
             updatedAt: new Date(),
+            lastUpdateTimestamp: Date.now(),
+            lastUpdatedBy: {
+              adminId: new ObjectId(req.user.userId),
+              adminName: adminUser.username,
+              timestamp: new Date(),
+            },
           },
         }
       );
@@ -565,14 +559,36 @@ router.post(
       }
 
       // Log admin action
-      await db.collection("admin_actions").insertOne({
+      const logResult = await db.collection("admin_actions").insertOne({
         action: "archive_user_account",
         targetUserId: new ObjectId(userId),
         adminId: new ObjectId(req.user.userId),
         adminName: adminUser.username,
-        adminRole: "admin", // Log the role
+        adminRole: "admin",
         timestamp: new Date(),
+        details: {
+          userName: `${targetUser.firstName} ${targetUser.lastName}`,
+          userUsername: targetUser.username,
+          userEmail: targetUser.email,
+        },
       });
+
+      console.log(
+        `⚡ Performed action: archive_user_account for ${targetUser.firstName} ${targetUser.lastName}`
+      );
+      console.log(
+        `Admin: ${adminUser.username} | User: ${targetUser.firstName} ${targetUser.lastName} (${targetUser.username}) | Email: ${targetUser.email} | Action: archive_user_account | ID: ${logResult.insertedId}`
+      );
+      console.log(
+        `${new Date().toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })}`
+      );
 
       res.status(200).json({
         success: true,
@@ -642,6 +658,11 @@ router.post(
         });
       }
 
+      // Get user for logging
+      const targetUser = await usersCollection.findOne({
+        _id: new ObjectId(userId),
+      });
+
       const result = await usersCollection.updateOne(
         {
           _id: new ObjectId(userId),
@@ -651,6 +672,12 @@ router.post(
           $set: {
             isArchived: false,
             updatedAt: new Date(),
+            lastUpdateTimestamp: Date.now(),
+            lastUpdatedBy: {
+              adminId: new ObjectId(req.user.userId),
+              adminName: adminUser.username,
+              timestamp: new Date(),
+            },
           },
           $unset: {
             archivedAt: 1,
@@ -667,14 +694,36 @@ router.post(
       }
 
       // Log admin action
-      await db.collection("admin_actions").insertOne({
+      const logResult = await db.collection("admin_actions").insertOne({
         action: "unarchive_user_account",
         targetUserId: new ObjectId(userId),
         adminId: new ObjectId(req.user.userId),
         adminName: adminUser.username,
-        adminRole: "admin", // Log the role
+        adminRole: "admin",
         timestamp: new Date(),
+        details: {
+          userName: `${targetUser.firstName} ${targetUser.lastName}`,
+          userUsername: targetUser.username,
+          userEmail: targetUser.email,
+        },
       });
+
+      console.log(
+        `⚡ Performed action: unarchive_user_account for ${targetUser.firstName} ${targetUser.lastName}`
+      );
+      console.log(
+        `Admin: ${adminUser.username} | User: ${targetUser.firstName} ${targetUser.lastName} (${targetUser.username}) | Email: ${targetUser.email} | Action: unarchive_user_account | ID: ${logResult.insertedId}`
+      );
+      console.log(
+        `${new Date().toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })}`
+      );
 
       res.status(200).json({
         success: true,
@@ -894,7 +943,7 @@ router.post("/admin/promote", verifyToken, async (req, res) => {
     }
 
     // Log admin action
-    await db.collection("admin_actions").insertOne({
+    const logResult = await db.collection("admin_actions").insertOne({
       action: "promote_to_admin",
       targetUserId: new ObjectId(userId),
       adminId: new ObjectId(req.user.userId),
@@ -903,10 +952,29 @@ router.post("/admin/promote", verifyToken, async (req, res) => {
       timestamp: new Date(),
       details: {
         targetUserName: `${userToPromote.firstName} ${userToPromote.lastName}`,
+        targetUserUsername: userToPromote.username,
+        targetUserEmail: userToPromote.email,
         role: role,
         newRole: role === "assistant" ? "Assistant Admin" : "Full Admin",
       },
     });
+
+    console.log(
+      `⚡ Performed action: promote_to_admin for ${userToPromote.firstName} ${userToPromote.lastName}`
+    );
+    console.log(
+      `Admin: ${adminUser.username} | User: ${userToPromote.firstName} ${userToPromote.lastName} (${userToPromote.username}) | Email: ${userToPromote.email} | Action: promote_to_admin | ID: ${logResult.insertedId}`
+    );
+    console.log(
+      `${new Date().toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })}`
+    );
 
     res.status(200).json({
       success: true,
@@ -1011,7 +1079,7 @@ router.post("/admin/change-role", verifyToken, async (req, res) => {
     }
 
     // Log admin action
-    await db.collection("admin_actions").insertOne({
+    const logResult = await db.collection("admin_actions").insertOne({
       action: "change_admin_role",
       targetUserId: new ObjectId(adminId),
       adminId: new ObjectId(req.user.userId),
@@ -1020,10 +1088,29 @@ router.post("/admin/change-role", verifyToken, async (req, res) => {
       timestamp: new Date(),
       details: {
         targetUserName: `${targetAdmin.firstName} ${targetAdmin.lastName}`,
+        targetUserUsername: targetAdmin.username,
+        targetUserEmail: targetAdmin.email,
         oldRole: targetAdmin.isAssistant ? "Assistant Admin" : "Full Admin",
         newRole: role === "assistant" ? "Assistant Admin" : "Full Admin",
       },
     });
+
+    console.log(
+      `⚡ Performed action: change_admin_role for ${targetAdmin.firstName} ${targetAdmin.lastName}`
+    );
+    console.log(
+      `Admin: ${adminUser.username} | User: ${targetAdmin.firstName} ${targetAdmin.lastName} (${targetAdmin.username}) | Email: ${targetAdmin.email} | Action: change_admin_role | ID: ${logResult.insertedId}`
+    );
+    console.log(
+      `${new Date().toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })}`
+    );
 
     res.status(200).json({
       success: true,
@@ -1131,7 +1218,7 @@ router.post("/admin/revoke", verifyToken, async (req, res) => {
     }
 
     // Log admin action
-    await db.collection("admin_actions").insertOne({
+    const logResult = await db.collection("admin_actions").insertOne({
       action: "revoke_admin_privileges",
       targetUserId: new ObjectId(adminId),
       adminId: new ObjectId(req.user.userId),
@@ -1140,9 +1227,28 @@ router.post("/admin/revoke", verifyToken, async (req, res) => {
       timestamp: new Date(),
       details: {
         targetUserName: `${targetAdmin.firstName} ${targetAdmin.lastName}`,
+        targetUserUsername: targetAdmin.username,
+        targetUserEmail: targetAdmin.email,
         oldRole: targetAdmin.isAssistant ? "Assistant Admin" : "Full Admin",
       },
     });
+
+    console.log(
+      `⚡ Performed action: revoke_admin_privileges for ${targetAdmin.firstName} ${targetAdmin.lastName}`
+    );
+    console.log(
+      `Admin: ${adminUser.username} | User: ${targetAdmin.firstName} ${targetAdmin.lastName} (${targetAdmin.username}) | Email: ${targetAdmin.email} | Action: revoke_admin_privileges | ID: ${logResult.insertedId}`
+    );
+    console.log(
+      `${new Date().toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })}`
+    );
 
     res.status(200).json({
       success: true,

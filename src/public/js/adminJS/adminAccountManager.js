@@ -16,27 +16,18 @@ document.addEventListener("DOMContentLoaded", function () {
   let searchTimeout = null;
   let editFormData = null;
   let isAssistantAdmin = false;
+  let currentStatusFilter = "active"; // Default filter
+  let editModal = null;
 
-  // TSOP Implementation Variables
-  let activeEditSessions = new Map();
+  // TSOP Edit Session Tracking (for logging only, not for locking)
   let currentEditSessionId = null;
   let editSessionCheckInterval = null;
-  let editModal = null;
-  let editModalHideHandler = null;
 
   // Initialize the page
   initializePage();
 
-  // TSOP Functions
-  function initializeTSOPSystem() {
-    // Start checking for active edit sessions every 10 seconds
-    editSessionCheckInterval = setInterval(checkActiveEditSessions, 10000);
-
-    // Initialize modal instance
-    editModal = new bootstrap.Modal(
-      document.getElementById("editAccountModal")
-    );
-
+  // TSOP Functions (for logging only)
+  function initializeTSOPLogging() {
     // Clean up on page unload
     window.addEventListener("beforeunload", cleanupEditSessions);
   }
@@ -84,23 +75,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (result.success) {
         currentEditSessionId = sessionData.sessionId;
-        activeEditSessions.set(userId, sessionData);
-
-        // Show timestamp info modal
-        showEditTimestampModal(sessionData);
-
         return sessionData.sessionId;
       } else {
-        // Another admin is editing this user
-        if (result.conflict) {
-          showEditSessionModal(result.activeSession);
-          return null;
-        }
         throw new Error(result.message);
       }
     } catch (error) {
       console.error("Error starting edit session:", error);
-      showAlert("Error starting edit session. Please try again.", "danger");
+      // Don't show alert for logging errors - continue with edit anyway
       return null;
     }
   }
@@ -118,14 +99,6 @@ document.addEventListener("DOMContentLoaded", function () {
         body: JSON.stringify({ sessionId }),
       });
 
-      // Remove from local tracking
-      for (let [userId, session] of activeEditSessions.entries()) {
-        if (session.sessionId === sessionId) {
-          activeEditSessions.delete(userId);
-          break;
-        }
-      }
-
       if (currentEditSessionId === sessionId) {
         currentEditSessionId = null;
       }
@@ -134,66 +107,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  async function checkActiveEditSessions() {
-    if (!currentEditSessionId) return;
-
-    try {
-      const response = await fetch(
-        `/api/accounts/admin/edit-sessions/check?sessionId=${currentEditSessionId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${adminToken}`,
-          },
-        }
-      );
-
-      const result = await response.json();
-
-      if (!result.isActive) {
-        // Session was terminated (maybe by another admin or timeout)
-        showAlert(
-          "Your edit session has ended. Please refresh the page.",
-          "warning"
-        );
-        if (editModal) {
-          editModal.hide();
-        }
-        currentEditSessionId = null;
-      }
-    } catch (error) {
-      console.error("Error checking edit session:", error);
-    }
-  }
-
   function generateSessionId() {
     return `edit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  function showEditSessionModal(activeSession) {
-    document.getElementById("currentEditorName").textContent =
-      activeSession.adminName;
-    document.getElementById("editSessionStartTime").textContent = new Date(
-      activeSession.startTime
-    ).toLocaleString();
-    document.getElementById("editingUserName").textContent =
-      activeSession.userName;
-
-    const modal = new bootstrap.Modal(
-      document.getElementById("editSessionModal")
-    );
-    modal.show();
-  }
-
-  function showEditTimestampModal(sessionData) {
-    document.getElementById("yourEditStartTime").textContent =
-      sessionData.startTime.toLocaleString();
-    document.getElementById("yourEditingUserName").textContent =
-      sessionData.userName;
-
-    const modal = new bootstrap.Modal(
-      document.getElementById("editTimestampModal")
-    );
-    modal.show();
   }
 
   // Check if current admin is an assistant
@@ -247,7 +162,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Add restriction notice to the page
-    const pageHeader = document.querySelector(".page-header");
+    const pageHeader = document.querySelector(".dashboard-header");
     if (pageHeader && !document.getElementById("assistantRestrictionNotice")) {
       const restrictionNotice = document.createElement("div");
       restrictionNotice.id = "assistantRestrictionNotice";
@@ -280,44 +195,6 @@ document.addEventListener("DOMContentLoaded", function () {
     .getElementById("confirmSecurityBtn")
     .addEventListener("click", handleSecurityConfirmation);
 
-  // TSOP Event Listeners
-  document
-    .getElementById("refreshEditStatusBtn")
-    ?.addEventListener("click", async function () {
-      bootstrap.Modal.getInstance(
-        document.getElementById("editSessionModal")
-      )?.hide();
-    });
-
-  // NEW: Handle edit modal cancellation
-  document
-    .getElementById("editAccountModal")
-    ?.addEventListener("hide.bs.modal", function () {
-      // If modal is being hidden and we have an active session, end it
-      if (currentEditSessionId && !currentAction) {
-        console.log(
-          "Edit modal closed without saving - ending session:",
-          currentEditSessionId
-        );
-        endEditSession(currentEditSessionId);
-        currentEditSessionId = null;
-      }
-    });
-
-  // NEW: Handle cancel button click explicitly
-  document
-    .querySelector("#editAccountModal .btn-secondary")
-    ?.addEventListener("click", function () {
-      console.log(
-        "Cancel button clicked - ending session:",
-        currentEditSessionId
-      );
-      if (currentEditSessionId) {
-        endEditSession(currentEditSessionId);
-        currentEditSessionId = null;
-      }
-    });
-
   // Search functionality
   const searchInput = document.getElementById("usersSearch");
   const clearSearchBtn = document.getElementById("clearUsersSearch");
@@ -338,9 +215,52 @@ document.addEventListener("DOMContentLoaded", function () {
     clearSearchBtn.addEventListener("click", clearUsersSearch);
   }
 
+  // Status filter functionality
+  document.querySelectorAll(".status-filter-option").forEach((item) => {
+    item.addEventListener("click", function (e) {
+      e.preventDefault();
+      const status = this.getAttribute("data-status");
+      handleStatusFilterChange(status);
+    });
+  });
+
   async function initializePage() {
     checkAdminRole();
-    initializeTSOPSystem(); // Initialize TSOP system
+    initializeTSOPLogging(); // Initialize TSOP logging
+
+    // Initialize modal instance
+    editModal = new bootstrap.Modal(
+      document.getElementById("editAccountModal")
+    );
+
+    // Add event listener for modal close to end edit session
+    document
+      .getElementById("editAccountModal")
+      ?.addEventListener("hide.bs.modal", function () {
+        if (currentEditSessionId && !currentAction) {
+          console.log(
+            "Edit modal closed without saving - ending session:",
+            currentEditSessionId
+          );
+          endEditSession(currentEditSessionId);
+          currentEditSessionId = null;
+        }
+      });
+
+    // Handle cancel button click
+    document
+      .querySelector("#editAccountModal .btn-secondary")
+      ?.addEventListener("click", function () {
+        console.log(
+          "Cancel button clicked - ending session:",
+          currentEditSessionId
+        );
+        if (currentEditSessionId) {
+          endEditSession(currentEditSessionId);
+          currentEditSessionId = null;
+        }
+      });
+
     await loadUsers();
   }
 
@@ -361,9 +281,19 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 300);
   }
 
+  function filterUsersByStatus(users, status) {
+    if (status === "active") {
+      return users.filter((user) => !user.isArchived);
+    } else if (status === "archived") {
+      return users.filter((user) => user.isArchived);
+    }
+    return users; // Return all if status is not recognized
+  }
+
   function filterUsers(searchTerm) {
     if (!searchTerm.trim()) {
-      filteredUsers = [...allUsers];
+      // If no search term, just apply status filter to all users
+      filteredUsers = filterUsersByStatus(allUsers, currentStatusFilter);
       displayUsers(filteredUsers);
       updateSearchUI(false);
       return;
@@ -371,7 +301,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const term = searchTerm.toLowerCase().trim();
 
-    filteredUsers = allUsers.filter((user) => {
+    // First filter by search term
+    let searchFilteredUsers = allUsers.filter((user) => {
       const searchableFields = [
         user.firstName,
         user.lastName,
@@ -386,8 +317,36 @@ document.addEventListener("DOMContentLoaded", function () {
       return searchableFields.some((field) => field.includes(term));
     });
 
+    // Then apply status filter
+    filteredUsers = filterUsersByStatus(
+      searchFilteredUsers,
+      currentStatusFilter
+    );
     displayUsers(filteredUsers);
     updateSearchUI(true);
+  }
+
+  function handleStatusFilterChange(status) {
+    currentStatusFilter = status;
+
+    // Update the dropdown text
+    const statusFilterText = document.getElementById("statusFilterText");
+    if (statusFilterText) {
+      statusFilterText.textContent =
+        status === "active" ? "Active Accounts" : "Archived Accounts";
+    }
+
+    // Update active class in dropdown items
+    document.querySelectorAll(".status-filter-option").forEach((item) => {
+      if (item.getAttribute("data-status") === status) {
+        item.classList.add("active");
+      } else {
+        item.classList.remove("active");
+      }
+    });
+
+    // Apply the filter
+    filterUsers(document.getElementById("usersSearch").value);
   }
 
   function clearUsersSearch() {
@@ -403,7 +362,8 @@ document.addEventListener("DOMContentLoaded", function () {
       clearSearchBtn.style.display = "none";
     }
 
-    filteredUsers = [...allUsers];
+    // Reset to current status filter
+    filteredUsers = filterUsersByStatus(allUsers, currentStatusFilter);
     displayUsers(filteredUsers);
     updateSearchUI(false);
   }
@@ -445,7 +405,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (result.success) {
         allUsers = result.users;
-        filteredUsers = [...allUsers];
+
+        // Apply the current status filter
+        filteredUsers = filterUsersByStatus(allUsers, currentStatusFilter);
 
         // Update admin role from response if available
         if (result.adminRole === "assistant") {
@@ -475,25 +437,61 @@ document.addEventListener("DOMContentLoaded", function () {
   function displayUsers(users) {
     const tableBody = document.getElementById("usersTableBody");
     const noUsersMessage = document.getElementById("noUsersMessage");
+    const noUsersSearchResults = document.getElementById(
+      "noUsersSearchResults"
+    );
     const usersCount = document.getElementById("usersCount");
 
-    // Update users count
-    usersCount.textContent = `${allUsers.length} user${
-      allUsers.length !== 1 ? "s" : ""
-    }`;
+    // Update users count - show filtered count and total in parenthesis
+    const totalUsers = allUsers.length;
+    const filteredCount = users.length;
+    usersCount.textContent = `${filteredCount} ${
+      currentStatusFilter === "active" ? "active" : "archived"
+    } user${filteredCount !== 1 ? "s" : ""} (${totalUsers} total)`;
 
     if (users.length === 0) {
       tableBody.innerHTML = "";
-      if (users === filteredUsers && allUsers.length > 0) {
-        // This means we have users but search returned no results
-        noUsersMessage.style.display = "none";
-      } else {
+
+      // Show appropriate empty state message
+      if (allUsers.length === 0) {
+        // No users at all in the system
         noUsersMessage.style.display = "block";
+        noUsersSearchResults.style.display = "none";
+      } else if (
+        filteredUsers.length === 0 &&
+        document.getElementById("usersSearch").value.trim()
+      ) {
+        // Search returned no results
+        noUsersMessage.style.display = "none";
+        noUsersSearchResults.style.display = "block";
+      } else {
+        // Status filter returned no results
+        noUsersMessage.style.display = "none";
+        noUsersSearchResults.style.display = "block";
+
+        // Update the no results message for status filter
+        const noResultsElement = document.getElementById(
+          "noUsersSearchResults"
+        );
+        if (noResultsElement) {
+          noResultsElement.innerHTML = `
+            <i class="fas fa-${
+              currentStatusFilter === "active" ? "user-check" : "archive"
+            } fa-3x mb-3"></i>
+            <h4>No ${
+              currentStatusFilter === "active" ? "Active" : "Archived"
+            } Users</h4>
+            <p class="text-muted">There are no ${
+              currentStatusFilter === "active" ? "active" : "archived"
+            } user accounts.</p>
+          `;
+        }
       }
       return;
     }
 
     noUsersMessage.style.display = "none";
+    noUsersSearchResults.style.display = "none";
 
     tableBody.innerHTML = users
       .map((user) => {
@@ -652,15 +650,12 @@ document.addEventListener("DOMContentLoaded", function () {
         // Reset current action when starting new edit
         currentAction = null;
 
-        // Start TSOP edit session
+        // Start TSOP edit session for logging
         const sessionId = await startEditSession(userId, result.user);
 
-        if (sessionId) {
-          // Only show edit modal if we got the session
-          displayEditAccountModal(result.user);
-          currentUserId = userId;
-        }
-        // If sessionId is null, the edit session modal is already shown
+        // Display edit modal with user data
+        displayEditAccountModal(result.user);
+        currentUserId = userId;
       } else {
         showAlert("Failed to load user details: " + result.message, "danger");
       }
@@ -743,9 +738,22 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     currentAction = "edit";
+
+    // Get the commit timestamp (when user clicks save)
+    const commitTimestamp = Date.now();
+
+    // Store in form data for later use
+    editFormData.commitTimestamp = commitTimestamp;
+
     showSecurityConfirmationModal(
       "Edit User Account",
-      `You are about to edit the account of <strong>${editFormData.firstName} ${editFormData.lastName}</strong>. This action requires security confirmation.`
+      `You are about to edit the account of <strong>${editFormData.firstName} ${editFormData.lastName}</strong>. 
+       <br><br>
+       <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>
+          <strong>TSOP Concurrency Control:</strong> Multiple admins can edit simultaneously. 
+          The last admin to save will overwrite previous changes.
+       </div>`
     );
   }
 
@@ -887,24 +895,35 @@ document.addEventListener("DOMContentLoaded", function () {
                 updateData: editFormData,
                 adminPassword: adminPassword,
                 confirmText: confirmText,
-                editSessionId: currentEditSessionId, // Include session ID
+                commitTimestamp: editFormData.commitTimestamp, // Send commit timestamp
+                editSessionId: currentEditSessionId, // Include session ID for logging
               }),
             }
           );
           result = await response.json();
 
           if (result.success) {
-            showAlert("User account updated successfully!", "success");
+            let alertMessage = "User account updated successfully!";
+
+            // Show conflict warning if applicable
+            if (result.hadConflict) {
+              alertMessage +=
+                " (Note: Your changes overwrote a more recent update)";
+              showAlert(alertMessage, "warning");
+            } else {
+              showAlert(alertMessage, "success");
+            }
+
             bootstrap.Modal.getInstance(
               document.getElementById("securityConfirmModal")
             ).hide();
 
-            // Close edit modal and end session
+            // Close edit modal
             if (editModal) {
               editModal.hide();
             }
 
-            // End the edit session
+            // End the edit session after successful update
             if (currentEditSessionId) {
               await endEditSession(currentEditSessionId);
               currentEditSessionId = null;
@@ -1061,15 +1080,12 @@ document.addEventListener("DOMContentLoaded", function () {
       (user) => user.createdAt && new Date(user.createdAt) >= startOfWeek
     );
 
-    // Update statistics
-    document.getElementById("totalUsers").textContent =
-      users.length > 0 ? users.length : "-";
-    document.getElementById("activeUsers").textContent =
-      activeUsers.length > 0 ? activeUsers.length : "-";
-    document.getElementById("archivedUsers").textContent =
-      archivedUsers.length > 0 ? archivedUsers.length : "-";
+    // Update statistics - show actual numbers even if 0
+    document.getElementById("totalUsers").textContent = users.length;
+    document.getElementById("activeUsers").textContent = activeUsers.length;
+    document.getElementById("archivedUsers").textContent = archivedUsers.length;
     document.getElementById("newUsersThisWeek").textContent =
-      newUsersThisWeek.length > 0 ? newUsersThisWeek.length : "-";
+      newUsersThisWeek.length;
   }
 
   function formatDate(date) {

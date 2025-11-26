@@ -42,7 +42,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const downloadButtons = document.querySelectorAll(`
       #downloadRevenueReport,
       #downloadMembershipReport,
-      #downloadCheckinReport
+      #downloadCheckinReport,
+      #downloadNonMemberReport
     `);
 
     downloadButtons.forEach((button) => {
@@ -123,11 +124,22 @@ document.addEventListener("DOMContentLoaded", function () {
   document
     .getElementById("downloadCheckinReport")
     .addEventListener("click", () => showDownloadConfirmation("checkin"));
+  document
+    .getElementById("downloadNonMemberReport")
+    .addEventListener("click", () => showDownloadConfirmation("nonmember"));
 
   // Security confirmation event listener
   document
     .getElementById("confirmDownloadBtn")
     .addEventListener("click", handleDownloadConfirmation);
+
+  // Backup functionality
+  document
+    .getElementById("downloadBackupBtn")
+    .addEventListener("click", showBackupConfirmation);
+  document
+    .getElementById("confirmBackupBtn")
+    .addEventListener("click", handleBackupConfirmation);
 
   async function initializePage() {
     checkAdminRole();
@@ -156,6 +168,7 @@ document.addEventListener("DOMContentLoaded", function () {
       revenue: "Revenue Report",
       membership: "Membership Report",
       checkin: "Check-in Report",
+      nonmember: "Non-Member Report",
     };
 
     document.getElementById(
@@ -645,6 +658,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const period = action.period || "all";
         return `📊 Downloaded ${reportType} report for period: ${getPeriodDisplay(period)}`;
 
+      case "create_json_backup":
+        return `💾 Created JSON backup: ${action.fileName || "backup.json"}`;
+
       default:
         return `⚡ Performed action: ${action.action} for ${userName}`;
     }
@@ -678,6 +694,7 @@ document.addEventListener("DOMContentLoaded", function () {
       member_checkin: "checkin",
       add_walkin_customer: "walkin", // Add walk-in action class
       download_report: "download",
+      create_json_backup: "backup",
     };
     return actionMap[action] || "update";
   }
@@ -695,6 +712,7 @@ document.addEventListener("DOMContentLoaded", function () {
       member_checkin: "Member Check-in",
       add_walkin_customer: "Add Walk-in Customer", // Add walk-in action type
       download_report: "Download Report",
+      create_json_backup: "Create JSON Backup",
     };
     return actionMap[action] || action;
   }
@@ -756,6 +774,124 @@ document.addEventListener("DOMContentLoaded", function () {
           alertDiv.remove();
         }
       }, 5000);
+    }
+  }
+
+  // Backup Functions
+  function showBackupConfirmation() {
+    if (isAssistantAdmin) {
+      showAlert(
+        "Assistant admins are not authorized to create backups. Please contact a full administrator.",
+        "warning"
+      );
+      return;
+    }
+
+    document.getElementById("backupModalLabel").textContent =
+      "Create JSON Backup";
+    document.getElementById("backupActionDescription").innerHTML = `
+      <p>You are about to create a <strong>JSON backup</strong> of all critical collections.</p>
+      <ul>
+        <li>Each collection will be exported as its own file.</li>
+        <li>Backups are stored under <code>C:\\backup\\&lt;timestamp&gt;</code>.</li>
+        <li>Please verify the backup folder after this operation completes.</li>
+      </ul>
+    `;
+    document.getElementById("backupAdminPassword").value = "";
+    document.getElementById("backupConfirmText").value = "";
+    document.getElementById("backupSecurityError").style.display = "none";
+
+    const modal = new bootstrap.Modal(
+      document.getElementById("backupConfirmModal")
+    );
+    modal.show();
+  }
+
+  async function handleBackupConfirmation() {
+    if (isAssistantAdmin) {
+      showAlert(
+        "Assistant admins are not authorized to create backups.",
+        "warning"
+      );
+      const backupModal = bootstrap.Modal.getInstance(
+        document.getElementById("backupConfirmModal")
+      );
+      if (backupModal) {
+        backupModal.hide();
+      }
+      return;
+    }
+
+    const adminPassword = document.getElementById("backupAdminPassword").value;
+    const confirmText = document.getElementById("backupConfirmText").value;
+    const securityError = document.getElementById("backupSecurityError");
+
+    if (!adminPassword) {
+      securityError.textContent = "Please enter your admin password";
+      securityError.style.display = "block";
+      return;
+    }
+
+    if (confirmText !== "CONFIRM") {
+      securityError.textContent =
+        'Please type "CONFIRM" to proceed with this action';
+      securityError.style.display = "block";
+      return;
+    }
+
+    securityError.style.display = "none";
+    showLoading(true);
+
+    try {
+      const response = await fetch("/api/reports/backup/json", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          adminPassword,
+          confirmText,
+        }),
+      });
+
+      if (response.status === 403) {
+        throw new Error(
+          "Access denied. Assistant admins cannot create backups."
+        );
+      }
+
+      if (response.status === 401) {
+        throw new Error("Authentication failed. Please log in again.");
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || `Backup failed: ${response.statusText}`
+        );
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.message || "Backup failed.");
+      }
+
+      bootstrap.Modal.getInstance(
+        document.getElementById("backupConfirmModal")
+      ).hide();
+
+      const backupPath = result.backupFolderPath || "C:\\backup";
+      showAlert(
+        `Backup created successfully at <strong>${backupPath}</strong>.`,
+        "success"
+      );
+    } catch (error) {
+      console.error("Error creating backup:", error);
+      securityError.textContent = error.message;
+      securityError.style.display = "block";
+    } finally {
+      showLoading(false);
     }
   }
 });

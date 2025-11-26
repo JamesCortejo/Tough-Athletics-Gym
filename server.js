@@ -328,6 +328,6 @@ app.post("/debug-token", (req, res) => {
 // Server startup
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running at http://192.168.1.12:${PORT}`);
+  console.log(`Server running at http://localhost:${PORT}`);
   console.log(`Make sure MongoDB is running on localhost:27017`);
 });

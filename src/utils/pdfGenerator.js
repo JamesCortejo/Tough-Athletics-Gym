@@ -60,13 +60,32 @@ class PDFGenerator {
     return text.substring(0, maxLength - 3) + "...";
   }
 
-  // Generate Revenue Report (removed unused checkins parameter)
-  async generateRevenueReport(memberships, period = "all") {
+  // Validate non-member data
+  validateNonMemberData(nonMember) {
+    return {
+      firstName: nonMember.firstName || "Unknown",
+      lastName: nonMember.lastName || "Unknown",
+      phone: nonMember.phone || "No phone",
+      email: nonMember.email || "No email",
+      address: nonMember.address || "No address",
+      amount: Number(nonMember.amount) || 0,
+      paymentMethod: nonMember.paymentMethod || "Cash at Gym",
+      checkInTime: nonMember.checkInTime
+        ? new Date(nonMember.checkInTime)
+        : new Date(),
+    };
+  }
+
+  // Generate Revenue Report (updated to include non-member revenue)
+  async generateRevenueReport(memberships, nonMembers = [], period = "all") {
     return new Promise((resolve, reject) => {
       try {
         // Validate input
         if (!Array.isArray(memberships)) {
           throw new Error("Memberships must be an array");
+        }
+        if (!Array.isArray(nonMembers)) {
+          nonMembers = [];
         }
 
         const doc = new PDFDocument({ margin: this.margin, size: "letter" });
@@ -76,17 +95,35 @@ class PDFGenerator {
         doc.on("end", () => resolve(Buffer.concat(chunks)));
         doc.on("error", reject);
 
-        const filtered = this.filterByPeriod(memberships, period);
-
-        // Use validated data
-        const validatedMemberships = filtered.map((m) =>
-          this.validateMembershipData(m)
+        const filteredMemberships = this.filterByPeriod(memberships, period);
+        const filteredNonMembers = this.filterByPeriod(
+          nonMembers,
+          period,
+          "checkInTime"
         );
 
-        const totalRevenue = validatedMemberships.reduce(
+        // Use validated data
+        const validatedMemberships = filteredMemberships.map((m) =>
+          this.validateMembershipData(m)
+        );
+        const validatedNonMembers = filteredNonMembers.map((nm) =>
+          this.validateNonMemberData(nm)
+        );
+
+        // Calculate revenue from memberships
+        const membershipRevenue = validatedMemberships.reduce(
           (sum, m) => (m.status === "Active" ? sum + m.amount : sum),
           0
         );
+
+        // Calculate revenue from non-members
+        const nonMemberRevenue = validatedNonMembers.reduce(
+          (sum, nm) => sum + nm.amount,
+          0
+        );
+
+        // Total revenue
+        const totalRevenue = membershipRevenue + nonMemberRevenue;
 
         this.addHeader(doc, "Revenue Report", period);
         doc.moveDown(1);
@@ -99,8 +136,15 @@ class PDFGenerator {
           .text("Financial Summary", this.margin, doc.y);
         doc.moveDown(0.5);
 
+        // Filter out declined memberships for display
+        const activeAndPendingMemberships = validatedMemberships.filter(
+          (m) => m.status !== "Declined"
+        );
+
         const stats = [
           ["Total Revenue:", `₱${totalRevenue.toLocaleString()}`],
+          ["Membership Revenue:", `₱${membershipRevenue.toLocaleString()}`],
+          ["Non-Member Revenue:", `₱${nonMemberRevenue.toLocaleString()}`],
           [
             "Active Memberships:",
             validatedMemberships.filter((m) => m.status === "Active").length,
@@ -109,10 +153,7 @@ class PDFGenerator {
             "Pending Memberships:",
             validatedMemberships.filter((m) => m.status === "Pending").length,
           ],
-          [
-            "Declined Memberships:",
-            validatedMemberships.filter((m) => m.status === "Declined").length,
-          ],
+          ["Walk-in Customers:", validatedNonMembers.length],
         ];
 
         stats.forEach(([label, value]) => {
@@ -127,8 +168,8 @@ class PDFGenerator {
 
         doc.moveDown(1.5);
 
-        // Membership Details Table
-        if (validatedMemberships.length > 0) {
+        // Membership Details Table (excluding declined memberships)
+        if (activeAndPendingMemberships.length > 0) {
           doc
             .fontSize(14)
             .font("Helvetica-Bold")
@@ -139,7 +180,7 @@ class PDFGenerator {
           this.addProfessionalTable(
             doc,
             ["Name", "Plan", "Status", "Amount", "Start Date", "End Date"],
-            validatedMemberships.map((m) => [
+            activeAndPendingMemberships.map((m) => [
               this.truncateText(`${m.firstName} ${m.lastName}`, 20),
               m.planType,
               m.status,
@@ -155,6 +196,158 @@ class PDFGenerator {
             .fillColor("#666666")
             .text(
               "No membership data available for the selected period.",
+              this.margin,
+              doc.y
+            );
+          doc.moveDown(1);
+        }
+
+        this.addFooter(doc);
+        doc.end();
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  // Generate Non-Member Report
+  async generateNonMemberReport(nonMembers, period = "all") {
+    return new Promise((resolve, reject) => {
+      try {
+        if (!Array.isArray(nonMembers)) {
+          throw new Error("Non-members must be an array");
+        }
+
+        const doc = new PDFDocument({ margin: this.margin, size: "letter" });
+        const chunks = [];
+
+        doc.on("data", (chunk) => chunks.push(chunk));
+        doc.on("end", () => resolve(Buffer.concat(chunks)));
+        doc.on("error", reject);
+
+        const filtered = this.filterByPeriod(nonMembers, period, "checkInTime");
+        const validatedNonMembers = filtered.map((nm) =>
+          this.validateNonMemberData(nm)
+        );
+
+        this.addHeader(doc, "Non-Member Report", period);
+
+        // Non-Member Statistics
+        doc
+          .fontSize(14)
+          .font("Helvetica-Bold")
+          .fillColor("#2c5aa0")
+          .text("Walk-in Customer Statistics", this.margin, doc.y);
+        doc.moveDown(0.5);
+
+        const totalRevenue = validatedNonMembers.reduce(
+          (sum, nm) => sum + nm.amount,
+          0
+        );
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayNonMembers = validatedNonMembers.filter(
+          (nm) => nm.checkInTime.toDateString() === today.toDateString()
+        ).length;
+
+        const stats = [
+          ["Total Walk-in Customers:", validatedNonMembers.length],
+          ["Today's Walk-ins:", todayNonMembers],
+          ["Total Revenue:", `₱${totalRevenue.toLocaleString()}`],
+          [
+            "Average per Customer:",
+            `₱${
+              validatedNonMembers.length > 0
+                ? Math.round(totalRevenue / validatedNonMembers.length)
+                : 0
+            }`,
+          ],
+        ];
+
+        stats.forEach(([label, value]) => {
+          doc
+            .font("Helvetica-Bold")
+            .fillColor("#333333")
+            .text(label, { continued: true })
+            .font("Helvetica")
+            .fillColor("#000000")
+            .text(` ${value}`);
+        });
+
+        doc.moveDown(1.5);
+
+        // Payment Method Distribution
+        const paymentMethodDistribution = {};
+        validatedNonMembers.forEach((nm) => {
+          paymentMethodDistribution[nm.paymentMethod] =
+            (paymentMethodDistribution[nm.paymentMethod] || 0) + 1;
+        });
+
+        doc
+          .fontSize(14)
+          .font("Helvetica-Bold")
+          .fillColor("#2c5aa0")
+          .text("Payment Method Distribution", this.margin, doc.y);
+        doc.moveDown(0.5);
+
+        if (Object.keys(paymentMethodDistribution).length > 0) {
+          this.addProfessionalTable(
+            doc,
+            ["Payment Method", "Count"],
+            Object.entries(paymentMethodDistribution).map(([method, count]) => [
+              method,
+              count.toString(),
+            ])
+          );
+        } else {
+          doc
+            .fontSize(12)
+            .font("Helvetica")
+            .fillColor("#666666")
+            .text("No payment method data available.", this.margin, doc.y);
+          doc.moveDown(1);
+        }
+
+        doc.moveDown(1);
+
+        // Walk-in Customer Details
+        if (validatedNonMembers.length > 0) {
+          if (doc.y > 500) doc.addPage();
+
+          doc
+            .fontSize(14)
+            .font("Helvetica-Bold")
+            .fillColor("#2c5aa0")
+            .text("Walk-in Customer Details", this.margin, doc.y);
+          doc.moveDown(0.5);
+
+          this.addProfessionalTable(
+            doc,
+            [
+              "Name",
+              "Phone",
+              "Email",
+              "Amount",
+              "Payment Method",
+              "Check-in Time",
+            ],
+            validatedNonMembers.map((nm) => [
+              this.truncateText(`${nm.firstName} ${nm.lastName}`, 20),
+              this.truncateText(nm.phone, 15),
+              this.truncateText(nm.email, 20),
+              `₱${nm.amount.toLocaleString()}`,
+              this.truncateText(nm.paymentMethod, 15),
+              nm.checkInTime.toLocaleString(),
+            ])
+          );
+        } else {
+          doc
+            .fontSize(12)
+            .font("Helvetica")
+            .fillColor("#666666")
+            .text(
+              "No walk-in customer data available for the selected period.",
               this.margin,
               doc.y
             );

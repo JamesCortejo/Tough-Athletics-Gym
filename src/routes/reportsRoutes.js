@@ -2,6 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const { connectToDatabase } = require("../config/db");
+const fs = require("fs");
 const { ObjectId } = require("mongodb");
 const { verifyToken } = require("../handlers/loginHandler");
 const PDFGenerator = require("../utils/pdfGenerator");
@@ -9,6 +10,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
 const pdfGenerator = new PDFGenerator();
+const { createJSONBackup } = require("../utils/jsonBackup");
 
 // Middleware for token verification from header or query
 function verifyTokenFromSource(req, res, next) {
@@ -498,17 +500,20 @@ router.post(
       }
 
       const membershipsCollection = req.db.collection("memberships");
+      const nonMembersCollection = req.db.collection("nonmembers");
 
       // Get data for report
       const memberships = await membershipsCollection.find({}).toArray();
+      const nonMembers = await nonMembersCollection.find({}).toArray();
 
       console.log(
-        `Generating revenue PDF with ${memberships.length} memberships`
+        `Generating revenue PDF with ${memberships.length} memberships and ${nonMembers.length} non-members`
       );
 
       // Generate PDF
       const pdfBuffer = await pdfGenerator.generateRevenueReport(
         memberships,
+        nonMembers,
         period
       );
 
@@ -674,6 +679,112 @@ router.post(
       res.status(500).json({
         success: false,
         message: "Error generating check-in report: " + error.message,
+      });
+    }
+  }
+);
+
+router.post(
+  "/nonmember-pdf",
+  verifyTokenFromSource,
+  verifyAdmin,
+  verifySecurityConfirmation,
+  async (req, res) => {
+    try {
+      const { period = "all" } = req.query;
+
+      // Check if admin is assistant
+      if (req.adminUser.isAssistant) {
+        console.log(
+          "🔒 Assistant admin attempted to download non-member report"
+        );
+        return res.status(403).json({
+          success: false,
+          message: "Assistant admins are not authorized to download reports.",
+        });
+      }
+
+      const nonMembersCollection = req.db.collection("nonmembers");
+
+      // Get data for report
+      const nonMembers = await nonMembersCollection.find({}).toArray();
+
+      console.log(
+        `Generating non-member PDF with ${nonMembers.length} non-members`
+      );
+
+      // Generate PDF
+      const pdfBuffer = await pdfGenerator.generateNonMemberReport(
+        nonMembers,
+        period
+      );
+
+      // Log admin action
+      await req.db.collection("admin_actions").insertOne({
+        action: "download_report",
+        reportType: "nonmember",
+        period: period,
+        adminId: new ObjectId(req.adminUser._id),
+        adminName: req.adminUser.username,
+        adminRole: req.adminUser.isAssistant ? "assistant" : "admin",
+        timestamp: new Date(),
+      });
+
+      // Set response headers for PDF download
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="nonmember-report-${period}-${
+          new Date().toISOString().split("T")[0]
+        }.pdf"`
+      );
+      res.setHeader("Content-Length", pdfBuffer.length);
+
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Non-member PDF generation error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error generating non-member report: " + error.message,
+      });
+    }
+  }
+);
+
+// Simple JSON backup route
+router.post(
+  "/backup/json",
+  verifyTokenFromSource,
+  verifyAdmin,
+  verifySecurityConfirmation,
+  async (req, res) => {
+    try {
+      if (req.adminUser.isAssistant) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Assistant admins are not authorized to create database backups.",
+        });
+      }
+
+      const backupResult = await createJSONBackup();
+
+      await req.db.collection("admin_actions").insertOne({
+        action: "create_json_backup",
+        folderName: backupResult.folderName,
+        folderPath: backupResult.backupFolderPath,
+        files: backupResult.files,
+        adminId: new ObjectId(req.adminUser._id),
+        adminName: req.adminUser.username,
+        timestamp: new Date(),
+      });
+
+      return res.json(backupResult);
+    } catch (error) {
+      console.error("JSON backup error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error creating backup: " + error.message,
       });
     }
   }

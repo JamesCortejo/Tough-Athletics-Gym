@@ -101,6 +101,11 @@
                                     <option value="approve_membership">Approve Membership</option>
                                     <option value="decline_membership">Decline Membership</option>
                                     <option value="member_checkin">Member Check-in</option>
+                                    <option value="add_walkin_customer">Add Walk-in Customer</option>
+                                    <option value="create_backup">Create Backup</option>
+                                    <option value="delete_backup">Delete Backup</option>
+                                    <option value="restore_backup">Restore Backup</option>
+                                    <option value="download_report">Download Report</option>
                                 </select>
                             </div>
                             <div class="filter-group">
@@ -244,7 +249,83 @@
                                 </button>
                             </div>
                         </div>
+
+                        <div class="col-md-4">
+                            <div class="pdf-report-card">
+                                <div class="pdf-icon nonmember">
+                                    <i class="fas fa-user-clock"></i>
+                                </div>
+                                <h6>Non-Member Report</h6>
+                                <p class="text-muted">Walk-in customer statistics and revenue</p>
+                                <div class="period-selector mb-2">
+                                    <select class="form-select form-select-sm" id="nonMemberPeriod">
+                                        <option value="today">Today</option>
+                                        <option value="week">Last 7 Days</option>
+                                        <option value="month">Last 30 Days</option>
+                                        <option value="year">Last Year</option>
+                                        <option value="all" selected>All Time</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-secondary btn-sm w-100" id="downloadNonMemberReport">
+                                    <i class="fas fa-download me-1"></i>Download PDF
+                                </button>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Simple Backup Section -->
+        <div class="backup-section mb-4">
+            <div class="card backup-card">
+                <div class="card-body d-flex flex-column flex-md-row align-items-center justify-content-between">
+                    <div class="backup-text">
+                        <h5 class="card-title mb-1"><i class="fas fa-database me-2"></i>Data Backup</h5>
+                        <p class="card-text mb-0 text-muted">
+                            Download a JSON snapshot of all critical collections. Keep this file in a secure location.
+                        </p>
+                    </div>
+                    <div class="mt-3 mt-md-0">
+                        <button class="btn btn-dark btn-lg" id="downloadBackupBtn">
+                            <i class="fas fa-download me-2"></i>Download JSON Backup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup Confirmation Modal -->
+    <div class="modal fade" id="backupConfirmModal" tabindex="-1" aria-labelledby="backupModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="backupModalLabel">Security Confirmation Required</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="backupActionDescription" class="mb-3">
+                        <!-- Description will be inserted here -->
+                    </div>
+                    <div class="mb-3">
+                        <label for="backupAdminPassword" class="form-label">Admin Password</label>
+                        <input type="password" class="form-control" id="backupAdminPassword"
+                            placeholder="Enter your admin password">
+                    </div>
+                    <div class="mb-3">
+                        <label for="backupConfirmText" class="form-label">Type <strong>CONFIRM</strong> to
+                            proceed</label>
+                        <input type="text" class="form-control" id="backupConfirmText" placeholder="CONFIRM">
+                    </div>
+                    <div id="backupSecurityError" class="alert alert-danger mt-3" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-dark" id="confirmBackupBtn">
+                        <i class="fas fa-check me-1"></i>Confirm
+                    </button>
                 </div>
             </div>
         </div>

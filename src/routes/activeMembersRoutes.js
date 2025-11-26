@@ -29,60 +29,69 @@ router.get("/active-members", verifyAdminToken, async (req, res) => {
       .toArray();
 
     // Enrich with user data and check-in information
-    const membersWithDetails = await Promise.all(
-      activeMemberships.map(async (membership) => {
-        // Get user profile picture and additional info including QR code image
-        const user = await usersCollection.findOne({
-          _id: new ObjectId(membership.userId),
-        });
+    const membersWithDetails = (
+      await Promise.all(
+        activeMemberships.map(async (membership) => {
+          // Get user profile picture and additional info including QR code image
+          const user = await usersCollection.findOne({
+            _id: new ObjectId(membership.userId),
+          });
 
-        console.log("🔍 User data for QR code:", {
-          userId: membership.userId,
-          userFound: !!user,
-          qrCodePicture: user?.qrCodePicture,
-          profilePicture: user?.profilePicture,
-        });
+          // Skip memberships whose owning user is archived or missing
+          if (!user || user.isArchived) {
+            return null;
+          }
 
-        // Calculate remaining days
-        const today = new Date();
-        const endDate = new Date(membership.endDate);
-        const remainingDays = Math.ceil(
-          (endDate - today) / (1000 * 60 * 60 * 24)
-        );
+          console.log("🔍 User data for QR code:", {
+            userId: membership.userId,
+            userFound: !!user,
+            qrCodePicture: user?.qrCodePicture,
+            profilePicture: user?.profilePicture,
+            isArchived: user?.isArchived,
+          });
 
-        // Get check-in statistics
-        const checkins = await usercheckinCollection
-          .find({
-            membershipId: new ObjectId(membership._id),
-          })
-          .sort({ checkinTime: -1 })
-          .toArray();
+          // Calculate remaining days
+          const today = new Date();
+          const endDate = new Date(membership.endDate);
+          const remainingDays = Math.ceil(
+            (endDate - today) / (1000 * 60 * 60 * 24)
+          );
 
-        const totalCheckins = checkins.length;
+          // Get check-in statistics
+          const checkins = await usercheckinCollection
+            .find({
+              membershipId: new ObjectId(membership._id),
+            })
+            .sort({ checkinTime: -1 })
+            .toArray();
 
-        // Calculate missed check-ins
-        const missedCheckins = calculateMissedCheckins(membership, checkins);
+          const totalCheckins = checkins.length;
 
-        return {
-          _id: membership._id,
-          firstName: membership.firstName,
-          lastName: membership.lastName,
-          email: membership.email,
-          phone: membership.phone,
-          profilePicture: user?.profilePicture || "/images/default-profile.png",
-          qrCodePicture: user?.qrCodePicture, // This might be null if not exists
-          qrCodeId: membership.qrCodeId,
-          planType: membership.planType,
-          startDate: membership.startDate,
-          endDate: membership.endDate,
-          remainingDays: remainingDays > 0 ? remainingDays : 0,
-          totalCheckins: totalCheckins,
-          missedCheckins: missedCheckins,
-          lastCheckin: checkins[0]?.checkinTime || null,
-          userId: membership.userId,
-        };
-      })
-    );
+          // Calculate missed check-ins
+          const missedCheckins = calculateMissedCheckins(membership, checkins);
+
+          return {
+            _id: membership._id,
+            firstName: membership.firstName,
+            lastName: membership.lastName,
+            email: membership.email,
+            phone: membership.phone,
+            profilePicture:
+              user?.profilePicture || "/images/default-profile.png",
+            qrCodePicture: user?.qrCodePicture, // This might be null if not exists
+            qrCodeId: membership.qrCodeId,
+            planType: membership.planType,
+            startDate: membership.startDate,
+            endDate: membership.endDate,
+            remainingDays: remainingDays > 0 ? remainingDays : 0,
+            totalCheckins: totalCheckins,
+            missedCheckins: missedCheckins,
+            lastCheckin: checkins[0]?.checkinTime || null,
+            userId: membership.userId,
+          };
+        })
+      )
+    ).filter(Boolean);
 
     res.json({
       success: true,
