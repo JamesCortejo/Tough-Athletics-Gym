@@ -1,6 +1,6 @@
 const { MongoClient } = require("mongodb");
 
-const url = "mongodb://localhost:27017";
+const url = process.env.MONGO_URI;
 const dbName = "gymDatabase";
 let db = null;
 let client = null;
@@ -13,7 +13,7 @@ async function connectToDatabase() {
   try {
     client = new MongoClient(url);
     await client.connect();
-    console.log("Connected successfully to MongoDB");
+    console.log("Connected successfully to MongoDB Atlas");
     db = client.db(dbName);
 
     // Test the connection by listing collections
@@ -25,7 +25,7 @@ async function connectToDatabase() {
 
     return db;
   } catch (error) {
-    console.error("Failed to connect to MongoDB:", error);
+    console.error("Failed to connect to MongoDB Atlas:", error);
     throw error;
   }
 }

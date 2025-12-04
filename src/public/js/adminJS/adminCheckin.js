@@ -249,7 +249,7 @@ class AdminCheckin {
         qrbox: function (viewfinderWidth, viewfinderHeight) {
           // make box 80% of the smaller dimension
           const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-          const qrBoxSize = Math.floor(minEdge * 0.8);
+          const qrBoxSize = Math.floor(minEdge * 0.9);
           return { width: qrBoxSize, height: qrBoxSize };
         },
         aspectRatio: 1.0,

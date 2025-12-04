@@ -30,6 +30,7 @@
     "html5-qrcode": "^2.3.8",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.20.0",
+    "mongoose": "^9.0.0",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.10",
     "passport": "^0.7.0",
