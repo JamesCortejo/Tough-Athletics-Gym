@@ -51,8 +51,9 @@
 
                     <!-- Mobile Number -->
                     <div class="mb-3">
-                        <input type="tel" class="form-control" id="mobile" name="mobile" placeholder="Mobile Number"
-                            required>
+                        <input type="tel" class="form-control" id="mobile" name="mobile" placeholder="Mobile Number (11 digits, optional)"
+                            pattern="09[0-9]{9}" title="If provided, mobile number must be 11 digits and start with 09"
+                            >
                     </div>
 
                     <!-- Gender Dropdown -->

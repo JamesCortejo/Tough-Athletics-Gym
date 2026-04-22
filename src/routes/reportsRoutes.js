@@ -8,6 +8,7 @@ const { verifyToken } = require("../handlers/loginHandler");
 const PDFGenerator = require("../utils/pdfGenerator");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const encryptionService = require("../utils/encryptionService");
 
 const pdfGenerator = new PDFGenerator();
 const { createJSONBackup } = require("../utils/jsonBackup");
@@ -20,7 +21,7 @@ function verifyTokenFromSource(req, res, next) {
   } else if (req.query.token) {
     token = req.query.token;
     console.warn(
-      "Token used in URL parameter - consider using Authorization header for better security"
+      "Token used in URL parameter - consider using Authorization header for better security",
     );
   }
 
@@ -97,7 +98,7 @@ const verifySecurityConfirmation = async (req, res, next) => {
     // Verify admin password
     const isPasswordValid = await bcrypt.compare(
       adminPassword,
-      req.adminUser.password
+      req.adminUser.password,
     );
     if (!isPasswordValid) {
       return res.status(400).json({
@@ -189,7 +190,7 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
             // METHOD 1: Try to use top-level fields first (new structure)
             if (action.walkinCustomerName) {
               console.log(
-                `✅ Using top-level customer data: ${action.walkinCustomerName}`
+                `✅ Using top-level customer data: ${action.walkinCustomerName}`,
               );
               enrichedAction.walkinCustomerName = action.walkinCustomerName;
               enrichedAction.memberName = action.walkinCustomerName;
@@ -205,7 +206,7 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
             // METHOD 2: Try to use details fields (old structure)
             else if (action.details && action.details.customerName) {
               console.log(
-                `✅ Using details customer data: ${action.details.customerName}`
+                `✅ Using details customer data: ${action.details.customerName}`,
               );
               enrichedAction.walkinCustomerName = action.details.customerName;
               enrichedAction.memberName = action.details.customerName;
@@ -221,7 +222,7 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
             // METHOD 3: Try to lookup from nonmembers collection using walkinCheckinId
             else if (action.walkinCheckinId) {
               console.log(
-                `🔍 Looking up nonmember by ID: ${action.walkinCheckinId}`
+                `🔍 Looking up nonmember by ID: ${action.walkinCheckinId}`,
               );
               const walkinCustomer = await nonmembersCollection.findOne({
                 _id: new ObjectId(action.walkinCheckinId),
@@ -229,7 +230,7 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
 
               if (walkinCustomer) {
                 console.log(
-                  `✅ Found walk-in customer by ID: ${walkinCustomer.firstName} ${walkinCustomer.lastName}`
+                  `✅ Found walk-in customer by ID: ${walkinCustomer.firstName} ${walkinCustomer.lastName}`,
                 );
                 enrichedAction.walkinCustomerName = `${walkinCustomer.firstName} ${walkinCustomer.lastName}`;
                 enrichedAction.memberName = `${walkinCustomer.firstName} ${walkinCustomer.lastName}`;
@@ -242,7 +243,7 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
             // METHOD 4: Try to lookup from nonmembers collection using nonMemberId in details
             else if (action.details && action.details.nonMemberId) {
               console.log(
-                `🔍 Looking up nonmember by nonMemberId: ${action.details.nonMemberId}`
+                `🔍 Looking up nonmember by nonMemberId: ${action.details.nonMemberId}`,
               );
               const walkinCustomer = await nonmembersCollection.findOne({
                 _id: new ObjectId(action.details.nonMemberId),
@@ -250,7 +251,7 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
 
               if (walkinCustomer) {
                 console.log(
-                  `✅ Found walk-in customer by nonMemberId: ${walkinCustomer.firstName} ${walkinCustomer.lastName}`
+                  `✅ Found walk-in customer by nonMemberId: ${walkinCustomer.firstName} ${walkinCustomer.lastName}`,
                 );
                 enrichedAction.walkinCustomerName = `${walkinCustomer.firstName} ${walkinCustomer.lastName}`;
                 enrichedAction.memberName = `${walkinCustomer.firstName} ${walkinCustomer.lastName}`;
@@ -263,7 +264,7 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
             // METHOD 5: Last resort - try to find by timestamp
             else {
               console.log(
-                `🔍 No direct ID found, trying timestamp lookup for action: ${action._id}`
+                `🔍 No direct ID found, trying timestamp lookup for action: ${action._id}`,
               );
               const actionTime = new Date(action.timestamp);
               const startTime = new Date(actionTime.getTime() - 5 * 60 * 1000); // 5 minutes before
@@ -282,7 +283,7 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
               if (recentNonmembers.length > 0) {
                 const nonmember = recentNonmembers[0];
                 console.log(
-                  `✅ Found matching nonmember by timestamp: ${nonmember.firstName} ${nonmember.lastName}`
+                  `✅ Found matching nonmember by timestamp: ${nonmember.firstName} ${nonmember.lastName}`,
                 );
                 enrichedAction.walkinCustomerName = `${nonmember.firstName} ${nonmember.lastName}`;
                 enrichedAction.memberName = `${nonmember.firstName} ${nonmember.lastName}`;
@@ -292,7 +293,7 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
                 enrichedAction.paymentMethod = nonmember.paymentMethod;
               } else {
                 console.log(
-                  `❌ No matching nonmember found for action: ${action._id}`
+                  `❌ No matching nonmember found for action: ${action._id}`,
                 );
                 // Set default values to avoid "Unknown User"
                 enrichedAction.walkinCustomerName = "Walk-in Customer";
@@ -313,18 +314,25 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
             });
 
             if (membership) {
-              enrichedAction.memberFirstName = membership.firstName;
-              enrichedAction.memberLastName = membership.lastName;
-              enrichedAction.memberEmail = membership.email;
-              enrichedAction.memberQrCodeId = membership.qrCodeId;
+              // Decrypt membership data
+              const decryptedMembership = encryptionService.decryptObject(
+                membership,
+                ["email", "phone"],
+              );
+
+              enrichedAction.memberFirstName = decryptedMembership.firstName;
+              enrichedAction.memberLastName = decryptedMembership.lastName;
+              enrichedAction.memberEmail = decryptedMembership.email;
+              enrichedAction.memberPhone = decryptedMembership.phone;
+              enrichedAction.memberQrCodeId = decryptedMembership.qrCodeId;
 
               // If memberName is missing but we have first/last name, create it
               if (
                 !enrichedAction.memberName &&
-                membership.firstName &&
-                membership.lastName
+                decryptedMembership.firstName &&
+                decryptedMembership.lastName
               ) {
-                enrichedAction.memberName = `${membership.firstName} ${membership.lastName}`;
+                enrichedAction.memberName = `${decryptedMembership.firstName} ${decryptedMembership.lastName}`;
               }
             }
           }
@@ -339,18 +347,25 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
             });
 
             if (targetUser) {
-              enrichedAction.targetFirstName = targetUser.firstName;
-              enrichedAction.targetLastName = targetUser.lastName;
-              enrichedAction.targetEmail = targetUser.email;
-              enrichedAction.targetUsername = targetUser.username;
+              // Decrypt user data
+              const decryptedTargetUser = encryptionService.decryptObject(
+                targetUser,
+                ["email", "mobile"],
+              );
+
+              enrichedAction.targetFirstName = decryptedTargetUser.firstName;
+              enrichedAction.targetLastName = decryptedTargetUser.lastName;
+              enrichedAction.targetEmail = decryptedTargetUser.email;
+              enrichedAction.targetMobile = decryptedTargetUser.mobile;
+              enrichedAction.targetUsername = decryptedTargetUser.username;
 
               // Create targetUserName if missing
               if (
                 !enrichedAction.targetUserName &&
-                targetUser.firstName &&
-                targetUser.lastName
+                decryptedTargetUser.firstName &&
+                decryptedTargetUser.lastName
               ) {
-                enrichedAction.targetUserName = `${targetUser.firstName} ${targetUser.lastName}`;
+                enrichedAction.targetUserName = `${decryptedTargetUser.firstName} ${decryptedTargetUser.lastName}`;
               }
             }
           }
@@ -362,10 +377,20 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
               status: "Active",
             });
 
-            if (membership && !enrichedAction.memberName) {
-              enrichedAction.memberName = `${membership.firstName} ${membership.lastName}`;
-              enrichedAction.memberFirstName = membership.firstName;
-              enrichedAction.memberLastName = membership.lastName;
+            if (membership) {
+              // Decrypt membership data
+              const decryptedMembership = encryptionService.decryptObject(
+                membership,
+                ["email", "phone"],
+              );
+
+              if (!enrichedAction.memberName) {
+                enrichedAction.memberName = `${decryptedMembership.firstName} ${decryptedMembership.lastName}`;
+                enrichedAction.memberFirstName = decryptedMembership.firstName;
+                enrichedAction.memberLastName = decryptedMembership.lastName;
+                enrichedAction.memberEmail = decryptedMembership.email;
+                enrichedAction.memberPhone = decryptedMembership.phone;
+              }
             }
           }
         } catch (error) {
@@ -373,7 +398,7 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
         }
 
         return enrichedAction;
-      })
+      }),
     );
 
     // Get all admin users
@@ -388,14 +413,19 @@ router.get("/admin/actions", verifyToken, async (req, res) => {
             username: 1,
             email: 1,
           },
-        }
+        },
       )
       .toArray();
+
+    // Decrypt admin emails
+    const decryptedAdmins = allAdmins.map((admin) =>
+      encryptionService.decryptObject(admin, ["email"]),
+    );
 
     res.status(200).json({
       success: true,
       actions: enrichedActions,
-      admins: allAdmins,
+      admins: decryptedAdmins,
     });
   } catch (error) {
     console.error("Get admin actions error:", error);
@@ -429,9 +459,15 @@ router.get("/admin/user-actions", verifyToken, async (req, res) => {
 
     let query = {};
 
-    // Filter by user
+    // Filter by user (support both string and ObjectId formats)
     if (userId && userId !== "all") {
-      query.userId = userId;
+      const userIdConditions = [{ userId: userId }];
+
+      if (ObjectId.isValid(userId)) {
+        userIdConditions.push({ userId: new ObjectId(userId) });
+      }
+
+      query.$or = userIdConditions;
     }
 
     // Filter by action type
@@ -448,28 +484,52 @@ router.get("/admin/user-actions", verifyToken, async (req, res) => {
       .toArray();
 
     // Get unique users for filter dropdown
-    const userIds = [...new Set(actions.map((action) => action.userId))];
-    const users = await usersCollection
-      .find(
-        {
-          _id: { $in: userIds.map((id) => new ObjectId(id)) },
-        },
-        {
-          projection: {
-            _id: 1,
-            firstName: 1,
-            lastName: 1,
-            username: 1,
-            email: 1,
-          },
-        }
-      )
-      .toArray();
+    const validUserIds = [
+      ...new Set(
+        actions
+          .map((action) => {
+            const rawId = action?.userId;
+
+            if (!rawId) return null;
+            if (typeof rawId === "string") return rawId;
+            if (rawId instanceof ObjectId) return rawId.toString();
+            if (typeof rawId?.toString === "function") return rawId.toString();
+
+            return null;
+          })
+          .filter((id) => id && ObjectId.isValid(id)),
+      ),
+    ];
+
+    const users =
+      validUserIds.length > 0
+        ? await usersCollection
+            .find(
+              {
+                _id: { $in: validUserIds.map((id) => new ObjectId(id)) },
+              },
+              {
+                projection: {
+                  _id: 1,
+                  firstName: 1,
+                  lastName: 1,
+                  username: 1,
+                  email: 1,
+                },
+              },
+            )
+            .toArray()
+        : [];
+
+    // Decrypt user emails
+    const decryptedUsers = users.map((user) =>
+      encryptionService.decryptObject(user, ["email"]),
+    );
 
     res.status(200).json({
       success: true,
       actions: actions,
-      users: users,
+      users: decryptedUsers,
     });
   } catch (error) {
     console.error("Get user actions error:", error);
@@ -507,14 +567,23 @@ router.post(
       const nonMembers = await nonMembersCollection.find({}).toArray();
 
       console.log(
-        `Generating revenue PDF with ${memberships.length} memberships and ${nonMembers.length} non-members`
+        `Generating revenue PDF with ${memberships.length} memberships and ${nonMembers.length} non-members`,
+      );
+
+      // Decrypt sensitive data before generating PDF
+      const decryptedMemberships = memberships.map((membership) =>
+        encryptionService.decryptObject(membership, ["email", "phone"]),
+      );
+
+      const decryptedNonMembers = nonMembers.map((nonMember) =>
+        encryptionService.decryptObject(nonMember, ["email", "phone"]),
       );
 
       // Generate PDF
       const pdfBuffer = await pdfGenerator.generateRevenueReport(
-        memberships,
-        nonMembers,
-        period
+        decryptedMemberships,
+        decryptedNonMembers,
+        period,
       );
 
       // Log admin action
@@ -534,7 +603,7 @@ router.post(
         "Content-Disposition",
         `attachment; filename="revenue-report-${period}-${
           new Date().toISOString().split("T")[0]
-        }.pdf"`
+        }.pdf"`,
       );
       res.setHeader("Content-Length", pdfBuffer.length);
 
@@ -546,7 +615,7 @@ router.post(
         message: "Error generating revenue report: " + error.message,
       });
     }
-  }
+  },
 );
 
 router.post(
@@ -561,7 +630,7 @@ router.post(
       // Check if admin is assistant
       if (req.adminUser.isAssistant) {
         console.log(
-          "🔒 Assistant admin attempted to download membership report"
+          "🔒 Assistant admin attempted to download membership report",
         );
         return res.status(403).json({
           success: false,
@@ -579,14 +648,23 @@ router.post(
         .toArray();
 
       console.log(
-        `Generating membership PDF with ${memberships.length} memberships and ${users.length} users`
+        `Generating membership PDF with ${memberships.length} memberships and ${users.length} users`,
+      );
+
+      // Decrypt sensitive data before generating PDF
+      const decryptedMemberships = memberships.map((membership) =>
+        encryptionService.decryptObject(membership, ["email", "phone"]),
+      );
+
+      const decryptedUsers = users.map((user) =>
+        encryptionService.decryptObject(user, ["email", "mobile"]),
       );
 
       // Generate PDF
       const pdfBuffer = await pdfGenerator.generateMembershipReport(
-        memberships,
-        users,
-        period
+        decryptedMemberships,
+        decryptedUsers,
+        period,
       );
 
       // Log admin action
@@ -606,7 +684,7 @@ router.post(
         "Content-Disposition",
         `attachment; filename="membership-report-${period}-${
           new Date().toISOString().split("T")[0]
-        }.pdf"`
+        }.pdf"`,
       );
       res.setHeader("Content-Length", pdfBuffer.length);
 
@@ -618,7 +696,7 @@ router.post(
         message: "Error generating membership report: " + error.message,
       });
     }
-  }
+  },
 );
 
 router.post(
@@ -649,7 +727,7 @@ router.post(
       // Generate PDF
       const pdfBuffer = await pdfGenerator.generateCheckInReport(
         checkins,
-        period
+        period,
       );
 
       // Log admin action
@@ -669,7 +747,7 @@ router.post(
         "Content-Disposition",
         `attachment; filename="checkin-report-${period}-${
           new Date().toISOString().split("T")[0]
-        }.pdf"`
+        }.pdf"`,
       );
       res.setHeader("Content-Length", pdfBuffer.length);
 
@@ -681,7 +759,7 @@ router.post(
         message: "Error generating check-in report: " + error.message,
       });
     }
-  }
+  },
 );
 
 router.post(
@@ -696,7 +774,7 @@ router.post(
       // Check if admin is assistant
       if (req.adminUser.isAssistant) {
         console.log(
-          "🔒 Assistant admin attempted to download non-member report"
+          "🔒 Assistant admin attempted to download non-member report",
         );
         return res.status(403).json({
           success: false,
@@ -710,13 +788,18 @@ router.post(
       const nonMembers = await nonMembersCollection.find({}).toArray();
 
       console.log(
-        `Generating non-member PDF with ${nonMembers.length} non-members`
+        `Generating non-member PDF with ${nonMembers.length} non-members`,
+      );
+
+      // Decrypt sensitive data before generating PDF
+      const decryptedNonMembers = nonMembers.map((nonMember) =>
+        encryptionService.decryptObject(nonMember, ["email", "phone"]),
       );
 
       // Generate PDF
       const pdfBuffer = await pdfGenerator.generateNonMemberReport(
-        nonMembers,
-        period
+        decryptedNonMembers,
+        period,
       );
 
       // Log admin action
@@ -736,7 +819,7 @@ router.post(
         "Content-Disposition",
         `attachment; filename="nonmember-report-${period}-${
           new Date().toISOString().split("T")[0]
-        }.pdf"`
+        }.pdf"`,
       );
       res.setHeader("Content-Length", pdfBuffer.length);
 
@@ -748,7 +831,7 @@ router.post(
         message: "Error generating non-member report: " + error.message,
       });
     }
-  }
+  },
 );
 
 // Simple JSON backup route
@@ -787,7 +870,7 @@ router.post(
         message: "Error creating backup: " + error.message,
       });
     }
-  }
+  },
 );
 
 module.exports = router;

@@ -110,25 +110,6 @@ body {
   font-size: 14px;
 }
 
-.save-btn {
-  display: block;
-  width: 30%;
-  margin-top: 20px;
-  background-color: black;
-  color: white;
-  padding: 10px 0;
-  border: none;
-  border-radius: 20px;
-  font-family: "League Gothic", sans-serif;
-  font-size: 18px;
-  cursor: pointer;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-.save-btn:hover {
-  background-color: #333;
-}
-
 .footer-contacts ul {
   list-style: none;
   margin: 0;
@@ -214,4 +195,114 @@ body {
 
 #yesBtn:hover {
   background-color: #393e46;
+}
+
+/* Focused mobile pass for profile page */
+@media (max-width: 430px) {
+  .pfpTopbar {
+    padding: 10px 12px;
+  }
+
+  .pfpTopbar h1 {
+    font-size: 1.6rem !important;
+    margin: 0;
+  }
+
+  .pfpMaincontent {
+    margin-top: 68px;
+    padding: 24px 14px;
+    border-top-left-radius: 26px;
+    border-top-right-radius: 26px;
+  }
+
+  .profile-pic {
+    width: 120px !important;
+    height: 120px !important;
+    margin: 0 auto 14px !important;
+  }
+
+  .profile-name {
+    font-size: 2rem;
+    line-height: 1.05;
+  }
+
+  .edit-info {
+    margin: 0 4px;
+  }
+
+  .saveBtn {
+    justify-content: stretch !important;
+  }
+
+  .save-btn {
+    width: 100%;
+  }
+
+  .popup {
+    width: 94%;
+    padding: 20px 16px;
+  }
+
+  .popup-buttons {
+    gap: 10px;
+  }
+
+  footer {
+    padding: 18px 16px !important;
+  }
+
+  footer .col-6 {
+    width: 100%;
+  }
+
+  footer .logs {
+    margin-top: 0 !important;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 390px) {
+  .pfpTopbar h1 {
+    font-size: 1.45rem !important;
+  }
+
+  .profile-name {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .pfpTopbar {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .pfpMaincontent {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .profile-name {
+    font-size: 1.65rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .profile-pic {
+    width: 108px !important;
+    height: 108px !important;
+  }
+
+  .popup-buttons {
+    flex-direction: column;
+  }
+
+  .popup-buttons button {
+    width: 100%;
+  }
+
+  .footer-contacts li {
+    font-size: 12px;
+  }
 }

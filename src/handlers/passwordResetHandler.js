@@ -11,17 +11,37 @@ function generateResetCode() {
 }
 
 /**
- * Check if email exists in database
+ * Helper function to create SHA-256 hash for lookup (same as in registerHandler.js)
+ */
+function createLookupHash(text) {
+  if (!text) return null;
+
+  // Normalize by trimming and converting to lowercase
+  const normalizedText = text.toString().trim().toLowerCase();
+
+  // Create SHA-256 hash
+  return crypto.createHash("sha256").update(normalizedText).digest("hex");
+}
+
+/**
+ * Check if email exists in database using lookup hash
  * @param {string} email - User's email
- * @returns {Promise<boolean>} - Whether email exists
+ * @returns {Promise<Object>} - User object if exists, null otherwise
  */
 async function checkEmailExists(email) {
   try {
     const db = await connectToDatabase();
     const usersCollection = db.collection("users");
 
-    const user = await usersCollection.findOne({ email: email });
-    return !!user;
+    // Create lookup hash for the email (same method as in registerHandler.js)
+    const emailLookupHash = createLookupHash(email);
+
+    // Find user by email lookup hash
+    const user = await usersCollection.findOne({
+      emailLookupHash: emailLookupHash,
+    });
+
+    return user;
   } catch (error) {
     console.error("Error checking email:", error);
     throw error;
@@ -42,9 +62,12 @@ async function storeResetCode(email, resetCode) {
     // Set expiration to 10 minutes from now
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Store the reset code
+    // Create lookup hash for the email
+    const emailLookupHash = createLookupHash(email);
+
+    // Store the reset code with lookup hash
     const result = await resetCodesCollection.insertOne({
-      email: email,
+      emailLookupHash: emailLookupHash,
       code: resetCode,
       expiresAt: expiresAt,
       createdAt: new Date(),
@@ -69,9 +92,12 @@ async function verifyResetCode(email, code) {
     const db = await connectToDatabase();
     const resetCodesCollection = db.collection("resetCodes");
 
+    // Create lookup hash for the email
+    const emailLookupHash = createLookupHash(email);
+
     // Find valid, unused, unexpired code
     const resetCode = await resetCodesCollection.findOne({
-      email: email,
+      emailLookupHash: emailLookupHash,
       code: code,
       used: false,
       expiresAt: { $gt: new Date() },
@@ -87,7 +113,7 @@ async function verifyResetCode(email, code) {
     // Mark code as used
     await resetCodesCollection.updateOne(
       { _id: resetCode._id },
-      { $set: { used: true, usedAt: new Date() } }
+      { $set: { used: true, usedAt: new Date() } },
     );
 
     return { success: true, message: "Code verified successfully" };
@@ -108,18 +134,21 @@ async function updatePassword(email, newPassword) {
     const db = await connectToDatabase();
     const usersCollection = db.collection("users");
 
+    // Create lookup hash for the email
+    const emailLookupHash = createLookupHash(email);
+
     // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update user's password
+    // Update user's password using lookup hash
     const result = await usersCollection.updateOne(
-      { email: email },
+      { emailLookupHash: emailLookupHash },
       {
         $set: {
           password: hashedPassword,
           updatedAt: new Date(),
         },
-      }
+      },
     );
 
     if (result.modifiedCount === 0) {
@@ -176,4 +205,5 @@ module.exports = {
   verifyResetCode,
   updatePassword,
   validatePassword,
+  createLookupHash, // Export for use in other files if needed
 };

@@ -1,5 +1,4 @@
 // membershipRoutes.js - Updated with admin info passing
-
 const express = require("express");
 const router = express.Router();
 const { connectToDatabase } = require("../config/db");
@@ -17,6 +16,7 @@ const {
   getMembershipApplication,
 } = require("../handlers/membershipHandler");
 const { verifyToken } = require("../handlers/loginHandler");
+const encryptionService = require("../utils/encryptionService");
 
 // Get check-ins for a specific membership
 router.get("/checkins/:membershipId", verifyToken, async (req, res) => {
@@ -88,7 +88,7 @@ router.post("/admin/decline/:membershipId", verifyToken, async (req, res) => {
     const result = await declineMembership(
       membershipId,
       reason.trim(),
-      adminInfo
+      adminInfo,
     );
 
     if (result.success) {
@@ -288,7 +288,7 @@ router.get(
         message: "Internal server error",
       });
     }
-  }
+  },
 );
 
 // Approve pending membership (admin only) - UPDATED
@@ -368,8 +368,8 @@ router.get("/admin/pending-applications", verifyToken, async (req, res) => {
             status: 1,
             firstName: "$user.firstName",
             lastName: "$user.lastName",
-            email: "$user.email",
-            phone: "$user.mobile",
+            email: "$user.email", // This is encrypted
+            phone: "$user.mobile", // This is encrypted
             profilePicture: "$user.profilePicture",
             qrCodeId: "$user.qrCodeId",
           },
@@ -380,9 +380,16 @@ router.get("/admin/pending-applications", verifyToken, async (req, res) => {
       ])
       .toArray();
 
+    // Decrypt email and phone for each application
+    const decryptedApplications = pendingMemberships.map((app) => ({
+      ...app,
+      email: encryptionService.decrypt(app.email),
+      phone: encryptionService.decrypt(app.phone),
+    }));
+
     res.status(200).json({
       success: true,
-      applications: pendingMemberships,
+      applications: decryptedApplications,
     });
   } catch (error) {
     console.error("Get pending applications error:", error);

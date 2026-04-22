@@ -37,6 +37,12 @@
             border-radius: 50%;
             padding: 5px;
             cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .edit-icon:hover {
+            background: #333;
+            transform: scale(1.1);
         }
 
         #profileImageInput {
@@ -50,7 +56,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.7);
             justify-content: center;
             align-items: center;
             z-index: 1000;
@@ -58,10 +64,18 @@
 
         .popup {
             background: white;
-            padding: 20px;
-            border-radius: 10px;
+            padding: 30px;
+            border-radius: 15px;
             text-align: center;
             color: black;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .popup h2 {
+            margin-bottom: 20px;
+            color: #333;
         }
 
         .popup-buttons {
@@ -70,16 +84,143 @@
 
         .popup-buttons button {
             margin: 0 10px;
-            padding: 5px 20px;
+            padding: 10px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        #noBtn {
+            background: #dc3545;
+            color: white;
+        }
+
+        #noBtn:hover {
+            background: #c82333;
+        }
+
+        #yesBtn {
+            background: #28a745;
+            color: white;
+        }
+
+        #yesBtn:hover {
+            background: #218838;
+        }
+
+        /* Enhanced form validation styles */
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .edit-info input,
+        .edit-info select {
+            border-radius: 5px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            transition: all 0.3s ease;
+        }
+
+        .edit-info input:focus,
+        .edit-info select:focus {
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+
+        .edit-info input.is-invalid {
+            border-color: #dc3545;
+        }
+
+        .edit-info input.is-valid {
+            border-color: #28a745;
+        }
+
+        .invalid-feedback {
+            display: block;
+            color: #dc3545;
+            font-size: 0.875em;
+            margin-top: 5px;
+        }
+
+        .valid-feedback {
+            display: block;
+            color: #28a745;
+            font-size: 0.875em;
+            margin-top: 5px;
+        }
+
+        .save-btn {
+            background: black;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:hover {
+            background: #333;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .save-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .file-info {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .profile-pic {
+                width: 120px;
+                height: 120px;
+            }
+
+            .popup {
+                padding: 20px;
+                width: 95%;
+            }
+
+            .popup-buttons button {
+                padding: 8px 20px;
+                margin: 5px;
+            }
+        }
+
+        /* Animation for profile picture change */
+        .profile-pic img {
+            transition: all 0.3s ease;
+        }
+
+        .profile-pic img:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
         }
     </style>
 </head>
 
 <body>
     <div class="pfpTopbar">
-        <a class="mt-2" href="/userhomepage"><img src="/images/icons/backBtn.png" alt="" width="30px" height="30px"></a>
+        <a class="mt-2" href="/userhomepage"><img src="/images/icons/backBtn.png" alt="Back" width="30px"
+                height="30px"></a>
         <h1 style="font-family: 'League Gothic', sans-serif; font-size: 36px;">My Profile</h1>
-        <img class="mt-3" src="/images/icons/startuplogo.png" alt="" width="30px" height="54">
+        <img class="mt-3" src="/images/icons/startuplogo.png" alt="Logo" width="30px" height="54">
     </div>
 
     <div class="pfpMaincontent">
@@ -89,14 +230,17 @@
         <div class="profile-section">
             <div class="profile-pic">
                 <img id="profileImage" src="../images/pfpImages/defaultPfp.png" alt="Profile Picture">
-                <div class="edit-icon">
-                    <input type="file" id="profileImageInput" accept="image/*">
+                <div class="edit-icon" title="Change Profile Picture">
+                    <input type="file" id="profileImageInput"
+                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml">
                     <label for="profileImageInput" style="cursor: pointer; margin: 0;">
                         <img src="/images/icons/editBtn.png" alt="Edit Icon" width="20px" height="20px"
                             style="margin-bottom: 3px;">
                     </label>
                 </div>
             </div>
+            <p class="file-info">Accepted file types: .jpg, .jpeg, .png, .gif, .webp, .svg</p>
+            <p class="file-info">Maximum file size: 10MB</p>
             <h1 class="profile-name" id="profileName">Firstname Lastname</h1>
             <p class="profile-email" id="profileEmail">User23@gmail.com</p>
         </div>
@@ -104,38 +248,50 @@
         <div class="edit-info">
             <h3>Edit Info</h3>
 
-            <label for="fname">First Name</label>
-            <input type="text" id="fname" value="User" placeholder="Firstname" required>
+            <div class="mb-3">
+                <label for="fname" class="form-label">First Name *</label>
+                <input type="text" id="fname" class="form-control" placeholder="Firstname" required>
+            </div>
 
-            <label for="lname">Last Name</label>
-            <input type="text" id="lname" value="User" placeholder="Lastname" required>
+            <div class="mb-3">
+                <label for="lname" class="form-label">Last Name *</label>
+                <input type="text" id="lname" class="form-control" placeholder="Lastname" required>
+            </div>
 
-            <label for="email">Email</label>
-            <input type="email" id="email" value="User123@gmail.com" required>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email *</label>
+                <input type="email" id="email" class="form-control" placeholder="email@example.com" required>
+            </div>
 
-            <label for="age">Age</label>
-            <input type="number" id="age" value="0" min="1" max="120">
+            <div class="mb-3">
+                <label for="age" class="form-label">Age</label>
+                <input type="text" id="age" class="form-control" inputmode="numeric" placeholder="16-100">
+                <small class="text-muted">Must be a whole number between 16 and 100 (decimals and letters are not accepted)</small>
+            </div>
 
-            <label for="gender">Gender</label>
-            <select id="gender">
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-                <option value="prefer-not-to-say">Prefer not to say</option>
-            </select>
+            <div class="mb-3">
+                <label for="gender" class="form-label">Gender</label>
+                <select id="gender" class="form-control">
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer-not-to-say">Prefer not to say</option>
+                </select>
+            </div>
 
             <div class="saveBtn d-flex justify-content-end">
-                <button id="saveBtn" class="save-btn">Save</button>
+                <button id="saveBtn" class="save-btn">Save Changes</button>
             </div>
         </div>
     </div>
 
     <div id="popupOverlay" class="overlay">
         <div class="popup">
-            <h2>Are you sure you want to save changes?</h2>
+            <h2>Confirm Profile Update</h2>
+            <p>Are you sure you want to save these changes to your profile?</p>
             <div class="popup-buttons">
-                <button id="noBtn">No</button>
-                <button id="yesBtn">Yes</button>
+                <button id="noBtn">Cancel</button>
+                <button id="yesBtn">Save Changes</button>
             </div>
         </div>
     </div>
@@ -144,8 +300,8 @@
         <div class="row">
             <div class="col-6">
                 <div class="logs" style="margin-top: 20px;">
-                    <img src="/images/icons/startuplogo.png" alt="" width="40" height="80">
-                    <img src="/images/icons/words.png" alt="" width="100" height="60">
+                    <img src="/images/icons/startuplogo.png" alt="Logo" width="40" height="80">
+                    <img src="/images/icons/words.png" alt="Brand Name" width="100" height="60">
                 </div>
             </div>
             <div class="col-6">

@@ -42,15 +42,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function startEditSession(userId, userData) {
-    // Check if assistant admin
-    if (isAssistantAdmin) {
-      showAlert(
-        "Assistant admins are not authorized to edit user accounts.",
-        "warning"
-      );
-      return null;
-    }
-
     const sessionData = {
       sessionId: generateSessionId(),
       userId: userId,
@@ -75,13 +66,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (result.success) {
         currentEditSessionId = sessionData.sessionId;
+
+        // Show notification if lock was transferred
+        if (result.previousLockHolder) {
+          showAlert(
+            `Edit lock transferred from ${result.previousLockHolder} to you.`,
+            "info"
+          );
+        }
+
         return sessionData.sessionId;
       } else {
         throw new Error(result.message);
       }
     } catch (error) {
       console.error("Error starting edit session:", error);
-      // Don't show alert for logging errors - continue with edit anyway
+      showAlert("Error starting edit session. Please try again.", "danger");
       return null;
     }
   }
@@ -226,39 +226,49 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function initializePage() {
     checkAdminRole();
-    initializeTSOPLogging(); // Initialize TSOP logging
+    initializeTSOPLogging();
 
     // Initialize modal instance
     editModal = new bootstrap.Modal(
       document.getElementById("editAccountModal")
     );
 
-    // Add event listener for modal close to end edit session
+    // Add event listener for modal close
     document
       .getElementById("editAccountModal")
-      ?.addEventListener("hide.bs.modal", function () {
-        if (currentEditSessionId && !currentAction) {
-          console.log(
-            "Edit modal closed without saving - ending session:",
-            currentEditSessionId
-          );
-          endEditSession(currentEditSessionId);
+      ?.addEventListener("hide.bs.modal", async function () {
+        if (currentEditSessionId) {
+          console.log("Edit modal closed - ending session");
+          await endEditSession(currentEditSessionId);
           currentEditSessionId = null;
         }
+
+        if (editSessionCheckInterval) {
+          clearInterval(editSessionCheckInterval);
+          editSessionCheckInterval = null;
+        }
+
+        // Clear lock status UI
+        updateLockStatusInModal(null);
       });
 
     // Handle cancel button click
     document
       .querySelector("#editAccountModal .btn-secondary")
-      ?.addEventListener("click", function () {
-        console.log(
-          "Cancel button clicked - ending session:",
-          currentEditSessionId
-        );
+      ?.addEventListener("click", async function () {
+        console.log("Cancel button clicked - ending session");
         if (currentEditSessionId) {
-          endEditSession(currentEditSessionId);
+          await endEditSession(currentEditSessionId);
           currentEditSessionId = null;
         }
+
+        if (editSessionCheckInterval) {
+          clearInterval(editSessionCheckInterval);
+          editSessionCheckInterval = null;
+        }
+
+        // Clear lock status UI
+        updateLockStatusInModal(null);
       });
 
     await loadUsers();
@@ -622,6 +632,7 @@ document.addEventListener("DOMContentLoaded", function () {
     showLoading(true);
 
     try {
+      // Load user details first
       const response = await fetch(`/api/accounts/admin/accounts/${userId}`, {
         headers: {
           Authorization: `Bearer ${adminToken}`,
@@ -635,7 +646,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const result = await response.json();
 
       if (result.success) {
-        // Update admin role from response if available
+        // Check admin role
         if (result.adminRole === "assistant") {
           isAssistantAdmin = true;
           disableAccountActions();
@@ -647,15 +658,23 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
 
-        // Reset current action when starting new edit
+        // Reset current action
         currentAction = null;
 
-        // Start TSOP edit session for logging
+        // Start edit session (this will transfer lock to current admin if someone else has it)
         const sessionId = await startEditSession(userId, result.user);
+
+        if (!sessionId) {
+          showLoading(false);
+          return;
+        }
 
         // Display edit modal with user data
         displayEditAccountModal(result.user);
         currentUserId = userId;
+
+        // Start monitoring for lock changes
+        startLockMonitoring(userId, sessionId);
       } else {
         showAlert("Failed to load user details: " + result.message, "danger");
       }
@@ -665,6 +684,192 @@ document.addEventListener("DOMContentLoaded", function () {
     } finally {
       showLoading(false);
     }
+  }
+
+  function startLockMonitoring(userId, sessionId) {
+    if (editSessionCheckInterval) {
+      clearInterval(editSessionCheckInterval);
+    }
+
+    editSessionCheckInterval = setInterval(async () => {
+      try {
+        const response = await fetch(
+          `/api/accounts/admin/edit-sessions/status/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+            },
+          }
+        );
+
+        const result = await response.json();
+
+        if (result.success) {
+          const currentAdminId = JSON.parse(
+            localStorage.getItem("currentAdmin")
+          )._id;
+
+          // Check if lock is held by someone else
+          if (result.isLocked && result.lockedById !== currentAdminId) {
+            // Lock has been taken by another admin
+            clearInterval(editSessionCheckInterval);
+
+            // Update UI to show lock status
+            updateLockStatusInModal(result.lockedBy);
+
+            // Disable save button
+            const saveButton = document.getElementById("saveAccountBtn");
+            if (saveButton) {
+              saveButton.disabled = true;
+              saveButton.innerHTML =
+                '<i class="fas fa-lock me-1"></i>Locked - Cannot Save';
+              saveButton.title = `This account is being edited by ${result.lockedBy}`;
+            }
+
+            showAlert(
+              `Edit lock has been taken by ${result.lockedBy}. You can view but not save changes.`,
+              "warning"
+            );
+          } else if (
+            !result.isLocked &&
+            currentEditSessionId !== result.sessionId
+          ) {
+            // No one holds the lock anymore - re-enable save button
+            const saveButton = document.getElementById("saveAccountBtn");
+            if (saveButton) {
+              saveButton.disabled = false;
+              saveButton.innerHTML =
+                '<i class="fas fa-save me-1"></i>Save Changes';
+              saveButton.title = "";
+            }
+
+            // Update UI
+            updateLockStatusInModal(null);
+          }
+        }
+      } catch (error) {
+        console.error("Lock monitoring error:", error);
+      }
+    }, 3000); // Check every 3 seconds
+  }
+
+  function updateLockStatusInModal(lockedBy) {
+    const modalHeader = document.querySelector(
+      "#editAccountModal .modal-header h5"
+    );
+    const statusBadge = document.getElementById("accountStatusBadge");
+
+    if (modalHeader && statusBadge) {
+      if (lockedBy) {
+        // Add lock indicator to modal header
+        if (!modalHeader.querySelector(".lock-indicator")) {
+          const lockIndicator = document.createElement("span");
+          lockIndicator.className = "lock-indicator badge bg-warning ms-2";
+          lockIndicator.innerHTML = `<i class="fas fa-lock me-1"></i>Locked by ${lockedBy}`;
+          modalHeader.appendChild(lockIndicator);
+        }
+
+        // Update status badge
+        statusBadge.className = "badge bg-warning";
+        statusBadge.textContent = `Locked by ${lockedBy}`;
+      } else {
+        // Remove lock indicator
+        const lockIndicator = modalHeader.querySelector(".lock-indicator");
+        if (lockIndicator) {
+          lockIndicator.remove();
+        }
+
+        // Reset status badge
+        const user = allUsers.find((u) => u._id === currentUserId);
+        if (user) {
+          if (user.isArchived) {
+            statusBadge.className = "badge bg-danger";
+            statusBadge.textContent = "Archived";
+          } else {
+            statusBadge.className = "badge bg-success";
+            statusBadge.textContent = "Active";
+          }
+        }
+      }
+    }
+  }
+
+  async function validateSavePermission() {
+    if (!currentUserId || !currentEditSessionId) {
+      return false;
+    }
+
+    try {
+      const response = await fetch(
+        "/api/accounts/admin/edit-sessions/validate",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: currentUserId,
+            sessionId: currentEditSessionId,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        return result.canSave;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      console.error("Error validating save permission:", error);
+      return false;
+    }
+  }
+
+  function startSessionMonitoring(sessionId, userId) {
+    if (editSessionCheckInterval) {
+      clearInterval(editSessionCheckInterval);
+    }
+
+    editSessionCheckInterval = setInterval(async () => {
+      try {
+        const response = await fetch(
+          `/api/accounts/admin/edit-sessions/check/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${adminToken}`,
+            },
+          }
+        );
+
+        const result = await response.json();
+
+        if (result.success && result.isLocked && result.lockedBy) {
+          // Someone else has acquired the lock
+          clearInterval(editSessionCheckInterval);
+
+          showAlert(
+            `Another admin (${result.lockedBy}) has taken over editing this account. Your changes cannot be saved.`,
+            "danger"
+          );
+
+          // Close the edit modal
+          if (editModal) {
+            editModal.hide();
+          }
+
+          // Release our session
+          if (currentEditSessionId) {
+            await endEditSession(currentEditSessionId);
+            currentEditSessionId = null;
+          }
+        }
+      } catch (error) {
+        console.error("Session monitoring error:", error);
+      }
+    }, 5000); // Check every 5 seconds
   }
 
   function displayEditAccountModal(user) {
@@ -713,48 +918,89 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!currentUserId) return;
 
-    // Collect form data
-    editFormData = {
-      firstName: document.getElementById("editFirstName").value.trim(),
-      lastName: document.getElementById("editLastName").value.trim(),
-      username: document.getElementById("editUsername").value.trim(),
-      email: document.getElementById("editEmail").value.trim(),
-      mobile: document.getElementById("editMobile").value.trim(),
-      gender: document.getElementById("editGender").value,
-      age: document.getElementById("editAge").value
-        ? parseInt(document.getElementById("editAge").value)
-        : null,
-    };
+    // Validate we have permission to save
+    validateSavePermission().then((canSave) => {
+      if (!canSave) {
+        showAlert(
+          "You no longer hold the edit lock. Another admin has opened this account for editing. You cannot save changes.",
+          "warning"
+        );
+        return;
+      }
 
-    // Basic validation
-    if (
-      !editFormData.firstName ||
-      !editFormData.lastName ||
-      !editFormData.username ||
-      !editFormData.email
-    ) {
-      showAlert("Please fill in all required fields", "warning");
-      return;
-    }
+      // Collect form data
+      editFormData = {
+        firstName: document.getElementById("editFirstName").value.trim(),
+        lastName: document.getElementById("editLastName").value.trim(),
+        username: document.getElementById("editUsername").value.trim(),
+        email: document.getElementById("editEmail").value.trim(),
+        mobile: document.getElementById("editMobile").value.trim(),
+        gender: document.getElementById("editGender").value,
+        age: document.getElementById("editAge").value
+          ? parseInt(document.getElementById("editAge").value)
+          : null,
+      };
 
-    currentAction = "edit";
+      // Basic validation
+      if (
+        !editFormData.firstName ||
+        !editFormData.lastName ||
+        !editFormData.username ||
+        !editFormData.email
+      ) {
+        showAlert("Please fill in all required fields", "warning");
+        return;
+      }
 
-    // Get the commit timestamp (when user clicks save)
-    const commitTimestamp = Date.now();
+      currentAction = "edit";
+      const commitTimestamp = Date.now();
+      editFormData.commitTimestamp = commitTimestamp;
 
-    // Store in form data for later use
-    editFormData.commitTimestamp = commitTimestamp;
+      // Check lock status for the modal message
+      fetch(`/api/accounts/admin/edit-sessions/status/${currentUserId}`, {
+        headers: {
+          Authorization: `Bearer ${adminToken}`,
+        },
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          let lockMessage = "";
+          if (result.success && result.isLocked && result.lockedBy) {
+            lockMessage = `
+            <div class="alert alert-success">
+              <i class="fas fa-lock me-2"></i>
+              <strong>Lock Status:</strong> You hold the edit lock for this account.
+            </div>
+          `;
+          } else {
+            lockMessage = `
+            <div class="alert alert-info">
+              <i class="fas fa-unlock me-2"></i>
+              <strong>Lock Status:</strong> No active lock on this account.
+            </div>
+          `;
+          }
 
-    showSecurityConfirmationModal(
-      "Edit User Account",
-      `You are about to edit the account of <strong>${editFormData.firstName} ${editFormData.lastName}</strong>. 
-       <br><br>
-       <div class="alert alert-info">
-          <i class="fas fa-info-circle me-2"></i>
-          <strong>TSOP Concurrency Control:</strong> Multiple admins can edit simultaneously. 
-          The last admin to save will overwrite previous changes.
-       </div>`
-    );
+          showSecurityConfirmationModal(
+            "Edit User Account",
+            `You are about to edit the account of <strong>${editFormData.firstName} ${editFormData.lastName}</strong>. 
+           <br><br>
+           ${lockMessage}
+           <div class="alert alert-info mt-2">
+             <i class="fas fa-info-circle me-2"></i>
+             <strong>TSOP Strategy:</strong> Last-opener-wins - the last admin to open the edit modal gets to save changes.
+           </div>`
+          );
+        })
+        .catch((error) => {
+          console.error("Error checking lock status:", error);
+          // Continue without lock status
+          showSecurityConfirmationModal(
+            "Edit User Account",
+            `You are about to edit the account of <strong>${editFormData.firstName} ${editFormData.lastName}</strong>.`
+          );
+        });
+    });
   }
 
   function showSecurityConfirmationForArchive() {

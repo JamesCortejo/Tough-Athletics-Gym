@@ -4,6 +4,7 @@ const { connectToDatabase } = require("../config/db");
 const { ObjectId } = require("mongodb");
 const { verifyAdminToken } = require("../handlers/adminLoginHandler");
 const bcrypt = require("bcryptjs");
+const encryptionService = require("../utils/encryptionService");
 
 // Get all active members with their details
 router.get("/active-members", verifyAdminToken, async (req, res) => {
@@ -28,10 +29,15 @@ router.get("/active-members", verifyAdminToken, async (req, res) => {
       .sort({ firstName: 1, lastName: 1 })
       .toArray();
 
+    // Decrypt email and phone in memberships
+    const decryptedMemberships = activeMemberships.map((membership) =>
+      encryptionService.decryptObject(membership, ["email", "phone"]),
+    );
+
     // Enrich with user data and check-in information
     const membersWithDetails = (
       await Promise.all(
-        activeMemberships.map(async (membership) => {
+        decryptedMemberships.map(async (membership) => {
           // Get user profile picture and additional info including QR code image
           const user = await usersCollection.findOne({
             _id: new ObjectId(membership.userId),
@@ -50,11 +56,17 @@ router.get("/active-members", verifyAdminToken, async (req, res) => {
             isArchived: user?.isArchived,
           });
 
+          // Decrypt user data
+          const decryptedUser = encryptionService.decryptObject(user, [
+            "email",
+            "mobile",
+          ]);
+
           // Calculate remaining days
           const today = new Date();
           const endDate = new Date(membership.endDate);
           const remainingDays = Math.ceil(
-            (endDate - today) / (1000 * 60 * 60 * 24)
+            (endDate - today) / (1000 * 60 * 60 * 24),
           );
 
           // Get check-in statistics
@@ -74,8 +86,8 @@ router.get("/active-members", verifyAdminToken, async (req, res) => {
             _id: membership._id,
             firstName: membership.firstName,
             lastName: membership.lastName,
-            email: membership.email,
-            phone: membership.phone,
+            email: membership.email, // Already decrypted
+            phone: membership.phone, // Already decrypted
             profilePicture:
               user?.profilePicture || "/images/default-profile.png",
             qrCodePicture: user?.qrCodePicture, // This might be null if not exists
@@ -89,7 +101,7 @@ router.get("/active-members", verifyAdminToken, async (req, res) => {
             lastCheckin: checkins[0]?.checkinTime || null,
             userId: membership.userId,
           };
-        })
+        }),
       )
     ).filter(Boolean);
 
@@ -156,6 +168,16 @@ router.get(
         hasProfilePicture: !!user?.profilePicture,
       });
 
+      // Decrypt user data
+      const decryptedUser = encryptionService.decryptObject(user, [
+        "email",
+        "mobile",
+      ]);
+      const decryptedMembership = encryptionService.decryptObject(membership, [
+        "email",
+        "phone",
+      ]);
+
       // Get all check-ins for this membership
       const checkins = await usercheckinCollection
         .find({
@@ -197,8 +219,8 @@ router.get(
           : 0;
 
       const memberDetails = {
-        membership: membership,
-        user: user || {},
+        membership: decryptedMembership,
+        user: decryptedUser || {},
         checkins: checkins,
         statistics: {
           totalCheckins: totalUniqueCheckins, // Use unique days, not total records
@@ -221,7 +243,7 @@ router.get(
         message: error.message,
       });
     }
-  }
+  },
 );
 
 // Get QR code image directly
@@ -261,7 +283,7 @@ router.post("/verify-password", verifyAdminToken, async (req, res) => {
     // NEW: Check if admin is assistant and block password verification for actions
     if (req.admin.isAssistant) {
       console.log(
-        "🔒 Assistant admin attempted to verify password for actions"
+        "🔒 Assistant admin attempted to verify password for actions",
       );
       return res.status(403).json({
         success: false,
@@ -358,7 +380,7 @@ router.post("/members/:memberId/extend", verifyAdminToken, async (req, res) => {
           endDate: new Date(newEndDate),
           updatedAt: new Date(),
         },
-      }
+      },
     );
 
     if (result.modifiedCount === 0) {
@@ -375,6 +397,17 @@ router.post("/members/:memberId/extend", verifyAdminToken, async (req, res) => {
       isAdmin: true,
     });
 
+    // Get membership for logging
+    const membership = await membershipsCollection.findOne({
+      _id: new ObjectId(memberId),
+    });
+
+    // Decrypt for logging
+    const decryptedMembership = encryptionService.decryptObject(membership, [
+      "email",
+      "phone",
+    ]);
+
     // Log the action
     await db.collection("admin_actions").insertOne({
       action: "extend_membership",
@@ -384,6 +417,8 @@ router.post("/members/:memberId/extend", verifyAdminToken, async (req, res) => {
       adminId: req.admin.userId,
       adminName: adminUser?.username || "Unknown Admin",
       adminRole: "admin", // Log the role
+      memberEmail: decryptedMembership?.email,
+      memberPhone: decryptedMembership?.phone,
       timestamp: new Date(),
     });
 
@@ -441,6 +476,12 @@ router.post(
         });
       }
 
+      // Decrypt for logging
+      const decryptedMembership = encryptionService.decryptObject(
+        currentMembership,
+        ["email", "phone"],
+      );
+
       // Update the membership plan and dates
       const result = await membershipsCollection.updateOne(
         { _id: new ObjectId(memberId) },
@@ -451,7 +492,7 @@ router.post(
             endDate: new Date(endDate),
             updatedAt: new Date(),
           },
-        }
+        },
       );
 
       if (result.modifiedCount === 0) {
@@ -479,6 +520,8 @@ router.post(
         adminId: req.admin.userId,
         adminName: adminUser?.username || "Unknown Admin",
         adminRole: "admin", // Log the role
+        memberEmail: decryptedMembership?.email,
+        memberPhone: decryptedMembership?.phone,
         timestamp: new Date(),
       });
 
@@ -493,7 +536,7 @@ router.post(
         message: error.message,
       });
     }
-  }
+  },
 );
 
 // Withdraw membership
@@ -529,6 +572,12 @@ router.post(
         });
       }
 
+      // Decrypt for logging
+      const decryptedMembership = encryptionService.decryptObject(
+        currentMembership,
+        ["email", "phone"],
+      );
+
       // Update membership status to expired and set end date to today
       const result = await membershipsCollection.updateOne(
         { _id: new ObjectId(memberId) },
@@ -538,7 +587,7 @@ router.post(
             endDate: new Date(), // Set to current date
             updatedAt: new Date(),
           },
-        }
+        },
       );
 
       if (result.modifiedCount === 0) {
@@ -564,6 +613,8 @@ router.post(
         adminId: req.admin.userId,
         adminName: adminUser?.username || "Unknown Admin",
         adminRole: "admin", // Log the role
+        memberEmail: decryptedMembership?.email,
+        memberPhone: decryptedMembership?.phone,
         timestamp: new Date(),
       });
 
@@ -578,7 +629,7 @@ router.post(
         message: error.message,
       });
     }
-  }
+  },
 );
 
 // Accurate missed check-ins calculation

@@ -119,6 +119,14 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
 
+        // Mobile is optional, but if provided it must be 11 digits and start with 09
+        if (formData.mobile && !/^09\d{9}$/.test(formData.mobile)) {
+          showError("Mobile number is optional, but if provided it must be 11 digits and start with 09.");
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
+          return;
+        }
+
         // Enhanced password validation
         const passwordErrors = validatePasswordClient(formData.password);
         if (passwordErrors.length > 0) {

@@ -1,8 +1,10 @@
 const { connectToDatabase } = require("../config/db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const encryptionService = require("../utils/encryptionService"); // ADD THIS IMPORT
 
-const JWT_SECRET = "your_jwt_secret_key_here";
+const JWT_SECRET =
+  process.env.JWT_SECRET || process.env.ADMIN_JWT_SECRET || "your_jwt_secret_key_here";
 
 async function adminLogin(loginData) {
   console.log("Received admin login data:", loginData);
@@ -34,7 +36,7 @@ async function adminLogin(loginData) {
       username: user.username,
       email: user.email,
       isAdmin: user.isAdmin,
-      isAssistant: user.isAssistant || false, // NEW: Log assistant status
+      isAssistant: user.isAssistant || false,
     });
 
     // Verify password
@@ -46,22 +48,30 @@ async function adminLogin(loginData) {
 
     console.log("Admin password verified successfully");
 
-    // Generate JWT token with admin role - NEW: Include isAssistant in token
+    // DECRYPT ADMIN DATA
+    const decryptedUser = encryptionService.decryptObject(user, [
+      "email",
+      "mobile",
+    ]);
+
+    // Generate JWT token with admin role
     const token = jwt.sign(
       {
         userId: user._id.toString(),
         username: user.username,
-        email: user.email,
+        email: decryptedUser.email, // Use decrypted email
         isAdmin: true,
-        isAssistant: user.isAssistant || false, // NEW: Include assistant status
-        role: user.isAssistant ? "assistant" : "admin", // NEW: Set role based on assistant status
+        isAssistant: user.isAssistant || false,
+        role: user.isAssistant ? "assistant" : "admin",
       },
       JWT_SECRET,
-      { expiresIn: "24h" }
+      { expiresIn: "24h" },
     );
 
-    // Return admin data (excluding password)
+    // Return admin data (excluding password) - use decrypted data
     const { password: _, ...adminWithoutPassword } = user;
+    adminWithoutPassword.email = decryptedUser.email;
+    adminWithoutPassword.mobile = decryptedUser.mobile;
 
     return {
       success: true,

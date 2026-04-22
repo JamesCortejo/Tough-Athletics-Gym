@@ -64,3 +64,85 @@ body {
   background-color: #540000;
   color: #fff;
 }
+
+/* Focused mobile pass for settings page */
+@media (max-width: 430px) {
+  .settTopbar {
+    padding: 10px 12px;
+  }
+
+  .settTopbar h1 {
+    font-size: 1.6rem !important;
+    margin: 0;
+  }
+
+  .settMaincontent {
+    margin-top: 68px;
+    padding: 26px 14px;
+    border-top-left-radius: 26px;
+    border-top-right-radius: 26px;
+  }
+
+  .settBanner img {
+    width: min(92vw, 350px);
+    height: auto;
+  }
+
+  .settButtons {
+    margin-bottom: 50px !important;
+  }
+
+  .btn-custom,
+  .btn-customLog {
+    width: 100% !important;
+    max-width: 280px;
+    height: 46px !important;
+  }
+
+  footer {
+    padding: 18px 16px !important;
+  }
+
+  footer .col-6 {
+    width: 100%;
+  }
+
+  footer .logs {
+    margin-top: 0 !important;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 390px) {
+  .settTopbar h1 {
+    font-size: 1.45rem !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .settTopbar {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .settMaincontent {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .btn-custom,
+  .btn-customLog {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 320px) {
+  .settTopbar h1 {
+    font-size: 1.3rem !important;
+  }
+
+  .footer-contacts li {
+    font-size: 12px;
+  }
+}

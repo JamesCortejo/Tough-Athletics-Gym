@@ -153,15 +153,20 @@ app.post("/profile/update", verifyToken, async (req, res) => {
 });
 
 // Update profile picture
-app.post(
-  "/profile/picture",
-  verifyToken,
-  upload.single("profilePicture"),
-  (req, res) => {
+app.post("/profile/picture", verifyToken, (req, res) => {
+  upload.single("profilePicture")(req, res, (error) => {
+    if (error) {
+      console.error("Profile picture upload middleware error:", error);
+      return res.status(400).json({
+        success: false,
+        message: error.message || "Invalid image upload",
+      });
+    }
+
     req.body.userId = req.user.userId;
     handleProfilePictureUpload(req, res);
-  }
-);
+  });
+});
 
 // User Pages Routes
 app.get("/", (req, res) => {
@@ -231,6 +236,18 @@ app.get("/usersettings", (req, res) => {
 });
 
 app.get("/usermembershipstatus", (req, res) => {
+  res.sendFile(
+    path.join(
+      __dirname,
+      "src",
+      "public",
+      "user_pages",
+      "usermembershipstatus.html"
+    )
+  );
+});
+
+app.get("/membershipstatus", (req, res) => {
   res.sendFile(
     path.join(
       __dirname,

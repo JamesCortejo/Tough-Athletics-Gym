@@ -9,6 +9,59 @@
     <link rel="stylesheet" href="/css/splashstyles.css">
     <link rel="stylesheet" href="/css/indexstyles.css">
     <style>
+        /* Add to your existing CSS */
+        #lockCountdownAlert {
+            border-left: 4px solid #ffc107;
+            animation: pulse 2s infinite;
+            position: relative;
+        }
+
+        #countdownDisplay {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #dc3545;
+            background-color: rgba(220, 53, 69, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin: 0 4px;
+            min-width: 45px;
+            display: inline-block;
+            text-align: center;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Style for the unlock message */
+        .alert-success .bi-check-circle {
+            font-size: 1.2em;
+            vertical-align: middle;
+        }
+
+        /* Disabled form styling */
+        .form-disabled {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .form-disabled input,
+        .form-disabled button {
+            opacity: 0.6 !important;
+            cursor: not-allowed !important;
+        }
+
         /* Mobile-friendly button styles */
         .social-btn {
             border-radius: 8px;
@@ -132,12 +185,11 @@
             <div class="formContainer">
                 <form action="/login" method="POST" id="loginForm">
                     <div class="mb-4">
-                        <input type="text" class="form-control" id="username" name="username" placeholder="Username"
-                            required>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Username">
                     </div>
                     <div class="mb-2">
-                        <input type="password" class="form-control" id="password" name="password" placeholder="Password"
-                            required>
+                        <input type="password" class="form-control" id="password" name="password"
+                            placeholder="Password">
                     </div>
                     <div class="forgotPass text-end mb-4">
                         <a href="/user_pages/forgotEmail.html" class="text-decoration-none"
@@ -219,6 +271,11 @@
         // Check for Google auth errors
         if (urlParams.get('error') === 'google_auth_failed') {
             showError('Google authentication failed. Please try again.');
+        }
+
+        if (urlParams.get('error') === 'login_required') {
+            showError('Please log in first');
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
     });
 

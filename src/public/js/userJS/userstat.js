@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
 
   if (!token || !currentUser) {
-    window.location.href = "/login";
+    window.location.href = "/?error=login_required";
     return;
   }
 
@@ -40,7 +40,24 @@ document.addEventListener("DOMContentLoaded", function () {
         if (pendingResult.success && pendingResult.membership) {
           displayPendingMembership(pendingResult.membership);
         } else {
-          displayNoMembership();
+          // Check membership history for most recent expired membership
+          const historyResponse = await fetch("/api/membership/history", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const historyResult = await historyResponse.json();
+          const expiredMembership =
+            historyResult.success && Array.isArray(historyResult.memberships)
+              ? findMostRecentExpiredMembership(historyResult.memberships)
+              : null;
+
+          if (expiredMembership) {
+            await displayExpiredMembership(expiredMembership);
+          } else {
+            displayNoMembership();
+          }
         }
       }
     } catch (error) {
@@ -83,12 +100,26 @@ document.addEventListener("DOMContentLoaded", function () {
   async function displayActiveMembership(membership) {
     console.log("Displaying active membership:", membership);
 
+    const membershipEndDateCheck = membership.endDate
+      ? new Date(membership.endDate)
+      : null;
+    if (
+      membershipEndDateCheck &&
+      !isNaN(membershipEndDateCheck.getTime()) &&
+      membershipEndDateCheck.getTime() < Date.now()
+    ) {
+      await displayExpiredMembership(membership);
+      return;
+    }
+
     // Hide other sections
     document.getElementById("noMembership").style.display = "none";
     document.getElementById("pendingMembership").style.display = "none";
 
     // Show active membership sections
     document.querySelector(".status-details").style.display = "block";
+    document.getElementById("calendarSection").classList.remove("calendar-expired");
+    resetNoMembershipSection();
 
     // Update status pill and plan type badge
     updateStatusHeader("Active", membership.planType);
@@ -117,6 +148,67 @@ document.addEventListener("DOMContentLoaded", function () {
     initializeCalendar(membershipStartDate, membershipEndDate, []);
 
     // Then fetch check-in data and update calendar
+    await loadCheckinData(membership);
+  }
+
+  async function displayExpiredMembership(membership) {
+    console.log("Displaying expired membership:", membership);
+
+    // Hide pending section
+    document.getElementById("pendingMembership").style.display = "none";
+
+    // Show details, calendar and action section
+    document.querySelector(".status-details").style.display = "block";
+    document.getElementById("noMembership").style.display = "block";
+
+    // Expired header state
+    updateStatusHeader("Expired", membership.planType || "None");
+
+    const membershipStartDate = membership.startDate
+      ? new Date(membership.startDate)
+      : null;
+    const membershipEndDate = membership.endDate
+      ? new Date(membership.endDate)
+      : null;
+
+    document.getElementById("startDate").textContent =
+      membershipStartDate && !isNaN(membershipStartDate.getTime())
+        ? formatDate(membershipStartDate)
+        : "Not set";
+    document.getElementById("expiryDate").textContent =
+      membershipEndDate && !isNaN(membershipEndDate.getTime())
+        ? formatDate(membershipEndDate)
+        : "Not set";
+    document.getElementById("remainingDays").textContent = "Expired";
+    document.getElementById("nextPaymentDue").textContent = "Renew now";
+    document.getElementById("lastVisit").textContent = "No visits yet";
+
+    // Show past membership period in calendar
+    if (membershipStartDate && membershipEndDate) {
+      initializeCalendar(membershipStartDate, membershipEndDate, []);
+      document.getElementById("calendarSection").classList.add("calendar-expired");
+    }
+
+    // Emphasize renew action with clear inactive indication
+    const noMembershipSection = document.getElementById("noMembership");
+    const sectionTitle = noMembershipSection.querySelector("h3");
+    const sectionMessage = noMembershipSection.querySelector("p");
+    const actionButton = noMembershipSection.querySelector("a.btn");
+
+    if (sectionTitle) {
+      sectionTitle.textContent = "Membership Expired";
+    }
+    if (sectionMessage) {
+      sectionMessage.textContent =
+        "Your membership is no longer active. Renew to continue gym access.";
+    }
+    if (actionButton) {
+      actionButton.textContent = "Renew Membership";
+      actionButton.classList.remove("btn-primary");
+      actionButton.classList.add("btn-danger", "renew-emphasis");
+    }
+
+    // Try to load check-ins for this expired membership too
     await loadCheckinData(membership);
   }
 
@@ -199,6 +291,8 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelector(".status-details").style.display = "none";
     document.getElementById("noMembership").style.display = "none";
     document.getElementById("calendarSection").style.display = "none";
+    document.getElementById("calendarSection").classList.remove("calendar-expired");
+    resetNoMembershipSection();
 
     // Show pending section
     document.getElementById("pendingMembership").style.display = "block";
@@ -237,12 +331,67 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelector(".status-details").style.display = "none";
     document.getElementById("pendingMembership").style.display = "none";
     document.getElementById("calendarSection").style.display = "none";
+    document.getElementById("calendarSection").classList.remove("calendar-expired");
+    resetNoMembershipSection();
 
     // Show no membership section
     document.getElementById("noMembership").style.display = "block";
 
     // Update header for no membership
     updateStatusHeader("No Membership", "None");
+  }
+
+  function resetNoMembershipSection() {
+    const noMembershipSection = document.getElementById("noMembership");
+    const sectionTitle = noMembershipSection.querySelector("h3");
+    const sectionMessage = noMembershipSection.querySelector("p");
+    const actionButton = noMembershipSection.querySelector("a.btn");
+
+    if (sectionTitle) {
+      sectionTitle.textContent = "No Active Membership";
+    }
+    if (sectionMessage) {
+      sectionMessage.textContent = "You don't have an active membership yet.";
+    }
+    if (actionButton) {
+      actionButton.textContent = "Get Membership";
+      actionButton.classList.remove("btn-danger", "renew-emphasis");
+      actionButton.classList.add("btn-primary");
+    }
+  }
+
+  function findMostRecentExpiredMembership(memberships) {
+    const now = new Date();
+
+    const expiredMemberships = memberships.filter((membership) => {
+      if (!membership) return false;
+
+      if (
+        typeof membership.status === "string" &&
+        membership.status.toLowerCase() === "expired"
+      ) {
+        return true;
+      }
+
+      if (!membership.endDate) {
+        return false;
+      }
+
+      const endDate = new Date(membership.endDate);
+      return !isNaN(endDate.getTime()) && endDate < now;
+    });
+
+    if (expiredMemberships.length === 0) {
+      return null;
+    }
+
+    expiredMemberships.sort((a, b) => {
+      const aDate = a.endDate ? new Date(a.endDate).getTime() : 0;
+      const bDate = b.endDate ? new Date(b.endDate).getTime() : 0;
+      return bDate - aDate;
+    });
+
+    return expiredMemberships[0];
   }
 
   function updateStatusHeader(status, planType) {
@@ -256,6 +405,8 @@ document.addEventListener("DOMContentLoaded", function () {
     statusPill.className = "status-pill";
     if (status === "Active") {
       statusPill.classList.add("status-active");
+    } else if (status === "Expired") {
+      statusPill.classList.add("status-expired");
     } else if (status === "Pending") {
       statusPill.classList.add("status-pending");
     } else {

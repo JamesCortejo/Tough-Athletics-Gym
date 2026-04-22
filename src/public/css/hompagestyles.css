@@ -436,3 +436,143 @@ body {
 .notif-list::-webkit-scrollbar-thumb:hover {
   background: #333333;
 }
+
+/* Focused mobile pass for 430px and below */
+@media (max-width: 430px) {
+  .userNavbar {
+    height: auto;
+    min-height: 72px;
+    padding: 10px 12px;
+  }
+
+  .logo,
+  .pfpsett {
+    margin: 0;
+  }
+
+  .homepage_banner {
+    padding-top: 92px;
+  }
+
+  .homepage_banner img {
+    width: min(92vw, 350px);
+    height: auto;
+  }
+
+  .firsttext {
+    width: calc(100% - 24px);
+    padding: 10px 14px;
+    border-radius: 8px;
+  }
+
+  .firsttext h1 {
+    font-size: 1.5rem;
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  .userQR {
+    margin-top: 20px;
+    padding: 0 12px;
+  }
+
+  .userQR #userQRCode {
+    width: min(92vw, 350px);
+    height: auto;
+  }
+
+  .membership-actions {
+    margin: 18px 12px 0 !important;
+    height: auto !important;
+    row-gap: 10px;
+  }
+
+  .membership-actions .col-6 {
+    width: 100%;
+  }
+
+  .membership-actions .fancy-btn {
+    width: 100%;
+    padding: 10px 14px !important;
+    font-size: 15px !important;
+  }
+
+  .homepageImages img,
+  .homepageImages iframe {
+    width: min(92vw, 300px);
+    height: auto;
+  }
+
+  .map iframe {
+    height: min(72vh, 370px);
+  }
+
+  footer {
+    padding: 18px 16px !important;
+  }
+
+  footer .col-6 {
+    width: 100%;
+  }
+
+  footer .logs {
+    margin-top: 0 !important;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 390px) {
+  .firsttext h1 {
+    font-size: 1.35rem;
+  }
+
+  .destext {
+    padding-left: 18px;
+    padding-right: 18px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  .userNavbar {
+    padding: 8px 10px;
+  }
+
+  .firsttext {
+    width: calc(100% - 16px);
+  }
+
+  .firsttext h1 {
+    font-size: 1.2rem;
+  }
+
+  .membership-actions {
+    margin-left: 8px !important;
+    margin-right: 8px !important;
+  }
+}
+
+@media (max-width: 320px) {
+  .homepage_banner {
+    padding-top: 86px;
+  }
+
+  .firsttext {
+    padding: 10px;
+  }
+
+  .destext {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .membership-actions .fancy-btn {
+    font-size: 14px !important;
+    padding: 9px 10px !important;
+  }
+
+  .footer-contacts li {
+    font-size: 12px;
+  }
+}
