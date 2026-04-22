@@ -1107,6 +1107,13 @@ router.post("/admin/promote", verifyToken, async (req, res) => {
     const db = await connectToDatabase();
     const usersCollection = db.collection("users");
 
+    if (!["admin", "assistant"].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role. Must be either 'admin' or 'assistant'.",
+      });
+    }
+
     // Verify admin user
     const adminUser = await usersCollection.findOne({
       _id: new ObjectId(req.user.userId),
@@ -1244,6 +1251,13 @@ router.post("/admin/change-role", verifyToken, async (req, res) => {
     const { adminId, role, adminPassword, confirmText } = req.body;
     const db = await connectToDatabase();
     const usersCollection = db.collection("users");
+
+    if (!["admin", "assistant"].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role. Must be either 'admin' or 'assistant'.",
+      });
+    }
 
     // Verify admin user
     const adminUser = await usersCollection.findOne({

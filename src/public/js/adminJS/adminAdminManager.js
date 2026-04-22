@@ -3,11 +3,12 @@ class AdminManager {
   constructor() {
     this.adminToken = localStorage.getItem("adminToken");
     this.currentAdmin = JSON.parse(
-      localStorage.getItem("currentAdmin") || "{}"
+      localStorage.getItem("currentAdmin") || "{}",
     );
     this.selectedUser = null;
     this.currentAction = null;
     this.targetAdminId = null;
+    this.targetRole = null;
     this.searchTimeout = null;
     this.allUsers = [];
 
@@ -74,7 +75,7 @@ class AdminManager {
     if (this.currentAdmin.isAssistant) {
       this.showAlert(
         "Assistant admins are not authorized to manage admin accounts.",
-        "warning"
+        "warning",
       );
       return;
     }
@@ -85,7 +86,7 @@ class AdminManager {
       await Promise.all([this.loadAllUsers(), this.loadCurrentAdmins()]);
 
       const modal = new bootstrap.Modal(
-        document.getElementById("adminManagementModal")
+        document.getElementById("adminManagementModal"),
       );
       modal.show();
 
@@ -206,8 +207,8 @@ class AdminManager {
                     <button class="btn btn-revoke revoke-admin-btn" 
                             data-admin-id="${admin._id}" 
                             data-admin-name="${admin.firstName} ${
-              admin.lastName
-            }">
+                              admin.lastName
+                            }">
                         <i class="fas fa-user-times me-1"></i>Revoke
                     </button>
                 </div>
@@ -226,11 +227,11 @@ class AdminManager {
                         <div class="admin-avatar">${initials}</div>
                         <div class="admin-details">
                             <div class="admin-name">${admin.firstName} ${
-          admin.lastName
-        } ${currentUserBadge}</div>
+                              admin.lastName
+                            } ${currentUserBadge}</div>
                             <div class="admin-username">@${admin.username} • ${
-          admin.email
-        }</div>
+                              admin.email
+                            }</div>
                         </div>
                     </div>
                 </td>
@@ -259,7 +260,7 @@ class AdminManager {
         this.showChangeRoleSecurityConfirmation(
           adminId,
           adminName,
-          "assistant"
+          "assistant",
         );
       });
     });
@@ -354,7 +355,7 @@ class AdminManager {
                 <div class="user-name">${user.firstName} ${user.lastName}</div>
                 <div class="user-details">@${user.username} • ${user.email}</div>
             </div>
-        `
+        `,
       )
       .join("");
 
@@ -383,7 +384,7 @@ class AdminManager {
                 <strong>${user.firstName} ${user.lastName}</strong>
                 <div class="small">@${user.username} • ${user.email}</div>
                 <div class="small text-muted">Joined: ${this.formatDate(
-                  new Date(user.createdAt)
+                  new Date(user.createdAt),
                 )}</div>
             </div>
         `;
@@ -431,6 +432,7 @@ class AdminManager {
 
     this.currentAction = "promote";
     this.targetAdminId = this.selectedUser._id;
+    this.targetRole = role;
 
     document.getElementById("adminActionModalTitle").innerHTML =
       '<i class="fas fa-user-shield me-2"></i>Promote User to Admin';
@@ -454,6 +456,7 @@ class AdminManager {
   showChangeRoleSecurityConfirmation(adminId, adminName, newRole) {
     this.currentAction = "change_role";
     this.targetAdminId = adminId;
+    this.targetRole = newRole;
 
     const roleName =
       newRole === "admin" ? "Full Administrator" : "Assistant Administrator";
@@ -506,12 +509,12 @@ class AdminManager {
 
     // Close admin management modal
     bootstrap.Modal.getInstance(
-      document.getElementById("adminManagementModal")
+      document.getElementById("adminManagementModal"),
     )?.hide();
 
     // Show security modal
     const modal = new bootstrap.Modal(
-      document.getElementById("adminActionSecurityModal")
+      document.getElementById("adminActionSecurityModal"),
     );
     modal.show();
   }
@@ -544,7 +547,8 @@ class AdminManager {
 
       switch (this.currentAction) {
         case "promote":
-          const role = document.getElementById("adminRole").value;
+          const role =
+            this.targetRole || document.getElementById("adminRole").value;
           response = await fetch("/api/accounts/admin/promote", {
             method: "POST",
             headers: {
@@ -563,7 +567,7 @@ class AdminManager {
           if (result.success) {
             this.showAlert("User promoted to admin successfully!", "success");
             bootstrap.Modal.getInstance(
-              document.getElementById("adminActionSecurityModal")
+              document.getElementById("adminActionSecurityModal"),
             )?.hide();
             await this.openAdminManagementModal(); // Reload the modal
           } else {
@@ -572,7 +576,12 @@ class AdminManager {
           break;
 
         case "change_role":
-          const newRole = document.getElementById("adminRole").value;
+          const newRole = this.targetRole;
+
+          if (!newRole) {
+            throw new Error("No target role selected for this admin action");
+          }
+
           response = await fetch("/api/accounts/admin/change-role", {
             method: "POST",
             headers: {
@@ -591,7 +600,7 @@ class AdminManager {
           if (result.success) {
             this.showAlert("Admin role updated successfully!", "success");
             bootstrap.Modal.getInstance(
-              document.getElementById("adminActionSecurityModal")
+              document.getElementById("adminActionSecurityModal"),
             )?.hide();
             await this.openAdminManagementModal(); // Reload the modal
           } else {
@@ -617,7 +626,7 @@ class AdminManager {
           if (result.success) {
             this.showAlert("Admin privileges revoked successfully!", "success");
             bootstrap.Modal.getInstance(
-              document.getElementById("adminActionSecurityModal")
+              document.getElementById("adminActionSecurityModal"),
             )?.hide();
             await this.openAdminManagementModal(); // Reload the modal
           } else {
@@ -636,6 +645,7 @@ class AdminManager {
       this.showLoading(false);
       this.currentAction = null;
       this.targetAdminId = null;
+      this.targetRole = null;
     }
   }
 

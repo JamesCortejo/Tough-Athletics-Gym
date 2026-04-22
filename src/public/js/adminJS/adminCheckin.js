@@ -27,11 +27,11 @@ class AdminCheckin {
     // Check if Html5Qrcode library is available
     if (typeof Html5Qrcode === "undefined") {
       console.error(
-        "Html5Qrcode library not loaded. Check if the script is properly included."
+        "Html5Qrcode library not loaded. Check if the script is properly included.",
       );
       this.showAlert(
         "QR Scanner library failed to load. Please refresh the page or use manual QR code input.",
-        "danger"
+        "danger",
       );
       this.libraryLoaded = false;
       this.disableScanner();
@@ -124,7 +124,7 @@ class AdminCheckin {
             Authorization: `Bearer ${this.adminToken}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -140,7 +140,7 @@ class AdminCheckin {
         this.updateCheckinStatus("Member found", "status-pending");
         this.showAlert(
           `Found member: ${result.membership.firstName} ${result.membership.lastName}`,
-          "success"
+          "success",
         );
       } else {
         throw new Error(result.message || "Member not found");
@@ -163,7 +163,7 @@ class AdminCheckin {
       this.showAlert(
         "Camera access is not supported in this browser. " +
           "Please ensure you're using a modern browser like Chrome, Firefox, or Edge.",
-        "warning"
+        "warning",
       );
       return false;
     }
@@ -181,7 +181,7 @@ class AdminCheckin {
         "Camera access requires a secure context. " +
           "Please serve this page over HTTPS or from localhost. " +
           `Current protocol: ${window.location.protocol}`,
-        "warning"
+        "warning",
       );
       return false;
     }
@@ -221,7 +221,7 @@ class AdminCheckin {
       if (!this.libraryLoaded) {
         this.showAlert(
           "QR scanner library not available. Please refresh the page.",
-          "danger"
+          "danger",
         );
         return;
       }
@@ -249,7 +249,7 @@ class AdminCheckin {
         qrbox: function (viewfinderWidth, viewfinderHeight) {
           // make box 80% of the smaller dimension
           const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-          const qrBoxSize = Math.floor(minEdge * 0.9);
+          const qrBoxSize = Math.floor(minEdge * 0.8);
           return { width: qrBoxSize, height: qrBoxSize };
         },
         aspectRatio: 1.0,
@@ -268,7 +268,7 @@ class AdminCheckin {
           const backCamera = cameras.find(
             (camera) =>
               camera.label.toLowerCase().includes("back") ||
-              camera.label.toLowerCase().includes("rear")
+              camera.label.toLowerCase().includes("rear"),
           );
           cameraId = backCamera ? backCamera.id : cameras[0].id;
           console.log("Selected camera:", cameraId);
@@ -285,7 +285,7 @@ class AdminCheckin {
         cameraId || { facingMode: "environment" },
         config,
         (qrCodeMessage) => this.onScanSuccess(qrCodeMessage),
-        (errorMessage) => this.onScanFailure(errorMessage)
+        (errorMessage) => this.onScanFailure(errorMessage),
       );
 
       this.isScannerActive = true;
@@ -456,7 +456,7 @@ class AdminCheckin {
             Authorization: `Bearer ${this.adminToken}`,
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -517,8 +517,8 @@ class AdminCheckin {
                          class="user-avatar"
                          onerror="this.src='/images/default-profile.png'">
                     <div class="user-name">${membership.firstName} ${
-      membership.lastName
-    }</div>
+                      membership.lastName
+                    }</div>
                     <span class="plan-badge plan-${
                       membership.planType
                         ? membership.planType.toLowerCase()
@@ -612,7 +612,7 @@ class AdminCheckin {
       // Record check-in in the database
       const result = await this.recordCheckin(
         this.currentQrCode,
-        this.currentMembership
+        this.currentMembership,
       );
 
       if (result.success) {
@@ -620,7 +620,7 @@ class AdminCheckin {
         this.updateCheckinStatus("Check-in recorded!", "status-success");
         this.showAlert(
           `Successfully checked in ${this.currentMembership.firstName} ${this.currentMembership.lastName}`,
-          "success"
+          "success",
         );
 
         // Log successful check-in in console
