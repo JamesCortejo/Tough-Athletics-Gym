@@ -56,6 +56,29 @@
             border: 3px solid #0d6efd;
             margin-bottom: 15px;
         }
+
+        .form-control:invalid {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+        }
+
+        .form-control:valid {
+            border-color: #198754;
+            box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+        }
+
+        .validation-message {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .validation-message.invalid {
+            color: #dc3545;
+        }
+
+        .validation-message.valid {
+            color: #198754;
+        }
     </style>
 </head>
 
@@ -77,8 +100,12 @@
                 <form id="completeProfileForm">
                     <!-- Mobile Number -->
                     <div class="mb-3">
-                        <input type="tel" class="form-control" id="mobile" name="mobile" placeholder="Mobile Number"
-                            required>
+                        <input type="tel" class="form-control" id="mobile" name="mobile"
+                            placeholder="Mobile Number (11 digits, starts with 09, optional)" pattern="09[0-9]{9}"
+                            title="Please enter a valid 11-digit mobile number starting with 09">
+                        <div id="mobileValidation" class="validation-message">
+                            Optional. If provided, must be 11 digits and start with 09.
+                        </div>
                     </div>
 
                     <!-- Gender Dropdown -->
@@ -89,12 +116,18 @@
                             <option value="female">Female</option>
                             <option value="other">Other</option>
                         </select>
+                        <div id="genderValidation" class="validation-message">
+                            Please select your gender
+                        </div>
                     </div>
 
                     <!-- Age -->
                     <div class="mb-3">
                         <input type="number" class="form-control" id="age" name="age" placeholder="Age" min="16"
                             max="100" required>
+                        <div id="ageValidation" class="validation-message">
+                            Must be between 16 and 100 years old
+                        </div>
                     </div>
 
                     <!-- Submit -->
@@ -131,32 +164,123 @@
             if (user.gender) document.getElementById('gender').value = user.gender;
             if (user.age) document.getElementById('age').value = user.age;
 
+            // Get form elements
             const form = document.getElementById('completeProfileForm');
+            const mobileInput = document.getElementById('mobile');
+            const genderSelect = document.getElementById('gender');
+            const ageInput = document.getElementById('age');
+
+            // Get validation message elements
+            const mobileValidation = document.getElementById('mobileValidation');
+            const genderValidation = document.getElementById('genderValidation');
+            const ageValidation = document.getElementById('ageValidation');
+
+            // Real-time validation for mobile number
+            mobileInput.addEventListener('input', function () {
+                validateMobileNumber();
+            });
+
+            // Real-time validation for gender
+            genderSelect.addEventListener('change', function () {
+                validateGender();
+            });
+
+            // Real-time validation for age
+            ageInput.addEventListener('input', function () {
+                validateAge();
+            });
+
+            // Restrict mobile input to numbers only
+            mobileInput.addEventListener('keypress', function (e) {
+                const char = String.fromCharCode(e.which);
+                if (!/[0-9]/.test(char)) {
+                    e.preventDefault();
+                    return;
+                }
+            });
+
+            // Prevent pasting non-numeric characters in mobile field
+            mobileInput.addEventListener('paste', function (e) {
+                e.preventDefault();
+                const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                const numbersOnly = pastedText.replace(/\D/g, '');
+                const currentValue = this.value.replace(/\D/g, '');
+                const newValue = currentValue + numbersOnly;
+                this.value = newValue;
+            });
+
+            // Validation functions
+            function validateMobileNumber() {
+                const mobile = mobileInput.value.trim();
+                const mobileDigits = mobile.replace(/\D/g, '');
+
+                if (mobileDigits.length === 0) {
+                    mobileValidation.textContent = 'Optional. If provided, must be 11 digits and start with 09.';
+                    mobileValidation.className = 'validation-message';
+                    return true;
+                } else if (mobileDigits.length !== 11) {
+                    mobileValidation.textContent = `Mobile number must be exactly 11 digits (current: ${mobileDigits.length})`;
+                    mobileValidation.className = 'validation-message invalid';
+                    return false;
+                } else if (!/^09\d{9}$/.test(mobileDigits)) {
+                    mobileValidation.textContent = 'Mobile number must start with 09';
+                    mobileValidation.className = 'validation-message invalid';
+                    return false;
+                } else {
+                    mobileValidation.textContent = '✓ Valid mobile number format';
+                    mobileValidation.className = 'validation-message valid';
+                    return true;
+                }
+            }
+
+            function validateGender() {
+                const gender = genderSelect.value;
+                if (!gender) {
+                    genderValidation.textContent = 'Please select your gender';
+                    genderValidation.className = 'validation-message';
+                    return false;
+                } else {
+                    genderValidation.textContent = '✓ Gender selected';
+                    genderValidation.className = 'validation-message valid';
+                    return true;
+                }
+            }
+
+            function validateAge() {
+                const age = parseInt(ageInput.value);
+                if (!ageInput.value) {
+                    ageValidation.textContent = 'Must be between 16 and 100 years old';
+                    ageValidation.className = 'validation-message';
+                    return false;
+                } else if (isNaN(age) || age < 16 || age > 100) {
+                    ageValidation.textContent = `Age must be between 16 and 100 (current: ${age})`;
+                    ageValidation.className = 'validation-message invalid';
+                    return false;
+                } else {
+                    ageValidation.textContent = '✓ Valid age';
+                    ageValidation.className = 'validation-message valid';
+                    return true;
+                }
+            }
 
             form.addEventListener('submit', async function (e) {
                 e.preventDefault();
+
+                // Validate all fields before submission
+                const isMobileValid = validateMobileNumber();
+                const isGenderValid = validateGender();
+                const isAgeValid = validateAge();
+
+                if (!isMobileValid || !isGenderValid || !isAgeValid) {
+                    showError('Please fix the validation errors before submitting.');
+                    return;
+                }
 
                 const formData = {
                     mobile: document.getElementById('mobile').value.trim(),
                     gender: document.getElementById('gender').value,
                     age: parseInt(document.getElementById('age').value)
                 };
-
-                // Client-side validation
-                if (!formData.mobile) {
-                    showError('Mobile number is required!');
-                    return;
-                }
-
-                if (!formData.gender) {
-                    showError('Please select your gender!');
-                    return;
-                }
-
-                if (!formData.age || formData.age < 16 || formData.age > 100) {
-                    showError('Please enter a valid age between 16 and 100!');
-                    return;
-                }
 
                 try {
                     const submitBtn = form.querySelector('button[type="submit"]');
@@ -205,6 +329,11 @@
                     submitBtn.disabled = false;
                 }
             });
+
+            // Initialize validation messages on load
+            validateMobileNumber();
+            validateGender();
+            validateAge();
 
             function showError(message) {
                 removeExistingAlerts();

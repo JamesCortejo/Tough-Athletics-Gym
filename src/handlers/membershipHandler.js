@@ -2,6 +2,7 @@ const { connectToDatabase } = require("../config/db");
 const { ObjectId } = require("mongodb");
 const { calculateEndDate } = require("../utils/membershipDateUtils");
 const { createNotification } = require("./notificationHandler");
+const encryptionService = require("../utils/encryptionService");
 
 async function registerMembership(membershipData) {
   console.log("Received membership data:", membershipData);
@@ -34,17 +35,22 @@ async function registerMembership(membershipData) {
       throw new Error("User not found");
     }
 
-    // Get user information for membership
+    // Decrypt user data for membership record
+    const decryptedUser = encryptionService.decryptObject(user, [
+      "email",
+      "mobile",
+    ]);
+
     const qrCodeId = user.qrCodeId;
     const firstName = user.firstName;
     const lastName = user.lastName;
-    const email = user.email;
-    const phone = user.mobile;
+    const email = decryptedUser.email;
+    const phone = decryptedUser.mobile;
     const profilePicture = user.profilePicture;
 
     if (!qrCodeId) {
       throw new Error(
-        "User does not have a QR code ID. Please contact support."
+        "User does not have a QR code ID. Please contact support.",
       );
     }
 
@@ -66,25 +72,25 @@ async function registerMembership(membershipData) {
 
     if (existingMemberships && existingMemberships.length > 0) {
       const activeMembership = existingMemberships.find(
-        (m) => m.status === "Active"
+        (m) => m.status === "Active",
       );
       const pendingMembership = existingMemberships.find(
-        (m) => m.status === "Pending"
+        (m) => m.status === "Pending",
       );
 
       if (activeMembership) {
         const endDate = new Date(activeMembership.endDate).toLocaleDateString();
         throw new Error(
-          `You already have an active ${activeMembership.planType} membership that ends on ${endDate}. Please wait until your current membership expires before applying for a new one.`
+          `You already have an active ${activeMembership.planType} membership that ends on ${endDate}. Please wait until your current membership expires before applying for a new one.`,
         );
       }
 
       if (pendingMembership) {
         const appliedDate = new Date(
-          pendingMembership.appliedAt
+          pendingMembership.appliedAt,
         ).toLocaleDateString();
         throw new Error(
-          `You already have a pending ${pendingMembership.planType} membership application submitted on ${appliedDate}. Please wait for admin approval before applying for a new membership.`
+          `You already have a pending ${pendingMembership.planType} membership application submitted on ${appliedDate}. Please wait for admin approval before applying for a new membership.`,
         );
       }
     }
@@ -101,11 +107,11 @@ async function registerMembership(membershipData) {
       qrCodeId: qrCodeId,
       planType: planType,
 
-      // User personal information
+      // User personal information (store decrypted for easy access)
       firstName: firstName,
       lastName: lastName,
-      email: email,
-      phone: phone,
+      email: email, // Store decrypted email
+      phone: phone, // Store decrypted phone
       profilePicture: profilePicture,
 
       // Membership details
@@ -121,7 +127,7 @@ async function registerMembership(membershipData) {
 
     console.log(
       "Attempting to insert membership document with dates:",
-      membershipDocument
+      membershipDocument,
     );
 
     // Insert membership into database
@@ -147,7 +153,7 @@ async function registerMembership(membershipData) {
     } catch (notificationError) {
       console.error(
         "Failed to send application notification:",
-        notificationError
+        notificationError,
       );
       // Don't throw error, just log it
     }
@@ -212,7 +218,7 @@ async function approveMembership(membershipId, adminInfo = null) {
           updatedAt: new Date(),
           approvedAt: new Date(),
         },
-      }
+      },
     );
 
     if (result.modifiedCount === 0) {
@@ -230,7 +236,7 @@ async function approveMembership(membershipId, adminInfo = null) {
         {
           startDate: startDate,
           endDate: endDate,
-        }
+        },
       );
 
       if (logResult.success) {
@@ -238,7 +244,7 @@ async function approveMembership(membershipId, adminInfo = null) {
       } else {
         console.error(
           "❌ Failed to log admin approval action:",
-          logResult.message
+          logResult.message,
         );
       }
     }
@@ -310,7 +316,7 @@ async function declineMembership(membershipId, reason, adminInfo = null) {
           updatedAt: new Date(),
           declinedAt: new Date(),
         },
-      }
+      },
     );
 
     if (result.modifiedCount === 0) {
@@ -327,7 +333,7 @@ async function declineMembership(membershipId, reason, adminInfo = null) {
         adminInfo,
         {
           reason: reason,
-        }
+        },
       );
 
       if (logResult.success) {
@@ -335,7 +341,7 @@ async function declineMembership(membershipId, reason, adminInfo = null) {
       } else {
         console.error(
           "❌ Failed to log admin decline action:",
-          logResult.message
+          logResult.message,
         );
       }
     }
@@ -378,7 +384,7 @@ async function logAdminMembershipAction(
   action,
   membership,
   adminInfo,
-  additionalDetails = {}
+  additionalDetails = {},
 ) {
   try {
     console.log("📝 Creating admin membership action log entry...");
@@ -408,7 +414,7 @@ async function logAdminMembershipAction(
 
     console.log(
       "✅ Admin membership action inserted successfully, insertedId:",
-      result.insertedId
+      result.insertedId,
     );
 
     // Verify the document was inserted
@@ -419,7 +425,7 @@ async function logAdminMembershipAction(
       console.log("✅ Admin membership action document verified in database");
     } else {
       console.error(
-        "❌ Failed to verify admin membership action document insertion"
+        "❌ Failed to verify admin membership action document insertion",
       );
     }
 
@@ -468,10 +474,29 @@ async function getUserMembership(userId) {
     const db = await connectToDatabase();
     const membershipsCollection = db.collection("memberships");
 
-    const membership = await membershipsCollection.findOne({
+    let membership = await membershipsCollection.findOne({
       userId: new ObjectId(userId),
       status: "Active",
     });
+
+    // Auto-expire stale active memberships when fetched
+    if (membership && membership.endDate) {
+      const endDate = new Date(membership.endDate);
+      if (!isNaN(endDate.getTime()) && endDate.getTime() < Date.now()) {
+        await membershipsCollection.updateOne(
+          { _id: membership._id, status: "Active" },
+          {
+            $set: {
+              status: "Expired",
+              updatedAt: new Date(),
+              expiredAt: new Date(),
+            },
+          },
+        );
+
+        membership = null;
+      }
+    }
 
     return membership;
   } catch (error) {
@@ -511,7 +536,12 @@ async function getUserMembershipHistory(userId) {
       .sort({ createdAt: -1 })
       .toArray();
 
-    return memberships;
+    // Decrypt sensitive data in memberships
+    const decryptedMemberships = memberships.map((membership) =>
+      encryptionService.decryptObject(membership, ["email", "phone"]),
+    );
+
+    return decryptedMemberships;
   } catch (error) {
     console.error("Error getting user membership history:", error);
     return [];
@@ -532,12 +562,19 @@ async function getUserMembershipStatus(userId) {
       .sort({ createdAt: -1 })
       .toArray();
 
+    // Decrypt sensitive data in memberships
+    const decryptedMemberships = memberships.map((membership) =>
+      encryptionService.decryptObject(membership, ["email", "phone"]),
+    );
+
     return {
-      hasActive: memberships.some((m) => m.status === "Active"),
-      hasPending: memberships.some((m) => m.status === "Pending"),
-      activeMembership: memberships.find((m) => m.status === "Active"),
-      pendingMembership: memberships.find((m) => m.status === "Pending"),
-      allMemberships: memberships,
+      hasActive: decryptedMemberships.some((m) => m.status === "Active"),
+      hasPending: decryptedMemberships.some((m) => m.status === "Pending"),
+      activeMembership: decryptedMemberships.find((m) => m.status === "Active"),
+      pendingMembership: decryptedMemberships.find(
+        (m) => m.status === "Pending",
+      ),
+      allMemberships: decryptedMemberships,
     };
   } catch (error) {
     console.error("Error getting user membership status:", error);
@@ -564,7 +601,12 @@ async function getAllPendingMemberships() {
       .sort({ appliedAt: -1 })
       .toArray();
 
-    return memberships;
+    // Decrypt sensitive data in each membership
+    const decryptedMemberships = memberships.map((membership) =>
+      encryptionService.decryptObject(membership, ["email", "phone"]),
+    );
+
+    return decryptedMemberships;
   } catch (error) {
     console.error("Error getting all pending memberships:", error);
     return [];
@@ -584,7 +626,12 @@ async function getAllActiveMemberships() {
       .sort({ createdAt: -1 })
       .toArray();
 
-    return memberships;
+    // Decrypt sensitive data in each membership
+    const decryptedMemberships = memberships.map((membership) =>
+      encryptionService.decryptObject(membership, ["email", "phone"]),
+    );
+
+    return decryptedMemberships;
   } catch (error) {
     console.error("Error getting all active memberships:", error);
     return [];
@@ -601,7 +648,12 @@ async function getMembershipApplication(membershipId) {
       _id: new ObjectId(membershipId),
     });
 
-    return membership;
+    if (membership) {
+      // Decrypt sensitive data
+      return encryptionService.decryptObject(membership, ["email", "phone"]);
+    }
+
+    return null;
   } catch (error) {
     console.error("Error getting membership application:", error);
     return null;

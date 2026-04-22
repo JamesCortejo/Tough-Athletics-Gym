@@ -896,3 +896,44 @@ body {
   padding-bottom: 0.5rem;
   border-bottom: 2px solid #e9ecef;
 }
+
+/* Add lock status indicators */
+.lock-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.lock-status.locked {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.lock-status.unlocked {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+/* Current user indicator in admin table */
+.current-user-indicator {
+  background-color: rgba(0, 123, 255, 0.1) !important;
+}
+
+.current-user-badge {
+  display: inline-block;
+  background-color: #17a2b8;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  margin-left: 8px;
+}
+
+/* Assistant admin restrictions */
+.assistant-restriction {
+  opacity: 0.7;
+  pointer-events: none;
+}

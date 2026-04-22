@@ -82,6 +82,11 @@ body {
   color: white;
 }
 
+.status-expired {
+  background: linear-gradient(135deg, #dc3545, #b02a37);
+  color: white;
+}
+
 .status-none {
   background: #6c757d;
   color: white;
@@ -184,6 +189,30 @@ body {
   font-size: 16px;
   border-radius: 25px;
   font-weight: bold;
+}
+
+.renew-emphasis {
+  animation: renewPulse 1.6s infinite;
+  box-shadow: 0 0 0 rgba(220, 53, 69, 0.45);
+}
+
+@keyframes renewPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(220, 53, 69, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+  }
+}
+
+.calendar-expired {
+  opacity: 0.85;
+  border-radius: 12px;
+  border: 1px solid #f3b8be;
+  background: #fff5f6;
 }
 
 /* ---------- Pending Membership Section ---------- */

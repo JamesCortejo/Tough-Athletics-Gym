@@ -17,6 +17,7 @@ const passport = require("passport");
 const jwt = require("jsonwebtoken");
 const { logUserAction } = require("../utils/userActionLogger");
 const { logoutUser } = require("../handlers/logoutHandler");
+const encryptionService = require("../utils/encryptionService"); // ADD THIS IMPORT
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_here";
 
@@ -25,7 +26,7 @@ router.get(
   "/auth/google",
   passport.authenticate("google", {
     scope: ["profile", "email"],
-  })
+  }),
 );
 
 function getClientInfo(req) {
@@ -62,7 +63,7 @@ router.post("/api/logout", verifyToken, async (req, res) => {
       userId,
       authMethod,
       qrCodeId,
-      clientInfo
+      clientInfo,
     );
 
     console.log("Logout result:", logoutResult);
@@ -117,30 +118,36 @@ router.get(
         {
           ipAddress: req.ip || req.connection.remoteAddress,
           userAgent: req.get("User-Agent"),
-        }
+        },
       );
 
-      // Generate JWT token for the user - ADD authMethod HERE
+      // DECRYPT USER DATA BEFORE CREATING TOKEN
+      const decryptedUser = encryptionService.decryptObject(req.user, [
+        "email",
+        "mobile",
+        "googleId",
+      ]);
+
+      // Generate JWT token for the user
       const token = jwt.sign(
         {
           userId: req.user._id.toString(),
           username: req.user.username,
-          email: req.user.email,
+          email: decryptedUser.email, // Use decrypted email
           qrCodeId: req.user.qrCodeId,
-          authMethod: "google", // ADD THIS LINE
+          authMethod: "google",
         },
         JWT_SECRET,
-        { expiresIn: "24h" }
+        { expiresIn: "24h" },
       );
 
       // Check if user needs to complete their profile
       const needsProfileCompletion =
         req.user.needsProfileCompletion ||
-        !req.user.mobile ||
         !req.user.gender ||
         !req.user.age;
 
-      // Store user data and token
+      // Store user data and token - USE DECRYPTED DATA
       const userResponse = {
         success: true,
         message: "Google login successful!",
@@ -150,12 +157,12 @@ router.get(
           firstName: req.user.firstName,
           lastName: req.user.lastName,
           username: req.user.username,
-          email: req.user.email,
+          email: decryptedUser.email, // Use decrypted email
           profilePicture: req.user.profilePicture,
           qrCode: req.user.qrCode,
           qrCodeId: req.user.qrCodeId,
           authMethod: req.user.authMethod,
-          mobile: req.user.mobile,
+          mobile: decryptedUser.mobile, // Use decrypted mobile
           gender: req.user.gender,
           age: req.user.age,
           needsProfileCompletion: needsProfileCompletion,
@@ -168,30 +175,30 @@ router.get(
       if (needsProfileCompletion) {
         res.redirect(
           `/auth/success?token=${encodeURIComponent(
-            token
+            token,
           )}&user=${encodeURIComponent(
-            JSON.stringify(userResponse.user)
-          )}&needsProfile=true`
+            JSON.stringify(userResponse.user),
+          )}&needsProfile=true`,
         );
       } else {
         res.redirect(
           `/auth/success?token=${encodeURIComponent(
-            token
-          )}&user=${encodeURIComponent(JSON.stringify(userResponse.user))}`
+            token,
+          )}&user=${encodeURIComponent(JSON.stringify(userResponse.user))}`,
         );
       }
     } catch (error) {
       console.error("Google OAuth callback error:", error);
       res.redirect("/?error=google_auth_failed");
     }
-  }
+  },
 );
 
 // Profile completion page
 router.get("/complete-profile", (req, res) => {
   console.log("Serving profile completion page");
   res.sendFile(
-    path.join(__dirname, "../public/user_pages/complete-profile.html")
+    path.join(__dirname, "../public/user_pages/complete-profile.html"),
   );
 });
 
@@ -204,7 +211,7 @@ router.get(
   "/auth/facebook",
   passport.authenticate("facebook", {
     scope: ["email", "public_profile"],
-  })
+  }),
 );
 
 router.get(
@@ -232,26 +239,32 @@ router.get(
         {
           ipAddress: req.ip || req.connection.remoteAddress,
           userAgent: req.get("User-Agent"),
-        }
+        },
       );
 
-      // Generate JWT token for the user - ADD authMethod HERE
+      // DECRYPT USER DATA BEFORE CREATING TOKEN
+      const decryptedUser = encryptionService.decryptObject(req.user, [
+        "email",
+        "mobile",
+        "facebookId",
+      ]);
+
+      // Generate JWT token for the user
       const token = jwt.sign(
         {
           userId: req.user._id.toString(),
           username: req.user.username,
-          email: req.user.email,
+          email: decryptedUser.email, // Use decrypted email
           qrCodeId: req.user.qrCodeId,
-          authMethod: "facebook", // ADD THIS LINE
+          authMethod: "facebook",
         },
         JWT_SECRET,
-        { expiresIn: "24h" }
+        { expiresIn: "24h" },
       );
 
       // Check if user needs to complete their profile
       const needsProfileCompletion =
         req.user.needsProfileCompletion ||
-        !req.user.mobile ||
         !req.user.gender ||
         !req.user.age;
 
@@ -265,12 +278,12 @@ router.get(
           firstName: req.user.firstName,
           lastName: req.user.lastName,
           username: req.user.username,
-          email: req.user.email,
+          email: decryptedUser.email, // Use decrypted email
           profilePicture: req.user.profilePicture,
           qrCode: req.user.qrCode,
           qrCodeId: req.user.qrCodeId,
           authMethod: req.user.authMethod,
-          mobile: req.user.mobile,
+          mobile: decryptedUser.mobile, // Use decrypted mobile
           gender: req.user.gender,
           age: req.user.age,
           needsProfileCompletion: needsProfileCompletion,
@@ -283,23 +296,23 @@ router.get(
       if (needsProfileCompletion) {
         res.redirect(
           `/auth/success?token=${encodeURIComponent(
-            token
+            token,
           )}&user=${encodeURIComponent(
-            JSON.stringify(userResponse.user)
-          )}&needsProfile=true`
+            JSON.stringify(userResponse.user),
+          )}&needsProfile=true`,
         );
       } else {
         res.redirect(
           `/auth/success?token=${encodeURIComponent(
-            token
-          )}&user=${encodeURIComponent(JSON.stringify(userResponse.user))}`
+            token,
+          )}&user=${encodeURIComponent(JSON.stringify(userResponse.user))}`,
         );
       }
     } catch (error) {
       console.error("Facebook OAuth callback error:", error);
       res.redirect("/?error=facebook_auth_failed");
     }
-  }
+  },
 );
 
 // Serve static pages
@@ -315,7 +328,7 @@ router.get("/userhomepage", (req, res) => {
     "..",
     "public",
     "user_pages",
-    "userhomepage.html"
+    "userhomepage.html",
   );
   res.sendFile(filePath);
 });
@@ -327,7 +340,7 @@ router.get("/userprofile", (req, res) => {
     "..",
     "public",
     "user_pages",
-    "userprofile.html"
+    "userprofile.html",
   );
   res.sendFile(filePath);
 });
@@ -338,7 +351,7 @@ router.get("/usersettings", (req, res) => {
     "..",
     "public",
     "user_pages",
-    "usersettings.html"
+    "usersettings.html",
   );
   res.sendFile(filePath);
 });
@@ -349,7 +362,7 @@ router.get("/usermembership", (req, res) => {
     "..",
     "public",
     "user_pages",
-    "usermembership.html"
+    "usermembership.html",
   );
   res.sendFile(filePath);
 });
@@ -360,7 +373,7 @@ router.get("/gymhistory", (req, res) => {
     "..",
     "public",
     "user_pages",
-    "gymhistory.html"
+    "gymhistory.html",
   );
   res.sendFile(filePath);
 });
@@ -384,7 +397,7 @@ router.get("/enternewPass", (req, res) => {
 router.get("/changepassword", (req, res) => {
   console.log("Serving change password page");
   res.sendFile(
-    path.join(__dirname, "../public/user_pages/changepassword.html")
+    path.join(__dirname, "../public/user_pages/changepassword.html"),
   );
 });
 
@@ -412,7 +425,6 @@ router.post("/register", async (req, res) => {
       !lastName ||
       !username ||
       !email ||
-      !mobile ||
       !gender ||
       !age ||
       !password ||
@@ -493,7 +505,7 @@ router.post("/login", async (req, res) => {
         password,
         recaptchaToken,
       },
-      getClientInfo(req)
+      getClientInfo(req),
     ); // Pass client info
 
     console.log("Login result:", result);
@@ -555,7 +567,7 @@ router.post("/forgot-password", async (req, res) => {
 
     console.log(
       "reCAPTCHA verified successfully, score:",
-      recaptchaResult.score
+      recaptchaResult.score,
     );
     console.log("Password reset requested for:", email);
 

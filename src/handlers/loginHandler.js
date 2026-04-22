@@ -3,8 +3,9 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { verifyRecaptcha } = require("../utils/recaptcha");
 const { logUserAction } = require("../utils/userActionLogger");
+const encryptionService = require("../utils/encryptionService");
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_here";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 async function loginUser(loginData, requestInfo = {}) {
   console.log("Received login data:", loginData);
@@ -25,13 +26,13 @@ async function loginUser(loginData, requestInfo = {}) {
     const recaptchaResult = await verifyRecaptcha(recaptchaToken);
     if (!recaptchaResult.success) {
       throw new Error(
-        `reCAPTCHA verification failed: ${recaptchaResult.message}`
+        `reCAPTCHA verification failed: ${recaptchaResult.message}`,
       );
     }
 
     console.log(
       "reCAPTCHA verified successfully, score:",
-      recaptchaResult.score
+      recaptchaResult.score,
     );
 
     const db = await connectToDatabase();
@@ -46,29 +47,37 @@ async function loginUser(loginData, requestInfo = {}) {
     });
 
     if (!user) {
-      throw new Error("Invalid username or password");
+      throw new Error("User not Found");
     }
 
+    // Decrypt sensitive data for comparison and response
+    const decryptedUser = encryptionService.decryptObject(user, [
+      "email",
+      "mobile",
+      "googleId",
+      "facebookId",
+    ]);
+
     console.log("User found:", {
-      username: user.username,
-      email: user.email,
-      qrCodeId: user.qrCodeId,
-      profilePicture: user.profilePicture,
-      authMethod: user.authMethod,
-      isArchived: user.isArchived,
-      isAdmin: user.isAdmin, // Log admin status
+      username: decryptedUser.username,
+      email: decryptedUser.email,
+      qrCodeId: decryptedUser.qrCodeId,
+      profilePicture: decryptedUser.profilePicture,
+      authMethod: decryptedUser.authMethod,
+      isArchived: decryptedUser.isArchived,
+      isAdmin: decryptedUser.isAdmin,
     });
 
     // Check if account is archived
-    if (user.isArchived) {
+    if (decryptedUser.isArchived) {
       throw new Error(
-        "This account has been archived. Please contact support."
+        "This account has been archived. Please contact support.",
       );
     }
 
     // NEW: Check if user is an admin
-    if (user.isAdmin) {
-      throw new Error("Invalid user and password");
+    if (decryptedUser.isAdmin) {
+      throw new Error("Invalid username or password");
     }
 
     // Verify password
@@ -80,36 +89,36 @@ async function loginUser(loginData, requestInfo = {}) {
 
     console.log("Password verified successfully");
 
-    // FIXED: Ensure authMethod is properly included in JWT
-    const userAuthMethod = user.authMethod || "local";
+    // Ensure authMethod is properly included in JWT
+    const userAuthMethod = decryptedUser.authMethod || "local";
 
-    // Generate JWT token - ADD authMethod HERE
+    // Generate JWT token
     const token = jwt.sign(
       {
-        userId: user._id.toString(),
-        username: user.username,
-        email: user.email,
-        qrCodeId: user.qrCodeId,
-        authMethod: userAuthMethod, // THIS IS CRITICAL - use the variable
+        userId: decryptedUser._id.toString(),
+        username: decryptedUser.username,
+        email: decryptedUser.email,
+        qrCodeId: decryptedUser.qrCodeId,
+        authMethod: userAuthMethod,
       },
       JWT_SECRET,
-      { expiresIn: "24h" }
+      { expiresIn: "24h" },
     );
 
     // Log the login action
     await logUserAction(
-      user._id.toString(),
+      decryptedUser._id.toString(),
       "login",
-      userAuthMethod, // Use the same variable
-      user.qrCodeId,
+      userAuthMethod,
+      decryptedUser.qrCodeId,
       {
         ipAddress: requestInfo.ipAddress,
         userAgent: requestInfo.userAgent,
-      }
+      },
     );
 
     // Return user data (excluding password) including QR code
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _, ...userWithoutPassword } = decryptedUser;
 
     return {
       success: true,
@@ -120,9 +129,23 @@ async function loginUser(loginData, requestInfo = {}) {
     };
   } catch (error) {
     console.error("Login error:", error);
+
+    // Format error message based on the specific error
+    let errorMessage = error.message;
+
+    // If the error is specifically "User not Found", format it without the "Login failed:" prefix
+    // since it already clearly indicates the issue
+    if (error.message === "User not Found") {
+      errorMessage = "User not Found";
+    } else {
+      // For other errors, you can add the prefix if needed
+      // errorMessage = `Login failed: ${error.message}`;
+      errorMessage = error.message; // Using the original error message
+    }
+
     return {
       success: false,
-      message: error.message,
+      message: errorMessage,
     };
   }
 }

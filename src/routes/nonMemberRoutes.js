@@ -4,6 +4,7 @@ const router = express.Router();
 const { connectToDatabase } = require("../config/db");
 const { ObjectId } = require("mongodb");
 const { verifyToken } = require("../handlers/loginHandler");
+const encryptionService = require("../utils/encryptionService");
 
 // Get all non-members
 router.get("/non-members", verifyToken, async (req, res) => {
@@ -31,9 +32,14 @@ router.get("/non-members", verifyToken, async (req, res) => {
       .sort({ checkInTime: -1 })
       .toArray();
 
+    // Decrypt sensitive data
+    const decryptedNonMembers = nonMembers.map((nonMember) =>
+      encryptionService.decryptObject(nonMember, ["email", "phone"]),
+    );
+
     res.status(200).json({
       success: true,
-      nonMembers: nonMembers,
+      nonMembers: decryptedNonMembers,
     });
   } catch (error) {
     console.error("Get non-members error:", error);
@@ -74,13 +80,13 @@ router.post("/non-members", verifyToken, async (req, res) => {
       });
     }
 
-    // Create non-member document (removed checkedByAdmin and adminRole fields)
+    // Create non-member document with encrypted sensitive data
     const nonMemberData = {
       firstName,
       lastName,
       gender,
-      phone,
-      email: email || null,
+      phone: encryptionService.encrypt(phone), // Encrypt phone
+      email: email ? encryptionService.encrypt(email) : null, // Encrypt email if exists
       address,
       paymentMethod: paymentMethod || "Cash at Gym",
       amount: amount || 75,
@@ -92,6 +98,12 @@ router.post("/non-members", verifyToken, async (req, res) => {
     // Insert into database
     const result = await nonMembersCollection.insertOne(nonMemberData);
 
+    // Decrypt for logging
+    const decryptedEmail = email
+      ? encryptionService.decrypt(nonMemberData.email)
+      : null;
+    const decryptedPhone = encryptionService.decrypt(nonMemberData.phone);
+
     // Log admin action in admin_actions collection - FIXED STRUCTURE
     await db.collection("admin_actions").insertOne({
       action: "add_walkin_customer",
@@ -100,8 +112,8 @@ router.post("/non-members", verifyToken, async (req, res) => {
       adminRole: adminUser.isAssistant ? "assistant" : "admin",
       walkinCheckinId: result.insertedId, // ADD THIS - crucial for linking
       walkinCustomerName: `${firstName} ${lastName}`, // TOP LEVEL FIELD
-      walkinCustomerPhone: phone, // TOP LEVEL FIELD
-      walkinCustomerEmail: email, // TOP LEVEL FIELD
+      walkinCustomerPhone: decryptedPhone, // TOP LEVEL FIELD (decrypted)
+      walkinCustomerEmail: decryptedEmail, // TOP LEVEL FIELD (decrypted)
       amount: amount || 75, // TOP LEVEL FIELD
       paymentMethod: paymentMethod || "Cash at Gym", // TOP LEVEL FIELD
       timestamp: new Date(),
@@ -110,7 +122,8 @@ router.post("/non-members", verifyToken, async (req, res) => {
         manualEntry: true,
         // Keep the nested details for backward compatibility if needed
         customerName: `${firstName} ${lastName}`,
-        phone: phone,
+        phone: decryptedPhone,
+        email: decryptedEmail,
         amount: amount || 75,
         paymentMethod: paymentMethod || "Cash at Gym",
         nonMemberId: result.insertedId,
@@ -152,24 +165,32 @@ router.get("/non-members/search/:searchTerm", verifyToken, async (req, res) => {
       });
     }
 
-    const searchRegex = new RegExp(searchTerm, "i");
-
+    // Get all non-members and decrypt them for searching
     const nonMembers = await nonMembersCollection
-      .find({
-        $or: [
-          { firstName: searchRegex },
-          { lastName: searchRegex },
-          { email: searchRegex },
-          { phone: searchRegex },
-          { address: searchRegex },
-        ],
-      })
+      .find({})
       .sort({ checkInTime: -1 })
       .toArray();
 
+    // Decrypt sensitive data
+    const decryptedNonMembers = nonMembers.map((nonMember) =>
+      encryptionService.decryptObject(nonMember, ["email", "phone"]),
+    );
+
+    const searchRegex = new RegExp(searchTerm, "i");
+
+    const filteredNonMembers = decryptedNonMembers.filter((nonMember) => {
+      return (
+        searchRegex.test(nonMember.firstName) ||
+        searchRegex.test(nonMember.lastName) ||
+        (nonMember.email && searchRegex.test(nonMember.email)) ||
+        (nonMember.phone && searchRegex.test(nonMember.phone)) ||
+        (nonMember.address && searchRegex.test(nonMember.address))
+      );
+    });
+
     res.status(200).json({
       success: true,
-      nonMembers: nonMembers,
+      nonMembers: filteredNonMembers,
     });
   } catch (error) {
     console.error("Search non-members error:", error);

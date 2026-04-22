@@ -5,6 +5,7 @@ const { ObjectId } = require("mongodb");
 const { verifyAdminToken } = require("../handlers/adminLoginHandler");
 const { verifyToken } = require("../handlers/loginHandler");
 const { checkinMember, recordCheckin } = require("../handlers/checkinHandler");
+const encryptionService = require("../utils/encryptionService");
 
 // Get check-ins for a specific membership (for user)
 router.get("/checkins/:membershipId", verifyToken, async (req, res) => {
@@ -58,6 +59,8 @@ router.post("/record-checkin", verifyAdminToken, async (req, res) => {
         membershipId: checkinData.membershipId,
         firstName: checkinData.firstName,
         lastName: checkinData.lastName,
+        email: checkinData.email,
+        phone: checkinData.phone,
       },
       adminUser: req.admin, // Log the admin data from token
     });
@@ -86,8 +89,24 @@ router.post("/record-checkin", verifyAdminToken, async (req, res) => {
       username: adminUser?.username || "Unknown Admin",
     };
 
+    // Decrypt checkin data if it contains encrypted fields
+    const decryptedCheckinData = {
+      ...checkinData,
+      email: checkinData.email
+        ? encryptionService.decrypt(checkinData.email)
+        : null,
+      phone: checkinData.phone
+        ? encryptionService.decrypt(checkinData.phone)
+        : null,
+    };
+
+    console.log("🔍 Decrypted check-in data:", {
+      email: decryptedCheckinData.email,
+      phone: decryptedCheckinData.phone,
+    });
+
     // Pass adminInfo to recordCheckin
-    const result = await recordCheckin(checkinData, adminInfo);
+    const result = await recordCheckin(decryptedCheckinData, adminInfo);
 
     console.log("✅ Record check-in result:", result);
 
