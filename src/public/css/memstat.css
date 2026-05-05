@@ -1,0 +1,383 @@
+/* ---------- Font ---------- */
+@font-face {
+  font-family: "League Gothic";
+  src: url("/fonts/league-gothic-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* ---------- Base / Layout ---------- */
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  background: url("../images/backgroundimg.png") no-repeat center center fixed;
+  background-size: cover;
+  font-family: Arial, sans-serif;
+  color: #333;
+}
+
+.settTopbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+  padding: 10px 20px;
+}
+
+.settMaincontent {
+  background: #fff;
+  border-top-left-radius: 50px;
+  border-top-right-radius: 50px;
+  padding: 40px 30px;
+  max-width: 100%;
+  margin: 80px auto 0px auto;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+  min-height: calc(100vh - 200px);
+}
+
+/* ---------- Status Card (responsive ready) ---------- */
+/* Make card fluid and adaptive */
+.status-card {
+  max-width: 600px; /* keeps it neat on desktop */
+  width: 100%;
+  margin: 0 auto;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  padding: 0 12px; /* small horizontal inner spacing so edges don't touch screen */
+  box-sizing: border-box;
+}
+
+/* New Header with Status Pill and Plan Type */
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25px 30px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #eee;
+}
+
+/* Status Pill */
+.status-pill {
+  padding: 8px 20px;
+  border-radius: 50px;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: "League Gothic", sans-serif;
+}
+
+/* Status states */
+.status-active {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
+}
+
+.status-pending {
+  background: linear-gradient(135deg, #ff9800, #f57c00);
+  color: white;
+}
+
+.status-expired {
+  background: linear-gradient(135deg, #dc3545, #b02a37);
+  color: white;
+}
+
+.status-none {
+  background: #6c757d;
+  color: white;
+}
+
+/* Plan Type Badge */
+.plan-type-badge {
+  padding: 8px 20px;
+  border-radius: 50px;
+  font-size: 16px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: "League Gothic", sans-serif;
+  color: white;
+}
+
+.plan-basic {
+  background: #000000; /* Black for Basic */
+}
+
+.plan-premium {
+  background: rgb(26, 149, 231); /* Blue for Premium */
+}
+
+.plan-vip {
+  background: rgb(250, 132, 59); /* Orange for VIP */
+}
+
+.plan-none {
+  background: #6c757d;
+}
+
+/* ---------- Status Details (responsive grid -> stacked on mobile) ---------- */
+/* Status details container */
+.status-details {
+  padding: 30px;
+  box-sizing: border-box;
+}
+
+/* Default detail-row for tablet/desktop: two columns (label/value) */
+.detail-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+/* Label styling */
+.detail-label {
+  font-weight: 600;
+  color: #555;
+  font-size: 16px;
+  white-space: normal; /* allow wrapping when needed */
+}
+
+/* Value styling */
+.detail-value {
+  font-weight: bold;
+  color: #333;
+  font-size: 16px;
+  text-align: right;
+  word-break: break-word; /* prevents overflow from long strings */
+  max-width: 60%;
+}
+
+/* ---------- No Membership Section ---------- */
+.no-membership {
+  text-align: center;
+  padding: 50px 30px;
+}
+
+.no-membership-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.no-membership h3 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+  font-family: "League Gothic", sans-serif;
+  font-size: 28px;
+}
+
+.no-membership p {
+  color: #666;
+  margin-bottom: 25px;
+  font-size: 16px;
+}
+
+.no-membership .btn {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  border: none;
+  padding: 12px 30px;
+  font-size: 16px;
+  border-radius: 25px;
+  font-weight: bold;
+}
+
+.renew-emphasis {
+  animation: renewPulse 1.6s infinite;
+  box-shadow: 0 0 0 rgba(220, 53, 69, 0.45);
+}
+
+@keyframes renewPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(220, 53, 69, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+  }
+}
+
+.calendar-expired {
+  opacity: 0.85;
+  border-radius: 12px;
+  border: 1px solid #f3b8be;
+  background: #fff5f6;
+}
+
+/* ---------- Pending Membership Section ---------- */
+.pending-membership {
+  text-align: center;
+  padding: 50px 30px;
+}
+
+.pending-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.pending-membership h3 {
+  color: #ff9800;
+  margin-bottom: 15px;
+  font-family: "League Gothic", sans-serif;
+  font-size: 28px;
+}
+
+.pending-membership p {
+  color: #666;
+  margin-bottom: 25px;
+  font-size: 16px;
+}
+
+.pending-details {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 20px;
+  text-align: left;
+}
+
+.pending-details p {
+  margin: 8px 0;
+  color: #856404;
+}
+
+/* ---------- Footer ---------- */
+.footer-contacts ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.footer-contacts li {
+  color: white;
+  display: flex;
+  align-items: center;
+  margin: 6px 0;
+  font-family: "League Gothic", sans-serif;
+  font-size: 13px;
+}
+
+.footer-contacts .icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+}
+
+/* ---------- Responsive / Mobile Tweaks ---------- */
+@media (max-width: 900px) {
+  .status-card {
+    max-width: 520px;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Adjust maincontent spacing for small screens */
+  .settMaincontent {
+    padding: 28px 18px;
+    margin-top: 60px;
+    min-height: calc(100vh - 160px);
+  }
+
+  /* Slightly tighter card */
+  .status-card {
+    border-radius: 16px;
+    padding: 0;
+  }
+
+  .status-header {
+    padding: 18px 16px;
+  }
+
+  .status-details {
+    padding: 18px 14px;
+  }
+
+  /* Stack label above the value, increase spacing and touch targets */
+  .detail-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 14px 0;
+    border-bottom: 1px solid #f5f5f5;
+  }
+
+  .detail-label {
+    font-size: 14px;
+    color: #666;
+  }
+
+  .detail-value {
+    font-size: 16px;
+    text-align: left;
+    width: 100%;
+    font-weight: 700;
+    padding: 8px 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+
+  /* Reduce the size of the plan/status pills a bit for phones */
+  .status-pill,
+  .plan-type-badge {
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+
+  /* Make pending/no-membership sections more compact */
+  .no-membership,
+  .pending-membership {
+    padding: 30px 18px;
+  }
+}
+
+/* Optional: on larger screens keep value compact with ellipsis so layout stays neat */
+@media (min-width: 601px) {
+  .detail-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Extra small devices: bigger buttons */
+@media (max-width: 420px) {
+  .no-membership .btn,
+  .pending-membership .btn {
+    padding: 14px 20px;
+    font-size: 15px;
+    border-radius: 22px;
+  }
+}
+
+/* ---------- Accessibility / Utility tweaks ---------- */
+/* focus states for interactive items (if you later make labels or buttons focusable) */
+.status-pill:focus,
+.plan-type-badge:focus,
+.no-membership .btn:focus,
+.pending-membership .btn:focus {
+  outline: 3px solid rgba(0, 123, 255, 0.25);
+  outline-offset: 2px;
+}
+
+/* ensure images/icons inside header/footer don't overflow */
+.settTopbar img,
+.footer-contacts img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+}

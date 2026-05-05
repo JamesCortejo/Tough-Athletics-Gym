@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tough Athletics Gym</title>
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/forgotstyles.css">
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        .alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            width: calc(100% - 40px);
+            max-width: 350px;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 0;
+            border: none;
+            font-size: 14px;
+            line-height: 1.4;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-left: 4px solid transparent;
+            text-align: center;
+            word-wrap: break-word;
+        }
+
+        .alert-danger {
+            background: #fff5f5;
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            color: #0c5460;
+            border-left-color: #28a745;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <div class="bannerLogo">
+            <img src="/images/icons/bannerlogo.png" alt="Banner Logo" class="mb-5" style="width: 250px; height: 120px;">
+        </div>
+        <div class="forgotBox d-flex flex-column mb-4">
+            <button class="close-btn">
+                <a href="/"><img src="/images/icons/exitbtn.png" alt="Close" width="20" height="20"></a>
+            </button>
+            <h3 class="text-center mb-3"><b>Enter your Email</b></h3>
+            <div class="formContainer">
+                <form id="forgotPasswordForm">
+                    <!-- Hidden reCAPTCHA token field -->
+                    <input type="hidden" id="recaptchaToken" name="recaptchaToken">
+
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <input type="email" class="form-control" id="email" name="email" placeholder="Email" required>
+                    </div>
+                    <button type="submit" class="btn btn-custom w-95 mt-2">Get Code</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="footerLogo">
+        <img src="/images/icons/startuplogo.png" alt="Footer Logo" width="40" height="80">
+    </div>
+
+    <!-- Include the external JavaScript file -->
+    <script src="../js/userJS/forgotpass.js"></script>
+</body>
+
+</html>

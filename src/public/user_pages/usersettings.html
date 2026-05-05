@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/settingsstyles.css">
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <title>Settings</title>
+    <style>
+        .btn-custom {
+            background-color: #000;
+            color: #fff;
+            height: 50px;
+            border: none;
+            width: 170px;
+        }
+
+        .btn-custom:hover {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .btn-customLog {
+            background-color: #9a0000;
+            color: #fff;
+            width: 170px;
+            height: 50px;
+            border: none;
+        }
+
+        .btn-customLog:hover {
+            background-color: #540000;
+            color: #fff;
+        }
+
+        .settButtons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 90px;
+        }
+
+        /* Modal custom styles */
+        .logout-modal .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .logout-modal .modal-header {
+            border-bottom: 1px solid #eee;
+            background: linear-gradient(135deg, #9a0000, #540000);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .logout-modal .modal-footer {
+            border-top: 1px solid #eee;
+        }
+
+        .logout-confirm-btn {
+            background-color: #9a0000;
+            border: none;
+            padding: 10px 25px;
+        }
+
+        .logout-confirm-btn:hover {
+            background-color: #540000;
+        }
+
+        .logout-cancel-btn {
+            background-color: #6c757d;
+            border: none;
+            padding: 10px 25px;
+        }
+
+        .logout-cancel-btn:hover {
+            background-color: #545b62;
+        }
+
+        .success-modal .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .success-modal .modal-header {
+            border-bottom: 1px solid #eee;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .success-icon {
+            font-size: 48px;
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Logout Confirmation Modal -->
+    <div class="modal fade logout-modal" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="logoutConfirmModalLabel">
+                        <i class="fas fa-sign-out-alt me-2"></i>Confirm Logout
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-question-circle" style="font-size: 48px; color: #9a0000;"></i>
+                    </div>
+                    <h5 class="mb-3">Are you sure you want to logout?</h5>
+                    <p class="text-muted">You will need to login again to access your account.</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary logout-cancel-btn" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger logout-confirm-btn" id="confirmLogoutBtn">
+                        <i class="fas fa-sign-out-alt me-2"></i>Yes, Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Success Modal -->
+    <div class="modal fade success-modal" id="logoutSuccessModal" tabindex="-1"
+        aria-labelledby="logoutSuccessModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="logoutSuccessModalLabel">
+                        <i class="fas fa-check-circle me-2"></i>Logout Successful
+                    </h5>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h5 class="mb-3">You have been logged out successfully!</h5>
+                    <p class="text-muted">Redirecting to login page...</p>
+                    <div class="spinner-border text-success mt-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="settTopbar">
+        <a class="mt-2" href="/userhomepage"><img src="/images/icons/backBtn.png" alt="" width="30px" height="30px"></a>
+        <h1 style="font-family: 'League Gothic', sans-serif; font-size: 36px;">Settings</h1>
+        <img class="mt-3" src="/images/icons/startuplogo.png" alt="" width="30px" height="54">
+    </div>
+
+    <div class="settMaincontent">
+        <div class="settBanner d-flex justify-content-center">
+            <img src="/images/icons/bannerlogo.png" alt="" width="350px" height="160px">
+        </div>
+        <div class="settButtons">
+            <div class="changePass">
+                <div class="btnLogout mt-3">
+                    <button id="logoutBtn" class="btn btn-customLog">
+                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer style="background-color: black; padding: 20px 30px 20px 30px;">
+        <div class="row">
+            <div class="col-6">
+                <div class="logs" style="margin-top: 20px;">
+                    <img src="/images/icons/startuplogo.png" alt="" width="40" height="80">
+                    <img src="/images/icons/words.png" alt="" width="100" height="60">
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="footer-contacts">
+                    <ul>
+                        <li>
+                            <img src="/images/icons/phone.png" alt="Phone" class="icon">
+                            0917 880 5849
+                        </li>
+                        <li>
+                            <img src="/images/icons/emailfoot.png" alt="Email" class="icon">
+                            csagpalo@gmail.com
+                        </li>
+                        <li>
+                            <img src="/images/icons/facebook.png" alt="Facebook" class="icon">
+                            TOUGH ATHLETICS GYM/YourPage
+                        </li>
+                        <li>
+                            <img src="/images/icons/location.png" alt="Location" class="icon">
+                            Magsaysay Corner Murillo St. Brgy 6, Malaybalay City, 8700 Bukidnon
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/userJS/logout.js"></script>
+
+    <!-- REMOVED THE DUPLICATE INLINE SCRIPT THAT WAS CAUSING DOUBLE LOGOUTS -->
+</body>
+
+</html>

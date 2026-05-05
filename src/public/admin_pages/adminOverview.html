@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tough Athletics Gym - Admin Overview</title>
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/adminOverview.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="text-center">
+            <div class="spinner-border mb-3" role="status"></div>
+            <p>Checking authentication...</p>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" class="alert-container"></div>
+
+    <div class="sideBar d-flex flex-column">
+        <div class="titleLogo">
+            <img src="../images/icons/bannerlogo.png" alt="Banner Logo" class="mb-1"
+                style="width: 250px; height: 120px;">
+            <h3 class="" style="font-family: 'League Gothic' sans-serif;">Admin Dashboard</h3>
+            <!-- Admin Info Section -->
+            <div class="admin-info">
+                <div class="admin-welcome">Welcome back,</div>
+                <div class="admin-name" id="adminNameDisplay">Loading...</div>
+            </div>
+        </div>
+        <div class="sideBarContent">
+            <button type="button" class="btn btn-custom overview-btn">Overview</button>
+            <button type="button" class="btn btn-custom membership-btn">Membership Manager</button>
+            <button type="button" class="btn btn-custom non-member-btn">Non-Member Manager</button>
+            <button type="button" class="btn btn-custom accounts-btn">Accounts Manager</button>
+            <button type="button" class="btn btn-custom reports-btn">Reports Manager</button>
+            <button type="button" class="btn btn-custom logout-btn mt-4"
+                style="background-color: rgb(124, 0, 0);">Logout</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-tachometer-alt me-2 mb-4" style="font-size: 1.8rem;"></i>
+                    <div>
+                        <h3 style="font-weight: bold; margin: 0;">System Overview</h3>
+                        <p class="text-muted mb-0">Monitor gym performance and statistics</p>
+                    </div>
+                </div>
+                <div class="date-selector">
+                    <select id="timeRange" class="form-select">
+                        <option value="7">Last 7 Days</option>
+                        <option value="30" selected>Last 30 Days</option>
+                        <option value="90">Last 90 Days</option>
+                        <option value="365">Last Year</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" id="totalUsers">-</div>
+                    <div class="stat-label">Total Users</div>
+                    <div class="stat-change" id="userChange">
+                        <i class="fas fa-arrow-up text-success"></i>
+                        <span class="text-success">0%</span> from last period
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" id="activeMembers">-</div>
+                    <div class="stat-label">Active Members</div>
+                    <div class="stat-change" id="memberChange">
+                        <i class="fas fa-arrow-up text-success"></i>
+                        <span class="text-success">0%</span> from last period
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" id="pendingApplications">-</div>
+                    <div class="stat-label">Pending Applications</div>
+                    <div class="stat-change" id="applicationChange">
+                        <i class="fas fa-arrow-up text-danger"></i>
+                        <span class="text-danger">0%</span> from last period
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-qrcode"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" id="todayCheckins">-</div>
+                    <div class="stat-label">Today's Check-ins</div>
+                    <div class="stat-change" id="checkinChange">
+                        <i class="fas fa-arrow-up text-success"></i>
+                        <span class="text-success">0%</span> from yesterday
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" id="revenue">-</div>
+                    <div class="stat-label">Monthly Revenue</div>
+                    <div class="stat-change" id="revenueChange">
+                        <i class="fas fa-arrow-up text-success"></i>
+                        <span class="text-success">0%</span> from last month
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number" id="avgAttendance">-</div>
+                    <div class="stat-label">Avg. Daily Check-ins</div>
+                    <div class="stat-change" id="attendanceChange">
+                        <i class="fas fa-arrow-up text-success"></i>
+                        <span class="text-success">0%</span> from last period
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="row">
+                <!-- Membership Growth Chart -->
+                <div class="col-md-8">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h5>Membership Growth</h5>
+                            <div class="chart-legend">
+                                <span class="legend-item">
+                                    <span class="legend-color new-members"></span>
+                                    New Members
+                                </span>
+                                <span class="legend-item">
+                                    <span class="legend-color total-members"></span>
+                                    Total Members
+                                </span>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="membershipGrowthChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Membership Plan Distribution -->
+                <div class="col-md-4">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h5>Plan Distribution</h5>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="planDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <!-- Check-in Activity -->
+                <div class="col-md-6">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h5>Daily Check-ins</h5>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="checkinActivityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gender Distribution -->
+                <div class="col-md-3">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h5>Gender Distribution</h5>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="genderDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Age Distribution -->
+                <div class="col-md-3">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h5>Age Groups</h5>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="ageDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <!-- Revenue Breakdown -->
+                <div class="col-md-6">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h5>Revenue by Plan</h5>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="revenueBreakdownChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Application Status -->
+                <div class="col-md-6">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h5>Application Status</h5>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="applicationStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/adminJS/adminCommon.js"></script>
+    <script src="../js/adminJS/adminOverview.js"></script>
+</body>
+
+</html>

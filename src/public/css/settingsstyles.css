@@ -1,0 +1,148 @@
+@font-face {
+  font-family: "League Gothic";
+  src: url("/fonts/league-gothic-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  background: url("../images/backgroundimg.png") no-repeat center center fixed;
+}
+
+.settTopbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+  padding: 10px 20px;
+}
+
+.settMaincontent {
+  background: #fff;
+  border-top-left-radius: 50px;
+  border-top-right-radius: 50px;
+  padding: 40px 30px;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 80px auto 0px auto; /* centers vertically below top bar */
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+  text-align: center;
+}
+
+.footer-contacts ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.footer-contacts li {
+  color: white;
+  display: flex;
+  align-items: center;
+  margin: 6px 0;
+  font-family: "League Gothic", sans-serif;
+  font-size: 13px;
+}
+
+.footer-contacts .icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+}
+.btn-customLog {
+  background-color: #9a0000;
+  color: #fff;
+  height: 50px;
+  border: none;
+}
+
+.btn-customLog:hover {
+  background-color: #540000;
+  color: #fff;
+}
+
+/* Focused mobile pass for settings page */
+@media (max-width: 430px) {
+  .settTopbar {
+    padding: 10px 12px;
+  }
+
+  .settTopbar h1 {
+    font-size: 1.6rem !important;
+    margin: 0;
+  }
+
+  .settMaincontent {
+    margin-top: 68px;
+    padding: 26px 14px;
+    border-top-left-radius: 26px;
+    border-top-right-radius: 26px;
+  }
+
+  .settBanner img {
+    width: min(92vw, 350px);
+    height: auto;
+  }
+
+  .settButtons {
+    margin-bottom: 50px !important;
+  }
+
+  .btn-custom,
+  .btn-customLog {
+    width: 100% !important;
+    max-width: 280px;
+    height: 46px !important;
+  }
+
+  footer {
+    padding: 18px 16px !important;
+  }
+
+  footer .col-6 {
+    width: 100%;
+  }
+
+  footer .logs {
+    margin-top: 0 !important;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 390px) {
+  .settTopbar h1 {
+    font-size: 1.45rem !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .settTopbar {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .settMaincontent {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .btn-custom,
+  .btn-customLog {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 320px) {
+  .settTopbar h1 {
+    font-size: 1.3rem !important;
+  }
+
+  .footer-contacts li {
+    font-size: 12px;
+  }
+}
